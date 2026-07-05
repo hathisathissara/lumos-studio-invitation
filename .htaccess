@@ -1,0 +1,9 @@
+RewriteEngine On
+RewriteBase /invite/
+
+# If the request is for an existing file or directory, do not rewrite
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, pass the path to invite.php as the slug
+RewriteRule ^([a-zA-Z0-9-]+)$ invite.php?slug=$1 [L,QSA]
