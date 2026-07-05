@@ -19,6 +19,7 @@
     <meta name="twitter:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
     <meta name="twitter:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
     <script type="application/ld+json">
+        
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
