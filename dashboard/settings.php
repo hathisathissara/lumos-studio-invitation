@@ -19,21 +19,52 @@ try {
 } catch (Exception $e) {}
 
 // Update wedding details
+// Update wedding details
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_wedding'])) {
     $bride = trim($_POST['bride_name']);
     $groom = trim($_POST['groom_name']);
     $date  = $_POST['wedding_date'];
     $template = isset($_POST['template_name']) ? $_POST['template_name'] : 'premium_gold';
-    
+
     if (!empty($bride) && !empty($groom) && !empty($date)) {
-        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, template_name = ? WHERE id = ? AND user_id = ?")
-            ->execute([$bride, $groom, $date, $template, $wedding_id, $user_id]);
-        
+
+        // Get current bride/groom to check if names actually changed
+        $stmtOld = $pdo->prepare("SELECT bride_name, groom_name, slug FROM weddings WHERE id = ? AND user_id = ?");
+        $stmtOld->execute([$wedding_id, $user_id]);
+        $old = $stmtOld->fetch();
+
+        $slug_to_use = $old['slug'];
+        $link_changed = false;
+
+        // Only regenerate slug if bride or groom name actually changed
+        if ($old['bride_name'] !== $bride || $old['groom_name'] !== $groom) {
+            $new_slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $bride . '-' . $groom));
+            $new_slug = trim($new_slug, '-');
+
+            // Ensure uniqueness, excluding this wedding's own row
+            $checkSlug = $pdo->prepare("SELECT COUNT(*) FROM weddings WHERE slug = ? AND id != ?");
+            $checkSlug->execute([$new_slug, $wedding_id]);
+            if ($checkSlug->fetchColumn() > 0) {
+                $new_slug .= '-' . rand(100, 999);
+            }
+
+            $slug_to_use = $new_slug;
+            $link_changed = true;
+        }
+
+        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, template_name = ?, slug = ? WHERE id = ? AND user_id = ?")
+            ->execute([$bride, $groom, $date, $template, $slug_to_use, $wedding_id, $user_id]);
+
         $new_name = $bride . " & " . $groom;
         $pdo->prepare("UPDATE users SET name = ? WHERE id = ?")
             ->execute([$new_name, $user_id]);
         $_SESSION['user_name'] = $new_name;
-        $msg_wedding = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Wedding details updated!</div>";
+
+        if ($link_changed) {
+            $msg_wedding = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Wedding details updated! Your invitation link has changed — please re-share the new link with guests.</div>";
+        } else {
+            $msg_wedding = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Wedding details updated!</div>";
+        }
     } else {
         $msg_wedding = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Please fill in all fields.</div>";
     }

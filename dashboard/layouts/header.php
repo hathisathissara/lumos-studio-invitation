@@ -484,7 +484,7 @@ $current = basename($_SERVER['PHP_SELF']);
 
         <?php else: ?>
         <!-- Active — full access -->
-         <a href="<?php echo $invitation_link; ?>" target="_blank" class="topbar-btn topbar-btn-outline">
+         <a href="<?php echo htmlspecialchars($invite_url_for_header); ?>" target="_blank" class="topbar-btn topbar-btn-outline">
             <i class="fas fa-eye"></i> Preview
         </a>
         <button class="topbar-btn topbar-btn-gold" onclick="copyInviteLink()">
