@@ -34,8 +34,16 @@ if ($role !== 'admin' && !empty($_SESSION['wedding_id']) && isset($pdo)) {
     // නිවැරදි කල නව කේතය (ඉබේම http/https හඳුනාගනී)
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
 $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+$ring = "\u{1F48D}";
+    $sparkles = "\u{2728}";
+    $heart = "\u{2764}\u{FE0F}";
     $invite_url_for_header = rtrim($domain, '/') . '/' . $invite_slug;
-    $invite_share_message_header = "Together with our families, we joyfully invite you to celebrate the beginning of our forever.\n\nYour presence on our wedding day would be the greatest gift as we exchange our vows and begin this beautiful new chapter of our lives. Join us as we celebrate love, laughter, and a lifetime of happiness with our family and friends.\n\nWe look forward to sharing this unforgettable day with you.\n\n" . $invite_url_for_header;
+   $invite_share_message_header = $ring . " You're Invited! " . $ring . "\n\n"
+    . "Together with our families, we are delighted to invite you to celebrate our wedding and the beginning of our forever.\n\n"
+    . "Your love, blessings, and presence would mean the world to us on this special day.\n\n"
+    . $sparkles . " Please open our digital wedding invitation to view all the event details, venue, schedule, and RSVP:\n\n"
+    . $invite_url_for_header
+    . "\n\nWe look forward to celebrating this unforgettable day with you! " . $heart;
 }
 
 // Get initials for avatar

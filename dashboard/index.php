@@ -67,7 +67,13 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVE
 $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
 $invite_slug = !empty($wedding['slug']) ? $wedding['slug'] : 'invite.php?w_id=' . $wedding_id;
 $invitation_link = rtrim($domain, '/') . '/' . $invite_slug;
-$invite_share_message = "Together with our families, we joyfully invite you to celebrate the beginning of our forever.\n\nYour presence on our wedding day would be the greatest gift as we exchange our vows and begin this beautiful new chapter of our lives. Join us as we celebrate love, laughter, and a lifetime of happiness with our family and friends.\n\nWe look forward to sharing this unforgettable day with you.\n\n" . $invitation_link;
+$invite_share_message = "💍 You're Invited! 💍\n\n"
+    . "Together with our families, we are delighted to invite you to celebrate our wedding and the beginning of our forever.\n\n"
+    . "Your love, blessings, and presence would mean the world to us on this special day.\n\n"
+    . "✨ Please open our digital wedding invitation to view all the event details, venue, schedule, and RSVP:\n\n"
+    . $invitation_link
+    . "\n\nWe look forward to celebrating this unforgettable day with you! ❤️";
+
 
 require 'layouts/header.php';
 ?>

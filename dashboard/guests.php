@@ -299,6 +299,7 @@ require 'layouts/header.php';
     .badge-opened { background: rgba(59,130,246,0.1); color: #2563eb; }
     .badge-not-opened { background: rgba(107,114,128,0.08); color: #9ea3b0; }
 
+    /* wa/delete actions */
     .btn-del {
         background: none;
         border: 1px solid #fee2e2;
@@ -331,6 +332,32 @@ require 'layouts/header.php';
         color: #d1d5db;
         cursor: not-allowed;
         pointer-events: none;
+    }
+
+    /* Note and Seats Styles */
+    .btn-note-view {
+        background: none;
+        border: 1px solid #e8ecf0;
+        border-radius: 8px;
+        color: #4a5568;
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-wa-note:hover { background: #f1f5f9; }
+
+    .guest-note-box {
+        background: #fffdf5;
+        border-left: 3px solid #c9a96e;
+        padding: 8px 12px;
+        font-size: 0.78rem;
+        color: #5a4a35;
+        border-radius: 4px;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .empty-state {
@@ -444,7 +471,17 @@ require 'layouts/header.php';
                             data-rsvp="<?php echo htmlspecialchars($g['rsvp_status']); ?>"
                             data-seats="<?php echo intval($g['seats_reserved'] ?? 1); ?>"
                         >
-                            <td class="guest-name-cell"><?php echo htmlspecialchars($g['name']); ?></td>
+                            <td class="guest-name-cell">
+                                <?php echo htmlspecialchars($g['name']); ?>
+                                
+                                <!-- Guest Note එකක් දමා ඇත්නම් එය නමට යටින් ලස්සනට පෙන්වීම -->
+                                <?php if (!empty($g['guest_note'])): ?>
+                                    <div class="guest-note-box">
+                                        <i class="fas fa-comment-dots" style="color: #c9a96e;"></i>
+                                        <strong>Note:</strong> "<?php echo htmlspecialchars($g['guest_note']); ?>"
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <span class="guest-phone"><?php echo htmlspecialchars($g['whatsapp_number']); ?></span>
                                 <br>
@@ -488,33 +525,18 @@ require 'layouts/header.php';
                                 else
                                     echo "<span class='badge badge-pending-rsvp'>Pending</span>";
                                 ?>
-                                <?php if (!empty($g['guest_note'])): ?>
-                                <br><small style="color:#9ea3b0; font-size:0.7rem;" title="<?php echo htmlspecialchars($g['guest_note']); ?>">
-                                    <i class="fas fa-sticky-note"></i> Has note
-                                </small>
-                                <?php endif; ?>
                             </td>
                             <td>
                                 <?php
                                     $guest_wa_intl = to_whatsapp_intl($g['whatsapp_number']);
                                 ?>
                                 <?php if (!empty($guest_wa_intl) && !empty($invite_url_for_header)): ?>
-                                    <?php
-                                        // Personalized link: guest's own number embedded so the
-                                        // seal-open flow can auto-verify without them typing it.
-                                        $personal_link = $invite_url_for_header
-                                            . (strpos($invite_url_for_header, '?') !== false ? '&' : '?')
-                                            . 'wa=' . rawurlencode($g['whatsapp_number']);
-
-                                        // Reuse the exact wording from header.php, just swap the
-                                        // link at the end for this guest's personal one.
-                                        $personal_message = str_replace($invite_url_for_header, $personal_link, $invite_share_message_header);
-
-                                        $guest_wa_link = "https://wa.me/{$guest_wa_intl}?text=" . rawurlencode($personal_message);
-                                    ?>
-                                    <a href="<?php echo htmlspecialchars($guest_wa_link); ?>"
+                                    <!-- Dynamic URL redirection script injected here -->
+                                    <a href="#"
                                        target="_blank"
                                        class="btn-wa-send"
+                                       data-phone="<?php echo $guest_wa_intl; ?>"
+                                       data-phone-raw="<?php echo htmlspecialchars($g['whatsapp_number']); ?>"
                                        title="Send personalized invitation to <?php echo htmlspecialchars($g['name']); ?> via WhatsApp">
                                         <i class="fab fa-whatsapp"></i>
                                     </a>
@@ -578,6 +600,64 @@ function filterGuests() {
 document.getElementById('guest-search').addEventListener('input', filterGuests);
 document.getElementById('filter-cat').addEventListener('change', filterGuests);
 document.getElementById('filter-rsvp').addEventListener('change', filterGuests);
+
+// Dynamic Mobile/PC WhatsApp link routing script (Cases 3ටම සාර්ථකව ගැලපෙන ක්‍රමය)
+document.querySelectorAll('.btn-wa-send').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const phone = this.getAttribute('data-phone');
+        const rawPhone = this.getAttribute('data-phone-raw');
+        
+        // Build personalized dynamic URL
+        const inviteBaseUrl = "<?php echo $invite_url_for_header; ?>";
+        const separator = inviteBaseUrl.includes('?') ? '&' : '?';
+        const personalLink = inviteBaseUrl + separator + 'wa=' + encodeURIComponent(rawPhone);
+        
+        // Build base invitation message template using safe hex values
+        const ring = "\u{1F48D}";
+        const sparkles = "\u{2728}";
+        const heart = "\u{2764}\u{FE0F}";
+        
+        const personalMessage = ring + " You're Invited! " + ring + "\n\n"
+            + "Together with our families, we are delighted to invite you to celebrate our wedding and the beginning of our forever.\n\n"
+            + "Your love, blessings, and presence would mean the world to us on this special day.\n\n"
+            + sparkles + " Please open our digital wedding invitation to view all the event details, venue, schedule, and RSVP:\n\n"
+            + personalLink
+            + "\n\nWe look forward to celebrating this unforgettable day with you! " + heart;
+            
+        const encodedMessage = encodeURIComponent(personalMessage);
+        
+        let waUrl = "";
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // 1. Phone එකෙන් නම්: සෘජුවම Phone එකේ ඇති WhatsApp App එක විවෘත වේ
+            waUrl = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+            window.open(waUrl, '_blank');
+        } else {
+            // 2. PC / Desktop එකෙන් නම්:
+            let hasApp = false;
+            
+            // Browser window එක blur වුණොත් (App එක සාර්ථකව ඇරුණොත්) flag එක true වේ
+            const checkBlur = () => { hasApp = true; };
+            window.addEventListener('blur', checkBlur);
+            
+            // මුලින්ම කම්පියුටර් එකේ ඇති Native App එක විවෘත කිරීමට උත්සාහ කිරීම
+            window.location.href = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+            
+            // තත්පර 1ක් (මිලි තත්පර 1000ක්) බලා සිටීම
+            setTimeout(() => {
+                window.removeEventListener('blur', checkBlur);
+                if (!hasApp) {
+                    // 3. App එක ඇරුණේ නැත්නම් (App එක නැති නිසා), ඉබේම WhatsApp Web එක අලුත් Tab එකකින් විවෘත කිරීම
+                    const webUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+                    window.open(webUrl, '_blank');
+                }
+            }, 1000);
+        }
+    });
+});
 </script>
 
 <?php require 'layouts/footer.php'; ?>
