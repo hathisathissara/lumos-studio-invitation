@@ -193,10 +193,13 @@ if (isset($_GET['preview']) && ($is_owner || $is_admin)) {
     exit();
 }
 
-// Handle form submit
+// Handle form submit OR personalized auto-open link (?wa=0771234567)
 $just_verified = false;
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $whatsapp = trim($_POST['whatsapp_number']);
+$verified_via_form = false;
+$whatsapp_from_link = isset($_GET['wa']) ? trim($_GET['wa']) : '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" || $whatsapp_from_link !== '') {
+    $whatsapp = ($_SERVER["REQUEST_METHOD"] == "POST") ? trim($_POST['whatsapp_number']) : $whatsapp_from_link;
 
     $stmt = $pdo->prepare("SELECT id, name, is_opened FROM guests WHERE wedding_id = ? AND whatsapp_number = ?");
     $stmt->execute([$wedding_id, $whatsapp]);
@@ -215,10 +218,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Don't redirect right away — flag success so the page below
         // can play the envelope-opening animation before moving on.
         $just_verified = true;
-    } else {
+        // Typed-number submissions (default link) auto-continue straight
+        // into the opening animation; personalized ?wa= links still wait
+        // for a manual tap on the seal.
+        $verified_via_form = ($_SERVER["REQUEST_METHOD"] == "POST");
+    } elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
+        // Only show the "not on guest list" error for manual typing —
+        // a stale/invalid personalized link falls back to the normal form silently.
         $error = "Sorry, this number is not on the guest list.";
     }
 }
+
 
 $wedding_date_formatted = date("d F Y", strtotime($wedding['wedding_date']));
 $bride_name = htmlspecialchars($wedding['bride_name']);
@@ -584,6 +594,7 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
                     <div class="divider-line"></div>
                 </div>
 
+                <?php if (!$just_verified): ?>
                 <p class="instruction">
                     Enter your WhatsApp number to open<br>your personal invitation
                 </p>
@@ -617,8 +628,10 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
                     <i class="fas fa-lock" style="margin-right:4px;"></i>
                     Your number is only used to show you your invitation. It's not shared with anyone.
                 </p>
-
-                <?php if ($just_verified): ?>
+                <?php else: ?>
+                <!-- Guest already verified (personal link or form submit) —
+                     number entry is no longer needed, so it's hidden and we
+                     go straight into the seal-opening sequence below. -->
                 <p class="redirect-note"><i class="fas fa-spinner fa-spin"></i> Opening your invitation…</p>
                 <?php endif; ?>
             </div>
@@ -645,27 +658,34 @@ const waxSeal = document.getElementById('waxSeal');
 const whatsappInput = document.getElementById('whatsapp_input');
 const openBtn = document.getElementById('openBtn');
 
-// Tapping the wax seal cracks it open, tilts the flap back and reveals
-// the letter inside — nothing is submitted yet, it just unlocks the form.
+// Cracks the seal open, tilts the flap back and reveals the letter inside.
 let sealCracked = false;
-waxSeal.addEventListener('click', () => {
+function openInvitationFlow() {
     if (sealCracked) return;
     sealCracked = true;
     waxSeal.classList.add('cracked');
     document.body.classList.add('opening');
-    setTimeout(() => whatsappInput.focus(), 350);
-});
 
-<?php if ($just_verified): ?>
-// Guest was verified server-side on this request: make sure the envelope
-// is shown open, then hand off to the invitation page.
-window.addEventListener('DOMContentLoaded', () => {
-    openBtn.disabled = true;
-    document.body.classList.add('opening');
+    <?php if ($just_verified): ?>
+    // Guest already verified (personalized link or the number form) —
+    // tapping the seal now moves straight to the invitation after a
+    // short 3s envelope-opening animation.
+    if (openBtn) openBtn.disabled = true;
     setTimeout(() => {
         window.location.href = 'view_invitation.php';
-    }, 1000);
-});
+    }, 3000);
+    <?php else: ?>
+    setTimeout(() => whatsappInput.focus(), 350);
+    <?php endif; ?>
+}
+
+// Seal needs a manual tap for the personalized ?wa= link. But when the
+// guest just typed their number and submitted the form on the default
+// link, continue straight into the opening animation — no second tap.
+waxSeal.addEventListener('click', openInvitationFlow);
+
+<?php if ($just_verified && $verified_via_form): ?>
+openInvitationFlow();
 <?php endif; ?>
 </script>
 </body>

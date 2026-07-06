@@ -21,21 +21,25 @@ $wedding_id = $_SESSION['wedding_id'];
 $user_name  = $_SESSION['user_name'];
 
 // Stats
-$stmtTotal    = $pdo->prepare("SELECT COUNT(*) as total FROM guests WHERE wedding_id = ?");
+// 1. මුළු අමුත්තන්/ආසන ගණන (Sum of Seats_Reserved)
+$stmtTotal = $pdo->prepare("SELECT SUM(seats_reserved) as total FROM guests WHERE wedding_id = ?");
 $stmtTotal->execute([$wedding_id]);
-$total_guests = $stmtTotal->fetch()['total'];
+$total_guests = $stmtTotal->fetch()['total'] ?? 0; // null නම් 0 ලබාදේ
 
-$stmtOpened   = $pdo->prepare("SELECT COUNT(*) as opened FROM guests WHERE wedding_id = ? AND is_opened = 1");
+// 2. Invitation එක Open කරපු අයගේ මුළු ආසන ගණන
+$stmtOpened = $pdo->prepare("SELECT SUM(seats_reserved) as opened FROM guests WHERE wedding_id = ? AND is_opened = 1");
 $stmtOpened->execute([$wedding_id]);
-$opened_invitations = $stmtOpened->fetch()['opened'];
+$opened_invitations = $stmtOpened->fetch()['opened'] ?? 0;
 
-$stmtAccepted = $pdo->prepare("SELECT COUNT(*) as accepted FROM guests WHERE wedding_id = ? AND rsvp_status = 'accepted'");
+// 3. පැමිණීම තහවුරු කරපු අයගේ මුළු ආසන ගණන (Attending RSVP Sum)
+$stmtAccepted = $pdo->prepare("SELECT SUM(seats_reserved) as accepted FROM guests WHERE wedding_id = ? AND rsvp_status = 'accepted'");
 $stmtAccepted->execute([$wedding_id]);
-$accepted_rsvp = $stmtAccepted->fetch()['accepted'];
+$accepted_rsvp = $stmtAccepted->fetch()['accepted'] ?? 0;
 
-$stmtRejected = $pdo->prepare("SELECT COUNT(*) as rejected FROM guests WHERE wedding_id = ? AND rsvp_status = 'rejected'");
+// 4. පැමිණීමට නොහැකි බව දැනුම් දුන් අයගේ මුළු ආසන ගණන
+$stmtRejected = $pdo->prepare("SELECT SUM(seats_reserved) as rejected FROM guests WHERE wedding_id = ? AND rsvp_status = 'rejected'");
 $stmtRejected->execute([$wedding_id]);
-$rejected_rsvp = $stmtRejected->fetch()['rejected'];
+$rejected_rsvp = $stmtRejected->fetch()['rejected'] ?? 0;
 
 // Recent guests
 $stmtRecent   = $pdo->prepare("SELECT * FROM guests WHERE wedding_id = ? ORDER BY id DESC LIMIT 5");

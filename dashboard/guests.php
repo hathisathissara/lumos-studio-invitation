@@ -19,6 +19,20 @@ function normalize_whatsapp_number($value) {
     return $digits;
 }
 
+function to_whatsapp_intl($local_number) {
+    $digits = preg_replace('/\D+/', '', (string) $local_number);
+    if ($digits === '') return '';
+
+    if (substr($digits, 0, 1) === '0') {
+        // 0771234567 -> 94771234567
+        $digits = '94' . substr($digits, 1);
+    } elseif (substr($digits, 0, 2) !== '94') {
+        // just in case a bare 771234567 slipped through
+        $digits = '94' . $digits;
+    }
+    return $digits;
+}
+
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
     header("Location: login.php");
     exit();
@@ -75,6 +89,12 @@ if (isset($_GET['deleted'])) {
 $stmtGuests = $pdo->prepare("SELECT * FROM guests WHERE wedding_id = ? ORDER BY id DESC");
 $stmtGuests->execute([$wedding_id]);
 $guestsList = $stmtGuests->fetchAll();
+
+// PHP මඟින් මුළු ආසන (Seats) ගණන එකතු කිරීම
+$total_seats = 0;
+foreach ($guestsList as $g) {
+    $total_seats += intval($g['seats_reserved'] ?? 1);
+}
 
 require 'layouts/header.php';
 ?>
@@ -291,6 +311,28 @@ require 'layouts/header.php';
     }
     .btn-del:hover { background: #fee2e2; }
 
+    .btn-wa-send {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(37,211,102,0.1);
+        color: #25d366;
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-right: 6px;
+        transition: all 0.2s;
+    }
+    .btn-wa-send:hover { background: #25d366; color: white; }
+    .btn-wa-send.disabled {
+        background: #f1f5f9;
+        color: #d1d5db;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -351,8 +393,12 @@ require 'layouts/header.php';
     <div class="col-lg-8">
         <div class="guest-list-header">
             <div class="guest-count">
-                All Guests
-                <span id="visible-count"><?php echo count($guestsList); ?></span>
+                Total Guests (Seats)
+                <span id="visible-count"><?php echo $total_seats; ?></span>
+                <!-- Invitations/Rows ගණන වෙනම පෙන්වීම -->
+                <small style="color:#9ea3b0; font-size:0.75rem; margin-left:5px; font-weight: 500;">
+                    (from <?php echo count($guestsList); ?> invitations)
+                </small>
             </div>
             <div class="search-filter-bar">
                 <div class="search-wrap">
@@ -391,10 +437,12 @@ require 'layouts/header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($guestsList as $g): ?>
+                        <!-- JS Live Filter එක සඳහා data-seats එකතු කිරීම -->
                         <tr
                             data-name="<?php echo strtolower(htmlspecialchars($g['name'])); ?>"
                             data-cat="<?php echo htmlspecialchars($g['category']); ?>"
                             data-rsvp="<?php echo htmlspecialchars($g['rsvp_status']); ?>"
+                            data-seats="<?php echo intval($g['seats_reserved'] ?? 1); ?>"
                         >
                             <td class="guest-name-cell"><?php echo htmlspecialchars($g['name']); ?></td>
                             <td>
@@ -447,6 +495,35 @@ require 'layouts/header.php';
                                 <?php endif; ?>
                             </td>
                             <td>
+                                <?php
+                                    $guest_wa_intl = to_whatsapp_intl($g['whatsapp_number']);
+                                ?>
+                                <?php if (!empty($guest_wa_intl) && !empty($invite_url_for_header)): ?>
+                                    <?php
+                                        // Personalized link: guest's own number embedded so the
+                                        // seal-open flow can auto-verify without them typing it.
+                                        $personal_link = $invite_url_for_header
+                                            . (strpos($invite_url_for_header, '?') !== false ? '&' : '?')
+                                            . 'wa=' . rawurlencode($g['whatsapp_number']);
+
+                                        // Reuse the exact wording from header.php, just swap the
+                                        // link at the end for this guest's personal one.
+                                        $personal_message = str_replace($invite_url_for_header, $personal_link, $invite_share_message_header);
+
+                                        $guest_wa_link = "https://wa.me/{$guest_wa_intl}?text=" . rawurlencode($personal_message);
+                                    ?>
+                                    <a href="<?php echo htmlspecialchars($guest_wa_link); ?>"
+                                       target="_blank"
+                                       class="btn-wa-send"
+                                       title="Send personalized invitation to <?php echo htmlspecialchars($g['name']); ?> via WhatsApp">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <span class="btn-wa-send disabled" title="No valid WhatsApp number">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </span>
+                                <?php endif; ?>
+
                                 <a href="guests.php?delete=<?php echo $g['id']; ?>"
                                    class="btn-del"
                                    onclick="return confirm('Remove <?php echo addslashes($g['name']); ?> from the guest list?');">
@@ -469,18 +546,19 @@ require 'layouts/header.php';
 </div>
 
 <script>
-// Live search + filter
+// Live search + filter (ආසන ගණන එකතු වන ලෙස සකසා ඇත)
 function filterGuests() {
     const search = document.getElementById('guest-search').value.toLowerCase();
     const cat    = document.getElementById('filter-cat').value;
     const rsvp   = document.getElementById('filter-rsvp').value;
     const rows   = document.querySelectorAll('#guest-table tbody tr');
-    let visible  = 0;
+    let visibleSeats  = 0; // පෙනෙන්නට ඇති මුළු ආසන ගණන
 
     rows.forEach(row => {
         const name    = row.dataset.name || '';
         const rowCat  = row.dataset.cat  || '';
         const rowRsvp = row.dataset.rsvp || '';
+        const rowSeats = parseInt(row.dataset.seats) || 1; // row එකේ seats ගණන ගැනීම
 
         const matchSearch = name.includes(search);
         const matchCat    = !cat  || rowCat  === cat;
@@ -488,10 +566,13 @@ function filterGuests() {
 
         const show = matchSearch && matchCat && matchRsvp;
         row.style.display = show ? '' : 'none';
-        if (show) visible++;
+        
+        if (show) {
+            visibleSeats += rowSeats; // Filter වන row වල seats එකතු කිරීම
+        }
     });
 
-    document.getElementById('visible-count').textContent = visible;
+    document.getElementById('visible-count').textContent = visibleSeats;
 }
 
 document.getElementById('guest-search').addEventListener('input', filterGuests);
