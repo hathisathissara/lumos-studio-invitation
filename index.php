@@ -1,13 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumos Wedding Invitation | Elegant Digital Wedding Invitations</title>
+    <title>Lumos Studio | Lumos Wedding Invitation - Elegant Digital Wedding Invitations</title>
     <link rel="icon" type="image/x-icon" href="uploads/lumos.jpg">
-    <meta name="description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes for your special day.">
-    <meta name="keywords" content="Lumos Wedding Invitation, digital wedding invitation, wedding invitation website, wedding RSVP, online wedding invitation, elegant wedding invite">
+    <meta name="description" content="Lumos Studio presents Lumos Wedding Invitation - create beautiful digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdown, gallery, and 9 custom themes for your special day.">
+    <meta name="keywords" content="Lumos Studio, Lumos Studio invitation, Lumos Wedding Invitation, digital wedding invitation, wedding invitation website, wedding RSVP, online wedding invitation, elegant wedding invite">
     <link rel="canonical" href="https://lumosinvitation.unaux.com/">
     <meta property="og:title" content="Lumos Wedding Invitation | Elegant Digital Wedding Invitations">
     <meta property="og:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
@@ -19,13 +18,22 @@
     <meta name="twitter:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
     <meta name="twitter:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
     <script type="application/ld+json">
-        
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Lumos Studio",
+      "alternateName": "Lumos Wedding Invitation",
+      "url": "https://lumosinvitation.unaux.com/",
+      "logo": "https://lumosinvitation.unaux.com/lumos.jpg",
+      "description": "Lumos Studio creates elegant digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdowns, photo galleries, and 9 custom themes."
+    }
+    </script>
+    <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Lumos Wedding Invitation",
-      "url": "https://lumosinvitation.unaux.com/",
-      "description": "Create beautiful digital wedding invitations with RSVP tracking, WhatsApp delivery, countdowns, galleries, and custom themes."
+      "name": "Lumos Studio - Lumos Wedding Invitation",
+      "url": "https://lumosinvitation.unaux.com/"
     }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -503,6 +511,77 @@
             pointer-events: none;
         }
 
+        /* =========== THEME GALLERY =========== */
+        .theme-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 28px;
+            margin-top: 60px;
+        }
+        .theme-card {
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(201,169,110,0.15);
+            background: rgba(255,255,255,0.02);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+        }
+        .theme-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 45px rgba(0,0,0,0.4);
+            border-color: rgba(201,169,110,0.3);
+        }
+        .theme-phone-outer {
+            padding: 30px 20px 22px;
+            display: flex;
+            justify-content: center;
+        }
+        .theme-phone-frame {
+            width: 100%;
+            max-width: 230px;
+            background: var(--dark-2);
+            border-radius: 34px;
+            border: 2px solid rgba(201,169,110,0.2);
+            padding: 16px 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,169,110,0.05);
+        }
+        .theme-phone-notch {
+            width: 60px;
+            height: 5px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 10px;
+            margin: 0 auto 14px;
+        }
+        .theme-phone-screen {
+            border-radius: 20px;
+            padding: 20px 14px;
+            text-align: center;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .theme-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.03);
+            border-top: 1px solid rgba(201,169,110,0.1);
+        }
+        .theme-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.05);
+        }
+        .theme-label .theme-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--white);
+        }
+
         /* =========== PRICING / CTA =========== */
         .cta-section {
             text-align: center;
@@ -598,6 +677,7 @@
     <a href="index.php" class="nav-logo">Lumus Studio</a>
     <div class="nav-links">
         <a href="#features">Features</a>
+        <a href="#themes">Themes</a>
         <a href="#how-it-works">How It Works</a>
         <a href="#peace">Pricing</a>
         <a href="dashboard/login.php">Sign In</a>
@@ -743,41 +823,6 @@
     </div>
 </section>
 
-<!-- DEMO PHONE MOCKUP -->
-<section class="demo-section">
-    <span class="section-tag reveal">Live Preview</span>
-    <h2 class="section-title reveal">What your guests will see</h2>
-    <p class="section-subtitle reveal" style="margin: 12px auto 0; text-align:center;">Elegant, personal, and stunning on every screen.</p>
-    <div class="phone-mockup">
-        <div class="phone-glow"></div>
-        <div class="phone-frame">
-            <div class="phone-notch"></div>
-            <div class="phone-screen">
-                <div style="font-size:0.6rem; color:#888; font-family:sans-serif; margin-bottom:4px;">ආයුබෝවන්!</div>
-                <div style="font-size:0.75rem; color:#d63384; font-weight:600; font-family:sans-serif; margin-bottom:4px;">හිතවත් Kamal Perera,</div>
-                <div class="mock-names">Amara<br><span style="font-size:1.2rem; color:#aaa;">&</span><br>Sithum</div>
-                <div class="mock-date">We are getting married on</div>
-                <div style="font-size:0.7rem; color:#b78a44; font-weight:bold; font-family:sans-serif; margin-bottom:12px;">Saturday, 14 February 2026</div>
-                <div class="mock-countdown">
-                    <div class="mock-box"><span id="m-days">00</span><small>Days</small></div>
-                    <div class="mock-box"><span id="m-hrs">00</span><small>Hrs</small></div>
-                    <div class="mock-box"><span id="m-min">00</span><small>Min</small></div>
-                    <div class="mock-box"><span id="m-sec">00</span><small>Sec</small></div>
-                </div>
-                <div class="mock-event">
-                    <div class="mock-event-name">🌸 Poruwa Ceremony</div>
-                    <div class="mock-event-time">📍 Hotel Galadari, Colombo</div>
-                </div>
-                <div class="mock-event">
-                    <div class="mock-event-name">✨ Reception</div>
-                    <div class="mock-event-time">📍 Cinnamon Grand, Colombo</div>
-                </div>
-                <div class="mock-rsvp">RSVP — Confirm Attendance</div>
-            </div>
-        </div>
-    </div>
-</section>
-
 <!-- PLANNING TOOLS -->
 <section>
     <div style="text-align:center; margin-bottom:20px;">
@@ -796,11 +841,339 @@
             <h3>Guest Categories</h3>
             <p>Tag guests by group (Family, Friends, Office, VIP) and side (Bride, Groom, Both) for easy filtering.</p>
         </div>
-        <div class="feature-card reveal">
+        <a href="#themes" class="feature-card reveal" style="text-decoration:none; display:block; color:inherit;">
             <div class="feature-icon"><i class="fas fa-palette"></i></div>
             <h3>Choose From 9 Themes</h3>
-            <p>Pick from 9 beautiful invitation themes and preview each one live before you publish your final design.</p>
+            <p>Pick from 9 beautiful invitation themes and preview each one live before you publish your final design. <span style="color:var(--gold); font-weight:600;">See all themes ↓</span></p>
+        </a>
+    </div>
+</section>
+
+<!-- THEME GALLERY -->
+<section id="themes">
+    <div style="text-align:center; margin-bottom:20px;">
+        <span class="section-tag reveal">Live Preview</span>
+        <h2 class="section-title reveal">Choose your theme<br><em>see it before you pick it</em></h2>
+        <div class="divider"></div>
+        <p class="section-subtitle reveal" style="margin: 0 auto;">9 elegant themes, each with its own colours and personality. Switch anytime while building your invitation.</p>
+    </div>
+    <div class="theme-gallery-grid">
+
+        <!-- 1. Premium Gold -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#fdfaf5;">
+                        <div style="font-size:0.55rem; color:#2d2115; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#b78a44; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#8a6520;">Amara<br><span style="font-size:1.1rem; color:#2d2115; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#2d2115;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#8a6520; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#e8d5a3;"><span class="t-cd-days" style="color:#8a6520;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#e8d5a3;"><span class="t-cd-hrs" style="color:#8a6520;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#e8d5a3;"><span class="t-cd-min" style="color:#8a6520;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#e8d5a3;"><span class="t-cd-sec" style="color:#8a6520;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f9f5ee; border-color:#e8d5a3;">
+                            <div class="mock-event-name" style="color:#b78a44;">🌸 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#2d2115;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f9f5ee; border-color:#e8d5a3;">
+                            <div class="mock-event-name" style="color:#b78a44;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#2d2115;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#8a6520; color:#fdfaf5;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#b78a44;"></span>
+                <span class="theme-name">Premium Gold</span>
+            </div>
         </div>
+
+        <!-- 2. Minimal Light -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#ffffff;">
+                        <div style="font-size:0.55rem; color:#333333; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#8ba888; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#5c755a; font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:400; font-size:1.5rem;">Amara<br><span style="font-size:1.1rem; color:#333333; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#333333;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#5c755a; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#d6e2d4;"><span class="t-cd-days" style="color:#5c755a;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#d6e2d4;"><span class="t-cd-hrs" style="color:#5c755a;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#d6e2d4;"><span class="t-cd-min" style="color:#5c755a;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#d6e2d4;"><span class="t-cd-sec" style="color:#5c755a;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f8f9fa; border-color:#d6e2d4;">
+                            <div class="mock-event-name" style="color:#8ba888;">🌿 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#333333;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f8f9fa; border-color:#d6e2d4;">
+                            <div class="mock-event-name" style="color:#8ba888;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#333333;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#5c755a; color:#ffffff;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#8ba888;"></span>
+                <span class="theme-name">Minimal Light</span>
+            </div>
+        </div>
+
+        <!-- 3. Terracotta Bloom -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#faf5ec;">
+                        <div style="font-size:0.55rem; color:#362b21; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#c1633d; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#8f4526;">Amara<br><span style="font-size:1.1rem; color:#362b21; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#362b21;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#8f4526; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#e3a880;"><span class="t-cd-days" style="color:#8f4526;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#e3a880;"><span class="t-cd-hrs" style="color:#8f4526;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#e3a880;"><span class="t-cd-min" style="color:#8f4526;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#e3a880;"><span class="t-cd-sec" style="color:#8f4526;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f4ece0; border-color:#e3a880;">
+                            <div class="mock-event-name" style="color:#c1633d;">🌿 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#362b21;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f4ece0; border-color:#e3a880;">
+                            <div class="mock-event-name" style="color:#c1633d;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#362b21;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#8f4526; color:#faf5ec;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#c1633d;"></span>
+                <span class="theme-name">Terracotta Bloom</span>
+            </div>
+        </div>
+
+        <!-- 4. Plum Parchment -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#f8f2e9;">
+                        <div style="font-size:0.55rem; color:#2e2a28; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#8a9a7e; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#4a2c3b;">Amara<br><span style="font-size:1.1rem; color:#2e2a28; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#2e2a28;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#4a2c3b; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#b7c3ac;"><span class="t-cd-days" style="color:#4a2c3b;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#b7c3ac;"><span class="t-cd-hrs" style="color:#4a2c3b;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#b7c3ac;"><span class="t-cd-min" style="color:#4a2c3b;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#b7c3ac;"><span class="t-cd-sec" style="color:#4a2c3b;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f0e6d6; border-color:#b7c3ac;">
+                            <div class="mock-event-name" style="color:#8a9a7e;">🌸 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#2e2a28;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f0e6d6; border-color:#b7c3ac;">
+                            <div class="mock-event-name" style="color:#8a9a7e;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#2e2a28;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#4a2c3b; color:#f8f2e9;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#8a9a7e;"></span>
+                <span class="theme-name">Plum Parchment</span>
+            </div>
+        </div>
+
+        <!-- 5. Floral Garden -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#fffdf8;">
+                        <div style="font-size:0.55rem; color:#40352f; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#a9607c; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#a9607c;">Amara<br><span style="font-size:1.1rem; color:#40352f; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#40352f;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#9caf88; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#c3d3b1;"><span class="t-cd-days" style="color:#9caf88;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#c3d3b1;"><span class="t-cd-hrs" style="color:#9caf88;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#c3d3b1;"><span class="t-cd-min" style="color:#9caf88;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#c3d3b1;"><span class="t-cd-sec" style="color:#9caf88;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#fbf3ea; border-color:#c3d3b1;">
+                            <div class="mock-event-name" style="color:#a9607c;">🌸 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#40352f;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#fbf3ea; border-color:#c3d3b1;">
+                            <div class="mock-event-name" style="color:#a9607c;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#40352f;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#a9607c; color:#fffdf8;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#9caf88;"></span>
+                <span class="theme-name">Floral Garden</span>
+            </div>
+        </div>
+
+        <!-- 6. Beach Tropical -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#fffdf9;">
+                        <div style="font-size:0.55rem; color:#2b3a42; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#ef8264; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#2f7d9c;">Amara<br><span style="font-size:1.1rem; color:#2b3a42; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#2b3a42;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#2f7d9c; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#f4a688;"><span class="t-cd-days" style="color:#2f7d9c;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#f4a688;"><span class="t-cd-hrs" style="color:#2f7d9c;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#f4a688;"><span class="t-cd-min" style="color:#2f7d9c;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#f4a688;"><span class="t-cd-sec" style="color:#2f7d9c;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#fbf1e2; border-color:#f4a688;">
+                            <div class="mock-event-name" style="color:#ef8264;">🌴 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#2b3a42;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#fbf1e2; border-color:#f4a688;">
+                            <div class="mock-event-name" style="color:#ef8264;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#2b3a42;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#2f7d9c; color:#fffdf9;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#ef8264;"></span>
+                <span class="theme-name">Beach Tropical</span>
+            </div>
+        </div>
+
+        <!-- 7. Rustic Boho -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#faf3e7;">
+                        <div style="font-size:0.55rem; color:#3b2a1e; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#d99b6f; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#7a4225;">Amara<br><span style="font-size:1.1rem; color:#3b2a1e; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#3b2a1e;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#7a4225; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#e6bd97;"><span class="t-cd-days" style="color:#7a4225;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#e6bd97;"><span class="t-cd-hrs" style="color:#7a4225;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#e6bd97;"><span class="t-cd-min" style="color:#7a4225;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#e6bd97;"><span class="t-cd-sec" style="color:#7a4225;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f0e3ce; border-color:#e6bd97;">
+                            <div class="mock-event-name" style="color:#d99b6f;">🪶 Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#3b2a1e;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f0e3ce; border-color:#e6bd97;">
+                            <div class="mock-event-name" style="color:#d99b6f;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#3b2a1e;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#7a4225; color:#faf3e7;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#d99b6f;"></span>
+                <span class="theme-name">Rustic Boho</span>
+            </div>
+        </div>
+
+        <!-- 8. Royal Classic -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#faf7f0;">
+                        <div style="font-size:0.55rem; color:#1c2340; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#c6a15b; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#4d1219;">Amara<br><span style="font-size:1.1rem; color:#1c2340; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#1c2340;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#4d1219; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#dcc189;"><span class="t-cd-days" style="color:#1c2340;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#dcc189;"><span class="t-cd-hrs" style="color:#1c2340;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#dcc189;"><span class="t-cd-min" style="color:#1c2340;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#dcc189;"><span class="t-cd-sec" style="color:#1c2340;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#f1e9d8; border-color:#dcc189;">
+                            <div class="mock-event-name" style="color:#c6a15b;">♛ Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#1c2340;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#f1e9d8; border-color:#dcc189;">
+                            <div class="mock-event-name" style="color:#c6a15b;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#1c2340;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#1c2340; color:#faf7f0;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#c6a15b;"></span>
+                <span class="theme-name">Royal Classic</span>
+            </div>
+        </div>
+
+        <!-- 9. Indian Royal -->
+        <div class="theme-card reveal">
+            <div class="theme-phone-outer">
+                <div class="theme-phone-frame">
+                    <div class="theme-phone-notch"></div>
+                    <div class="theme-phone-screen" style="background:#fff8ec;">
+                        <div style="font-size:0.55rem; color:#3a1015; font-family:'Inter',sans-serif; opacity:0.6; margin-bottom:4px;">You're Invited</div>
+                        <div style="font-size:0.68rem; color:#e0a527; font-weight:600; font-family:'Inter',sans-serif; margin-bottom:4px;">Dear Guest,</div>
+                        <div class="mock-names" style="color:#6e1626;">Amara<br><span style="font-size:1.1rem; color:#3a1015; opacity:0.4;">&amp;</span><br>Sithum</div>
+                        <div class="mock-date" style="color:#3a1015;">We are getting married on</div>
+                        <div style="font-size:0.65rem; color:#6e1626; font-weight:bold; font-family:'Inter',sans-serif; margin-bottom:10px;">Saturday, 14 February 2026</div>
+                        <div class="mock-countdown">
+                            <div class="mock-box" style="border-color:#edc873;"><span class="t-cd-days" style="color:#6e1626;">00</span><small>Days</small></div>
+                            <div class="mock-box" style="border-color:#edc873;"><span class="t-cd-hrs" style="color:#6e1626;">00</span><small>Hrs</small></div>
+                            <div class="mock-box" style="border-color:#edc873;"><span class="t-cd-min" style="color:#6e1626;">00</span><small>Min</small></div>
+                            <div class="mock-box" style="border-color:#edc873;"><span class="t-cd-sec" style="color:#6e1626;">00</span><small>Sec</small></div>
+                        </div>
+                        <div class="mock-event" style="background:#fbecc9; border-color:#edc873;">
+                            <div class="mock-event-name" style="color:#e0a527;">❈ Poruwa Ceremony</div>
+                            <div class="mock-event-time" style="color:#3a1015;">📍 Hotel Galadari, Colombo</div>
+                        </div>
+                        <div class="mock-event" style="background:#fbecc9; border-color:#edc873;">
+                            <div class="mock-event-name" style="color:#e0a527;">✨ Reception</div>
+                            <div class="mock-event-time" style="color:#3a1015;">📍 Cinnamon Grand, Colombo</div>
+                        </div>
+                        <div class="mock-rsvp" style="background:#6e1626; color:#fff8ec;">RSVP — Confirm Attendance</div>
+                    </div>
+                </div>
+            </div>
+            <div class="theme-label">
+                <span class="theme-swatch" style="background:#e0a527;"></span>
+                <span class="theme-name">Indian Royal</span>
+            </div>
+        </div>
+
     </div>
 </section>
 
@@ -889,23 +1262,24 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 reveals.forEach(el => observer.observe(el));
 
-// Mini countdown on phone mockup
-function updateMockCountdown() {
+// Live countdown for all theme preview mockups
+function updateThemeCountdowns() {
     const target = new Date("2026-02-14 00:00:00").getTime();
     const now = new Date().getTime();
     const dist = target - now;
     if (dist < 0) return;
-    const d = Math.floor(dist / 86400000);
-    const h = Math.floor((dist % 86400000) / 3600000);
-    const m = Math.floor((dist % 3600000) / 60000);
-    const s = Math.floor((dist % 60000) / 1000);
-    document.getElementById('m-days').textContent = String(d).padStart(2,'0');
-    document.getElementById('m-hrs').textContent = String(h).padStart(2,'0');
-    document.getElementById('m-min').textContent = String(m).padStart(2,'0');
-    document.getElementById('m-sec').textContent = String(s).padStart(2,'0');
+    const d = String(Math.floor(dist / 86400000)).padStart(2, '0');
+    const h = String(Math.floor((dist % 86400000) / 3600000)).padStart(2, '0');
+    const m = String(Math.floor((dist % 3600000) / 60000)).padStart(2, '0');
+    const s = String(Math.floor((dist % 60000) / 1000)).padStart(2, '0');
+    document.querySelectorAll('.t-cd-days').forEach(el => el.textContent = d);
+    document.querySelectorAll('.t-cd-hrs').forEach(el => el.textContent = h);
+    document.querySelectorAll('.t-cd-min').forEach(el => el.textContent = m);
+    document.querySelectorAll('.t-cd-sec').forEach(el => el.textContent = s);
 }
-updateMockCountdown();
-setInterval(updateMockCountdown, 1000);
+updateThemeCountdowns();
+setInterval(updateThemeCountdowns, 1000);
+
 </script>
 </body>
 </html>
