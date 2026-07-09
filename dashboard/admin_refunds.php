@@ -90,32 +90,133 @@ require 'layouts/header.php';
 ?>
 
 <style>
-    .flash { padding: 13px 18px; border-radius: 12px; font-size: 0.87rem; margin-bottom: 20px; display:flex; align-items:center; gap:10px; }
-    .flash-success { background: rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color: #16a34a; }
+    :root {
+        --primary: #1a1a2e;
+        --border-color: #e8ecf0;
+        --gold: #c9a96e;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --text-dark: #1e293b;
+        --text-muted: #64748b;
+    }
+
+    .flash { padding: 14px 20px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 24px; display:flex; align-items:center; gap:10px; font-family: 'Inter', sans-serif; font-weight: 500; }
+    .flash-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: var(--success); }
     
-    .table-card { background: white; border: 1px solid #e8ecf0; border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
-    .table-card-header { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; }
-    .table-card-header h5 { font-size: 0.95rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+    .table-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01);
+    }
+    .table-card-header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .table-card-header h5 { font-size: 1.05rem; font-weight: 800; margin: 0; font-family: 'Inter', sans-serif; letter-spacing: 0.3px; }
     
+    /* Table UI Design */
     .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th { padding: 12px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #9ea3b0; background: #f8fafc; border-bottom: 1px solid #e8ecf0; }
-    .admin-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.86rem; color: #4a5568; vertical-align: middle; }
+    .admin-table th {
+        padding: 14px 20px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-muted);
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .admin-table td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.88rem;
+        color: var(--text-dark);
+        vertical-align: middle;
+    }
     .admin-table tr:hover td { background: #fafbfc; }
 
-    .badge-eligible { display:inline-flex; align-items:center; gap:4px; background:rgba(34,197,94,0.1); color:#16a34a; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; }
-    .badge-non-eligible { display:inline-flex; align-items:center; gap:4px; background:rgba(239,68,68,0.1); color:#dc2626; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; }
+    /* Custom Verification Badges */
+    .badge-eligible { display:inline-flex; align-items:center; gap:5px; background:rgba(16,185,129,0.08); color:var(--success); border:1px solid rgba(16,185,129,0.15); border-radius:20px; padding:4px 12px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .badge-non-eligible { display:inline-flex; align-items:center; gap:5px; background:rgba(239,68,68,0.08); color:var(--danger); border:1px solid rgba(239,68,68,0.15); border-radius:20px; padding:4px 12px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
 
-    .reason-box { background: #fafbfc; border: 1px solid #e8ecf0; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; color: #4a5568; margin-top: 6px; font-style: italic; white-space: normal; word-break: break-word; }
-    .bank-box { background: #fffdf5; border-left: 3px solid #16a34a; padding: 10px 14px; font-size: 0.82rem; color: #15803d; border-radius: 4px; font-family: monospace; white-space: pre-line; }
+    /* Custom Content Boxes */
+    .reason-box {
+        background: #f8fafc;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 0.82rem;
+        color: #334155;
+        margin-top: 8px;
+        font-style: italic;
+        line-height: 1.5;
+        max-width: 320px;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .bank-box {
+        background: #fffdf5;
+        border-left: 4px solid var(--success);
+        border-top: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px 18px;
+        font-size: 0.84rem;
+        color: #15803d;
+        border-radius: 8px;
+        font-family: 'Inter', monospace;
+        line-height: 1.6;
+        font-weight: 600;
+        white-space: pre-line;
+    }
     
-    .btn-action-approve { display: inline-flex; align-items: center; gap: 5px; background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-    .btn-action-approve:hover { background: rgba(34,197,94,0.2); }
+    /* Interactive Action Buttons */
+    .btn-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    .btn-action-approve { background: rgba(16,185,129,0.08); color: var(--success); border-color: rgba(16,185,129,0.12); }
+    .btn-action-approve:hover { background: var(--success); color: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.25); }
     
-    .btn-action-reject { display: inline-flex; align-items: center; gap: 5px; background: rgba(239,68,68,0.08); color: #dc2626; border: 1px solid rgba(239,68,68,0.15); border-radius: 8px; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; text-decoration: none; transition: all 0.2s; cursor: pointer; }
-    .btn-action-reject:hover { background: rgba(239,68,68,0.15); }
+    .btn-action-reject { background: rgba(239,68,68,0.06); color: var(--danger); border-color: rgba(239,68,68,0.12); }
+    .btn-action-reject:hover { background: var(--danger); color: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,0.25); }
 
-    .btn-action-complete { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #16a34a, #15803d); color: white; border: none; border-radius: 8px; padding: 6px 14px; font-size: 0.75rem; font-weight: 700; text-decoration: none; transition: all 0.2s; cursor: pointer; box-shadow: 0 2px 8px rgba(34,197,94,0.15); }
-    .btn-action-complete:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(34,197,94,0.25); }
+    .btn-action-complete {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, var(--success) 0%, #047857 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+    }
+    .btn-action-complete:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(16,185,129,0.35);
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -125,9 +226,9 @@ require 'layouts/header.php';
 <?php if ($msg) echo $msg; ?>
 
 <!-- 1. TABLE: PENDING REFUND REQUESTS REVIEWS -->
-<div class="table-card">
-    <div class="table-card-header bg-light">
-        <h5 class="text-danger fw-bold"><i class="fas fa-exclamation-circle me-1"></i> Phase 1: Pending Refund Reviews (අනුමැතිය අපේක්ෂාවෙන්)</h5>
+<div class="table-card border border-danger" style="border-color: rgba(239,68,68,0.2) !important;">
+    <div class="table-card-header text-danger" style="background: rgba(239,68,68,0.03) !important; border-bottom: 1px solid rgba(239,68,68,0.15);">
+        <h5><i class="fas fa-exclamation-circle me-1"></i> Phase 1: Pending Refund Reviews (අනුමැතිය අපේක්ෂාවෙන්)</h5>
     </div>
 
     <div style="overflow-x:auto;">
@@ -151,8 +252,8 @@ require 'layouts/header.php';
                     ?>
                     <tr>
                         <td>
-                            <div class="fw-bold text-dark"><?php echo htmlspecialchars($ref['name']); ?></div>
-                            <div class="text-muted small"><?php echo htmlspecialchars($ref['email']); ?></div>
+                            <div class="fw-bold text-dark" style="font-size:0.92rem;"><?php echo htmlspecialchars($ref['name']); ?></div>
+                            <div class="text-muted small" style="margin-top:2px;"><?php echo htmlspecialchars($ref['email']); ?></div>
                         </td>
                         <td>
                             <div class="small fw-bold text-muted"><i class="far fa-clock"></i> <?php echo date('d M Y, h:i A', strtotime($ref['refund_requested_at'])); ?></div>
@@ -169,7 +270,7 @@ require 'layouts/header.php';
                         </td>
                         <td>
                             <?php if (!empty($ref['payment_slip'])): ?>
-                                <a href="../<?php echo htmlspecialchars($ref['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-1" style="font-size:0.75rem;">
+                                <a href="../<?php echo htmlspecialchars($ref['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
                                     <i class="fas fa-file-invoice"></i> View Slip
                                 </a>
                             <?php else: ?>
@@ -178,12 +279,12 @@ require 'layouts/header.php';
                         </td>
                         <td style="white-space:nowrap;">
                             <a href="admin_refunds.php?action=approve&uid=<?php echo $ref['user_id']; ?>" 
-                               class="btn-action-approve"
+                               class="btn-action btn-action-approve"
                                onclick="return confirm('Approve refund for <?php echo addslashes($ref['name']); ?>? This will deactivated their account and ask them for bank details.');">
                                 <i class="fas fa-check"></i> Approve Refund
                             </a>
                             <a href="admin_refunds.php?action=reject&uid=<?php echo $ref['user_id']; ?>" 
-                               class="btn-action-reject"
+                               class="btn-action btn-action-reject"
                                style="margin-left:4px;"
                                onclick="return confirm('Reject refund request for <?php echo addslashes($ref['name']); ?>?');">
                                 <i class="fas fa-times"></i> Reject
@@ -192,7 +293,7 @@ require 'layouts/header.php';
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="5" class="text-center py-4 text-muted">Review කිරීමට කිසිදු Refund ඉල්ලීමක් දැනට නැත.</td></tr>
+                    <tr><td colspan="5" class="text-center py-5 text-muted font-style-italic"><i class="fas fa-inbox d-block mb-2" style="font-size:2rem; opacity:0.3;"></i>Review කිරීමට කිසිදු Refund ඉල්ලීමක් දැනට නැත.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
@@ -200,9 +301,9 @@ require 'layouts/header.php';
 </div>
 
 <!-- 2. TABLE: APPROVED REFUNDS - AWAITING BANK PAYOUT -->
-<div class="table-card">
-    <div class="table-card-header" style="background:#f0faf4;">
-        <h5 class="text-success fw-bold"><i class="fas fa-university me-1"></i> Phase 2: Pending Bank Payouts (බැංකු විස්තර ලැබී ඇති - ගෙවීම් කිරීමට ඇති ගිණුම්)</h5>
+<div class="table-card border border-success" style="border-color: rgba(16,185,129,0.2) !important;">
+    <div class="table-card-header text-success" style="background: rgba(16,185,129,0.03) !important; border-bottom: 1px solid rgba(16,185,129,0.15);">
+        <h5><i class="fas fa-university me-1"></i> Phase 2: Pending Bank Payouts (බැංකු විස්තර ලැබී ඇති - ගෙවීම් කිරීමට ඇති ගිණුම්)</h5>
     </div>
 
     <div style="overflow-x:auto;">
@@ -220,16 +321,15 @@ require 'layouts/header.php';
                     <?php foreach ($payoutsList as $pay): ?>
                     <tr>
                         <td>
-                            <div class="fw-bold text-dark"><?php echo htmlspecialchars($pay['name']); ?></div>
-                            <div class="text-muted small"><?php echo htmlspecialchars($pay['email']); ?></div>
+                            <div class="fw-bold text-dark" style="font-size:0.92rem;"><?php echo htmlspecialchars($pay['name']); ?></div>
+                            <div class="text-muted small" style="margin-top:2px;"><?php echo htmlspecialchars($pay['email']); ?></div>
                         </td>
                         <td>
-                            <!-- ලැබී ඇති බැංකු විස්තර පෙන්වීම -->
-                            <div class="bank-box"><?php echo htmlspecialchars($pay['refund_bank_details']); ?></div>
+                            <div class="bank-box"><i class="fas fa-university me-1 text-success"></i> <?php echo htmlspecialchars($pay['refund_bank_details']); ?></div>
                         </td>
                         <td>
                             <?php if (!empty($pay['payment_slip'])): ?>
-                                <a href="../<?php echo htmlspecialchars($pay['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-1" style="font-size:0.75rem;">
+                                <a href="../<?php echo htmlspecialchars($pay['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
                                     <i class="fas fa-file-invoice"></i> View Slip
                                 </a>
                             <?php else: ?>
@@ -237,7 +337,6 @@ require 'layouts/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
-                            <!-- Payout සාර්ථකව සිදුකර අවසන් කිරීමේ බටන් එක -->
                             <a href="admin_refunds.php?action=complete&uid=<?php echo $pay['user_id']; ?>" 
                                class="btn-action-complete"
                                onclick="return confirm('Confirm payout of Rs. 1000 to <?php echo addslashes($pay['name']); ?>? This will send a refund completed receipt email and close this request.');">
@@ -247,7 +346,7 @@ require 'layouts/header.php';
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="4" class="text-center py-4 text-muted">ගෙවීම් කිරීමට ඇති කිසිදු බැංකු ගිණුමක් දැනට ලැබී නැත.</td></tr>
+                    <tr><td colspan="4" class="text-center py-5 text-muted font-style-italic"><i class="fas fa-check-double d-block mb-2" style="font-size:2rem; opacity:0.3;"></i>ගෙවීම් කිරීමට ඇති කිසිදු බැංකු ගිණුමක් දැනට ලැබී නැත.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
