@@ -3,40 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumos Studio | Lumos Wedding Invitation - Elegant Digital Wedding Invitations</title>
+    <title>Features | Lumus Studio - Everything Your Wedding Invitation Can Do</title>
     <link rel="icon" type="image/x-icon" href="uploads/lumos.jpg">
-    <meta name="description" content="Lumos Studio presents Lumos Wedding Invitation - create beautiful digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdown, gallery, and 9 custom themes for your special day.">
-    <meta name="keywords" content="Lumos Studio, Lumos Studio invitation, Lumos Wedding Invitation, digital wedding invitation, wedding invitation website, wedding RSVP, online wedding invitation, elegant wedding invite">
-    <link rel="canonical" href="https://lumosinvitation.unaux.com/">
-    <meta property="og:title" content="Lumos Wedding Invitation | Elegant Digital Wedding Invitations">
-    <meta property="og:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
+    <meta name="description" content="Explore every feature of Lumus Studio's digital wedding invitations - personalized guest names, WhatsApp sharing, live RSVP dashboard, countdown timer, photo gallery, and more.">
+    <meta name="keywords" content="Lumus Studio features, wedding invitation features, RSVP tracking, WhatsApp wedding invite, digital invitation features Sri Lanka">
+    <link rel="canonical" href="https://lumosinvitation.unaux.com/features.php">
+    <meta property="og:title" content="Features | Lumus Studio - Digital Wedding Invitations">
+    <meta property="og:description" content="Everything your wedding invitation can do - personalized names, WhatsApp sharing, live RSVP, countdown, gallery and more.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://lumosinvitation.unaux.com/">
+    <meta property="og:url" content="https://lumosinvitation.unaux.com/features.php">
     <meta property="og:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Lumos Wedding Invitation | Elegant Digital Wedding Invitations">
-    <meta name="twitter:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
-    <meta name="twitter:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
-    <meta name="google-site-verification" content="KrJVNOQBGtAEWfU1vPROURf0R31dI2ExYzITXmZN8X0" />
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Lumos Studio",
-      "alternateName": "Lumos Wedding Invitation",
-      "url": "https://lumosinvitation.unaux.com/",
-      "logo": "https://lumosinvitation.unaux.com/lumos.jpg",
-      "description": "Lumos Studio creates elegant digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdowns, photo galleries, and 9 custom themes."
-    }
-    </script>
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Lumos Studio - Lumos Wedding Invitation",
-      "url": "https://lumosinvitation.unaux.com/"
-    }
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap" rel="stylesheet">
@@ -711,117 +687,103 @@
         <a href="dashboard/register.php" class="btn-nav">Get Started Free</a>
     </div>
 </nav>
-
-<!-- HERO -->
-<section class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-ornament">♡</div>
-    <div class="hero-content">
-        <div class="hero-badge fade-up"><i class="fas fa-star"></i> Lumos Studio — Elegant Digital Wedding Invitations</div>
-        <h1 class="hero-title fade-up delay-1">
-            Beautiful wedding invites,<br>
-            <em>crafted for your love story</em>
-        </h1>
-        <p class="hero-subtitle fade-up delay-2">
-            Lumos Studio helps couples create stunning digital wedding invitations with 9 elegant themes, live previews, RSVP tracking, guest management, and one-click sharing for WhatsApp.
-        </p>
-        <div class="hero-cta fade-up delay-3">
-            <a href="dashboard/register.php" class="btn-primary-gold">
-                <i class="fas fa-heart"></i> Create My Invitation — Free
-            </a>
-            <a href="dashboard/login.php" class="btn-ghost">
-                <i class="fas fa-sign-in-alt"></i> Sign In
-            </a>
-        </div>
-        <div class="hero-proof fade-up delay-4">
-            <div class="proof-item"><i class="fas fa-check-circle"></i> Free preview before payment</div>
-            <div class="proof-item"><i class="fas fa-check-circle"></i> Edit anytime after publishing</div>
-            <div class="proof-item"><i class="fas fa-check-circle"></i> Beautiful on every phone</div>
-        </div>
-    </div>
-</section>
-
-
-
-<!-- HOW IT WORKS -->
-<section class="how-it-works" id="how-it-works">
+<!-- INVITATION FEATURES -->
+<section id="features" style="padding-top:150px;">
     <div style="text-align:center; margin-bottom: 20px;">
-        <span class="section-tag reveal">Simple & Fast</span>
-        <h2 class="section-title reveal">Up and running in<br><em>under 10 minutes</em></h2>
+        <span class="section-tag reveal">Inside the Invitation</span>
+        <h2 class="section-title reveal">Everything your guests<br><em>will love</em></h2>
         <div class="divider"></div>
+        <p class="section-subtitle reveal" style="margin: 0 auto;">Every detail, beautifully crafted — from personalized greetings to one-tap directions.</p>
     </div>
-    <div class="steps-grid">
-        <div class="step reveal">
-            <div class="step-number">1</div>
-            <h4>Register Free</h4>
-            <p>Enter your names, wedding date, and create your account. No credit card needed.</p>
+
+    <div class="features-grid">
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-user-tag"></i></div>
+            <h3>Personalized Guest Names</h3>
+            <p>Each guest opens an invitation with their own name on it — a personal touch that makes them feel truly invited.</p>
         </div>
-        <div class="step reveal">
-            <div class="step-number">2</div>
-            <h4>Build Your Invitation</h4>
-            <p>Add events, upload photos, write your love story. Preview exactly what your guests will see.</p>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fab fa-whatsapp"></i></div>
+            <h3>One Link, Easy Sharing</h3>
+            <p>Share one invitation link via WhatsApp to all your guests. Each guest enters their number to open their personal invitation.</p>
         </div>
-        <div class="step reveal">
-            <div class="step-number">3</div>
-            <h4>Add Your Guests</h4>
-            <p>Add guests with their names and WhatsApp numbers. Tag by category and side.</p>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-eye"></i></div>
+            <h3>Live Open Tracking</h3>
+            <p>See which guests have opened their invitation and exactly when — in real time from your dashboard.</p>
         </div>
-        <div class="step reveal">
-            <div class="step-number">4</div>
-            <h4>Pay & Publish</h4>
-            <p>Upload a bank transfer slip. We activate your invitation within hours.</p>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-reply"></i></div>
+            <h3>Live RSVP Dashboard</h3>
+            <p>See who's attending, who can't come, and any dietary notes — all in one live, filterable dashboard.</p>
         </div>
-        <div class="step reveal">
-            <div class="step-number">5</div>
-            <h4>Share the Link</h4>
-            <p>Share one link via WhatsApp. Guests enter their number and open their personal invitation.</p>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+            <h3>All Events in One Place</h3>
+            <p>Poruwa, Church, Reception, Homecoming — linked in one invitation with timelines and venue details.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-clock"></i></div>
+            <h3>Live Countdown Timer</h3>
+            <p>A real-time countdown to your big day — visible on every guest's invitation, building the excitement.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <h3>Google Maps Directions</h3>
+            <p>One tap from the invitation opens turn-by-turn directions for each venue. No address confusion.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-calendar-plus"></i></div>
+            <h3>Add to Calendar</h3>
+            <p>Guests save the date to Google, Apple, or Outlook with a single tap — no one forgets the day.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-qrcode"></i></div>
+            <h3>QR Code for Printed Cards</h3>
+            <p>Print a scan-to-open code on physical cards so paper and digital work together seamlessly.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-images"></i></div>
+            <h3>Photo Gallery & Love Story</h3>
+            <p>Share engagement photos and how you met — give guests a feel for your beautiful story before the day.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+            <h3>Beautiful on Any Phone</h3>
+            <p>From your aunty's older phone to the latest iPhone — every guest opens it instantly, on slow or fast data.</p>
+        </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
+            <h3>Per-Event Guest Assignment</h3>
+            <p>Invite guests to only the events that apply — Poruwa, Reception, or Homecoming separately.</p>
         </div>
     </div>
 </section>
-
-
-
-
-
-<!-- PEACE OF MIND -->
-<section id="peace">
+<!-- PLANNING TOOLS -->
+<section>
     <div style="text-align:center; margin-bottom:20px;">
-        <span class="section-tag reveal">Built for Peace of Mind</span>
-        <h2 class="section-title reveal">Buy with confidence,<br><em>edit with confidence</em></h2>
+        <span class="section-tag reveal">Plan the Day</span>
+        <h2 class="section-title reveal">Wedding planning tools<br><em>alongside your invitation</em></h2>
         <div class="divider"></div>
     </div>
-    <div class="peace-grid">
-        <div class="peace-card reveal">
-            <div class="peace-card-icon"><i class="fas fa-eye"></i></div>
-            <div>
-                <h4>Free Preview Before You Pay</h4>
-                <p>Build the full invitation, see exactly how it looks on a real phone, then decide. No card on file, no pressure.</p>
-            </div>
+    <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-tasks"></i></div>
+            <h3>Task Checklist</h3>
+            <p>Track what's done and what's coming — from saree fitting to thank-you notes.</p>
         </div>
-        <div class="peace-card reveal">
-            <div class="peace-card-icon"><i class="fas fa-edit"></i></div>
-            <div>
-                <h4>Edit Anytime — Even After Publishing</h4>
-                <p>Venue changed? Guest list grew? Update once and every guest sees the latest version automatically.</p>
-            </div>
+        <div class="feature-card reveal">
+            <div class="feature-icon"><i class="fas fa-tags"></i></div>
+            <h3>Guest Categories</h3>
+            <p>Tag guests by group (Family, Friends, Office, VIP) and side (Bride, Groom, Both) for easy filtering.</p>
         </div>
-        <div class="peace-card reveal">
-            <div class="peace-card-icon"><i class="fas fa-university"></i></div>
-            <div>
-                <h4>Hassle-Free Payment</h4>
-                <p>Upload a bank transfer slip via WhatsApp. We review and unlock your invitation — no online card payments needed.</p>
-            </div>
-        </div>
-        <div class="peace-card reveal">
-            <div class="peace-card-icon"><i class="fas fa-headset"></i></div>
-            <div>
-                <h4>Personal Support</h4>
-                <p>We're a local team. Have a question or need help? Reach us directly on WhatsApp and we'll sort it out.</p>
-            </div>
-        </div>
+        <a href="#themes" class="feature-card reveal" style="text-decoration:none; display:block; color:inherit;">
+            <div class="feature-icon"><i class="fas fa-palette"></i></div>
+            <h3>Choose From 9 Themes</h3>
+            <p>Pick from 9 beautiful invitation themes and preview each one live before you publish your final design. <span style="color:var(--gold); font-weight:600;">See all themes ↓</span></p>
+        </a>
     </div>
 </section>
-
 <!-- CTA -->
 <section class="cta-section" id="cta">
     <span class="section-tag reveal">Ready to Begin?</span>
@@ -839,7 +801,6 @@
         <div class="cta-feature"><i class="fas fa-check"></i> Beautiful on any phone</div>
     </div>
 </section>
-
 <!-- FOOTER -->
 <footer>
     <div class="footer-logo">Lumus Studio</div>

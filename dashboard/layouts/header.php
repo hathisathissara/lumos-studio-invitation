@@ -32,18 +32,17 @@ if ($role !== 'admin' && !empty($_SESSION['wedding_id']) && isset($pdo)) {
     $host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
     $base_dir = dirname(dirname($_SERVER['PHP_SELF']));
     // නිවැරදි කල නව කේතය (ඉබේම http/https හඳුනාගනී)
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
-$ring = "\u{1F48D}";
-    $sparkles = "\u{2728}";
-    $heart = "\u{2764}\u{FE0F}";
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+    $ring = "\u{1F48D}";
+    $flower = "\u{1F338}"; // 🌸
+    $heart = "\u{2764}\u{FE0F}"; // ❤️
     $invite_url_for_header = rtrim($domain, '/') . '/' . $invite_slug;
-   $invite_share_message_header = $ring . " You're Invited! " . $ring . "\n\n"
-    . "Together with our families, we are delighted to invite you to celebrate our wedding and the beginning of our forever.\n\n"
-    . "Your love, blessings, and presence would mean the world to us on this special day.\n\n"
-    . $sparkles . " Please open our digital wedding invitation to view all the event details, venue, schedule, and RSVP:\n\n"
-    . $invite_url_for_header
-    . "\n\nWe look forward to celebrating this unforgettable day with you! " . $heart;
+    $invite_share_message_header =  $ring . " You're Invited! " . $ring . "\n\n"
+    ."With so much love and happiness in our hearts, we're excited to invite you to celebrate the invitation of our journey together - " . $user_name . "\n\n"
+    . "It would truly mean the world to us on this special day\n\n"
+    . "Invitation: " . $invite_url_for_header . "\n\n"
+    . "We can't wait to celebrate, laugh, and create beautiful memories with you! " . $heart;
 }
 
 // Get initials for avatar
@@ -364,8 +363,13 @@ $current = basename($_SERVER['PHP_SELF']);
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
-            .topbar { left: 0; }
-            .main-content { margin-left: 0; padding: 20px 16px; }
+            .topbar { left: 0; padding: 0 16px; }
+            .topbar-page-title { font-size: 0.85rem; display: none; /* Hide on very small screens if needed, but let's just make it smaller or hide it so buttons fit */ }
+            /* Better to hide page title on mobile to give space for buttons */
+            .topbar-page-title { display: none; }
+            .topbar-btn { padding: 6px 10px; font-size: 0.75rem; }
+            .topbar-right { gap: 8px; }
+            .main-content { margin-left: 0; padding: 20px 12px; }
             .mobile-toggle { display: block; }
         }
 
@@ -426,13 +430,15 @@ $current = basename($_SERVER['PHP_SELF']);
             <a href="admin_dashboard.php" class="nav-item <?php echo $current === 'admin_dashboard.php' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i> Admin Panel
             </a>
+            <a href="admin_refunds.php" class="nav-item <?php echo $current === 'admin_refunds.php' ? 'active' : ''; ?>">
+                <i class="fas fa-shield-alt"></i> Refund Requests
+            </a>
             
         <?php else: ?>
             <div class="nav-section-label">Overview</div>
             <a href="index.php" class="nav-item <?php echo $current === 'index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-home"></i> Dashboard
             </a>
-
             <div class="nav-section-label">Invitation</div>
             <a href="guests.php" class="nav-item <?php echo $current === 'guests.php' ? 'active' : ''; ?>">
                 <i class="fas fa-users"></i> Guest List
@@ -443,7 +449,9 @@ $current = basename($_SERVER['PHP_SELF']);
             <a href="gallery.php" class="nav-item <?php echo $current === 'gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-images"></i> Gallery & Story
             </a>
-
+            <a href="guest_gallery.php" class="nav-item <?php echo $current === 'guest_gallery.php' ? 'active' : ''; ?>">
+                <i class="fas fa-camera-retro"></i> Guest Shared Pics
+            </a>
             <div class="nav-section-label">Tools</div>
             <a href="checklist.php" class="nav-item <?php echo $current === 'checklist.php' ? 'active' : ''; ?>">
                 <i class="fas fa-tasks"></i> Checklist

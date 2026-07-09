@@ -21,22 +21,22 @@ $wedding_id = $_SESSION['wedding_id'];
 $user_name  = $_SESSION['user_name'];
 
 // Stats
-// 1. මුළු අමුත්තන්/ආසන ගණන (Sum of Seats_Reserved)
+// 1.Sum of Seats_Reserved
 $stmtTotal = $pdo->prepare("SELECT SUM(seats_reserved) as total FROM guests WHERE wedding_id = ?");
 $stmtTotal->execute([$wedding_id]);
-$total_guests = $stmtTotal->fetch()['total'] ?? 0; // null නම් 0 ලබාදේ
+$total_guests = $stmtTotal->fetch()['total'] ?? 0; // null 0 
 
-// 2. Invitation එක Open කරපු අයගේ මුළු ආසන ගණන
+// 2. Sum of seats_reserved where is_opened = 1
 $stmtOpened = $pdo->prepare("SELECT SUM(seats_reserved) as opened FROM guests WHERE wedding_id = ? AND is_opened = 1");
 $stmtOpened->execute([$wedding_id]);
 $opened_invitations = $stmtOpened->fetch()['opened'] ?? 0;
 
-// 3. පැමිණීම තහවුරු කරපු අයගේ මුළු ආසන ගණන (Attending RSVP Sum)
+// 3. Sum of seats_reserved where rsvp_status = 'accepted'
 $stmtAccepted = $pdo->prepare("SELECT SUM(seats_reserved) as accepted FROM guests WHERE wedding_id = ? AND rsvp_status = 'accepted'");
 $stmtAccepted->execute([$wedding_id]);
 $accepted_rsvp = $stmtAccepted->fetch()['accepted'] ?? 0;
 
-// 4. පැමිණීමට නොහැකි බව දැනුම් දුන් අයගේ මුළු ආසන ගණන
+
 $stmtRejected = $pdo->prepare("SELECT SUM(seats_reserved) as rejected FROM guests WHERE wedding_id = ? AND rsvp_status = 'rejected'");
 $stmtRejected->execute([$wedding_id]);
 $rejected_rsvp = $stmtRejected->fetch()['rejected'] ?? 0;
@@ -65,14 +65,16 @@ $task_pct = $tasks_total > 0 ? round(($tasks_done / $tasks_total) * 100) : 0;
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
 $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+$ring = "\u{1F48D}";
+$flower = "\u{1F338}"; // 🌸
+$heart = "\u{2764}\u{FE0F}"; // ❤️
 $invite_slug = !empty($wedding['slug']) ? $wedding['slug'] : 'invite.php?w_id=' . $wedding_id;
 $invitation_link = rtrim($domain, '/') . '/' . $invite_slug;
-$invite_share_message = "💍 You're Invited! 💍\n\n"
-    . "Together with our families, we are delighted to invite you to celebrate our wedding and the beginning of our forever.\n\n"
-    . "Your love, blessings, and presence would mean the world to us on this special day.\n\n"
-    . "✨ Please open our digital wedding invitation to view all the event details, venue, schedule, and RSVP:\n\n"
-    . $invitation_link
-    . "\n\nWe look forward to celebrating this unforgettable day with you! ❤️";
+$invite_share_message = $ring . " You're Invited! " . $ring . "\n\n"
+    ."With so much love and happiness in our hearts, we're excited to invite you to celebrate the invitation of our journey together - " . $user_name . "\n\n"
+    . "It would truly mean the world to us on this special day\n\n"
+    . "Invitation: " . $invitation_link. "\n\n"
+    . "We can't wait to celebrate, laugh, and create beautiful memories with you! " . $heart;
 
 
 require 'layouts/header.php';
@@ -341,49 +343,51 @@ require 'layouts/header.php';
                 <h6 style="font-size:0.85rem; font-weight:700; color:#1a1a2e; margin:0;">Recent Guests</h6>
                 <a href="guests.php" style="font-size:0.78rem; color:#c9a96e; text-decoration:none; font-weight:500;">View All →</a>
             </div>
-            <table class="table dashboard-table mb-0" style="margin-top:12px;">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>WhatsApp</th>
-                        <th>Opened</th>
-                        <th>RSVP</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (count($recent_guests) > 0): ?>
-                        <?php foreach ($recent_guests as $guest): ?>
+            <div style="overflow-x:auto;">
+                <table class="table dashboard-table mb-0" style="margin-top:12px; min-width:500px;">
+                    <thead>
                         <tr>
-                            <td style="font-weight:600; color:#1a1a2e;"><?php echo htmlspecialchars($guest['name']); ?></td>
-                            <td><?php echo htmlspecialchars($guest['whatsapp_number']); ?></td>
-                            <td>
-                                <?php if ($guest['is_opened']): ?>
-                                    <span class="badge-status badge-opened"><i class="fas fa-check"></i> Opened</span>
-                                <?php else: ?>
-                                    <span class="badge-status badge-not-opened">Not yet</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php
-                                if ($guest['rsvp_status'] == 'accepted')
-                                    echo '<span class="badge-status badge-attending"><i class="fas fa-check"></i> Attending</span>';
-                                elseif ($guest['rsvp_status'] == 'rejected')
-                                    echo '<span class="badge-status badge-not-attending"><i class="fas fa-times"></i> Declined</span>';
-                                else
-                                    echo '<span class="badge-status badge-pending">Pending</span>';
-                                ?>
-                            </td>
+                            <th>Name</th>
+                            <th>WhatsApp</th>
+                            <th>Opened</th>
+                            <th>RSVP</th>
                         </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="4" style="text-align:center; padding:30px; color:#9ea3b0; font-style:italic;">
-                                No guests added yet. <a href="guests.php" style="color:#c9a96e;">Add your first guest →</a>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php if (count($recent_guests) > 0): ?>
+                            <?php foreach ($recent_guests as $guest): ?>
+                            <tr>
+                                <td style="font-weight:600; color:#1a1a2e;"><?php echo htmlspecialchars($guest['name']); ?></td>
+                                <td><?php echo htmlspecialchars($guest['whatsapp_number']); ?></td>
+                                <td>
+                                    <?php if ($guest['is_opened']): ?>
+                                        <span class="badge-status badge-opened"><i class="fas fa-check"></i> Opened</span>
+                                    <?php else: ?>
+                                        <span class="badge-status badge-not-opened">Not yet</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    if ($guest['rsvp_status'] == 'accepted')
+                                        echo '<span class="badge-status badge-attending"><i class="fas fa-check"></i> Attending</span>';
+                                    elseif ($guest['rsvp_status'] == 'rejected')
+                                        echo '<span class="badge-status badge-not-attending"><i class="fas fa-times"></i> Declined</span>';
+                                    else
+                                        echo '<span class="badge-status badge-pending">Pending</span>';
+                                    ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="4" style="text-align:center; padding:30px; color:#9ea3b0; font-style:italic;">
+                                    No guests added yet. <a href="guests.php" style="color:#c9a96e;">Add your first guest →</a>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

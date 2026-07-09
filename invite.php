@@ -6,6 +6,22 @@ $wedding_id = isset($_GET['w_id']) ? intval($_GET['w_id']) : 0;
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
 $error = '';
 
+function normalize_whatsapp_number($value) {
+    $value = trim((string) $value);
+    $digits = preg_replace('/\D+/', '', $value);
+    if ($digits === '') {
+        return '';
+    }
+
+    if (strlen($digits) > 10 && substr($digits, 0, 2) === '94') {
+        $digits = '0' . substr($digits, 2);
+    } elseif (strlen($digits) === 9) {
+        $digits = '0' . $digits;
+    }
+
+    return $digits;
+}
+
 // 1. Wedding & user status
 if ($wedding_id > 0) {
     $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id 
@@ -56,9 +72,6 @@ function tc_darken($hex, $amount) { return tc_mix($hex, '#000000', $amount); }
 function tc_lighten($hex, $amount) { return tc_mix($hex, '#ffffff', $amount); }
 function tc_rgbstr($hex) { $r = tc_hex2rgb($hex); return round($r[0]) . ',' . round($r[1]) . ',' . round($r[2]); }
 
-// One base "primary" (for the velvet envelope) and "accent" (for the wax
-// seal / gold-ish highlights) hue per template — pulled from each
-// template file's own :root palette so the two pages feel like one brand.
 $theme_palettes = [
     'premium_gold'     => ['primary' => '#8a6520', 'accent' => '#b78a44', 'accent_light' => '#e8d5a3', 'paper' => '#fdfaf5', 'paper2' => '#f9f5ee', 'ink' => '#2d2115'],
     'minimal_light'    => ['primary' => '#5c755a', 'accent' => '#8ba888', 'accent_light' => '#d6e2d4', 'paper' => '#ffffff', 'paper2' => '#f8f9fa', 'ink' => '#333333'],
@@ -74,7 +87,6 @@ $theme_palettes = [
 $theme_name = !empty($wedding['template_name']) ? $wedding['template_name'] : 'premium_gold';
 $pal = $theme_palettes[$theme_name] ?? $theme_palettes['premium_gold'];
 
-// Envelope velvet gradient, derived from the template's primary hue
 $c_env_light = tc_lighten($pal['primary'], 0.28);
 $c_env_mid   = tc_darken($pal['primary'], 0.05);
 $c_env_dark  = tc_darken($pal['primary'], 0.55);
@@ -89,11 +101,10 @@ $c_paper2  = $pal['paper2'];
 $c_ink     = $pal['ink'];
 $c_ink_rgb = tc_rgbstr($c_ink);
 
-// Legible dark tones for text sitting on the cream letter / gold button
-$c_paper_accent_strong = tc_darken($c_accent, 0.55); // couple names, owner banner
-$c_paper_accent_mid    = tc_darken($c_accent, 0.35); // greeting, redirect note
-$c_paper_accent_rgb    = tc_rgbstr(tc_darken($c_accent, 0.45)); // dividers, icons
-$c_seal_ink            = tc_darken($c_accent, 0.75); // text inside the wax seal / button
+$c_paper_accent_strong = tc_darken($c_accent, 0.55); 
+$c_paper_accent_mid    = tc_darken($c_accent, 0.35); 
+$c_paper_accent_rgb    = tc_rgbstr(tc_darken($c_accent, 0.45)); 
+$c_seal_ink            = tc_darken($c_accent, 0.75); 
 
 $is_owner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $wedding['user_id']);
 $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
@@ -193,42 +204,98 @@ if (isset($_GET['preview']) && ($is_owner || $is_admin)) {
     exit();
 }
 
-// Handle form submit OR personalized auto-open link (?wa=0771234567)
 $just_verified = false;
-$verified_via_form = false;
-$whatsapp_from_link = isset($_GET['wa']) ? trim($_GET['wa']) : '';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" || $whatsapp_from_link !== '') {
-    $whatsapp = ($_SERVER["REQUEST_METHOD"] == "POST") ? trim($_POST['whatsapp_number']) : $whatsapp_from_link;
+// =====================================================================
+// 🔥 3. AUTO-LOGIN / AUTO-VERIFY (Token [t] පරීක්ෂා කිරීම)
+// =====================================================================
+if (isset($_GET['t']) && !$just_verified) {
+    $token_param = trim($_GET['t']);
 
-    $stmt = $pdo->prepare("SELECT id, name, is_opened FROM guests WHERE wedding_id = ? AND whatsapp_number = ?");
-    $stmt->execute([$wedding_id, $whatsapp]);
-    $guest = $stmt->fetch();
+    if (!empty($token_param)) {
+        // Token එකට ගැලපෙන Guest කෙනෙක් ඉන්නවද කියා පරීක්ෂා කිරීම
+        $stmtAuto = $pdo->prepare("SELECT id, name, is_opened, whatsapp_number FROM guests WHERE wedding_id = ? AND invite_token = ?");
+        $stmtAuto->execute([$wedding_id, $token_param]);
+        $auto_guest = $stmtAuto->fetch();
 
-    if ($guest) {
-        if ($guest['is_opened'] == 0) {
-            $updateStmt = $pdo->prepare("UPDATE guests SET is_opened = 1, opened_at = NOW() WHERE id = ?");
-            $updateStmt->execute([$guest['id']]);
+        if ($auto_guest) {
+            if ($auto_guest['is_opened'] == 0) {
+                $updateStmt = $pdo->prepare("UPDATE guests SET is_opened = 1, opened_at = NOW() WHERE id = ?");
+                $updateStmt->execute([$auto_guest['id']]);
+            }
+
+            $_SESSION['guest_id'] = $auto_guest['id'];
+            $_SESSION['guest_name'] = $auto_guest['name'];
+            $_SESSION['invite_wedding_id'] = $wedding_id;
+
+            $just_verified = true;
+            $verified_via_form = false; // Seal එක Click කල පසු ඇරීමට ඉඩ දෙයි
         }
-
-        $_SESSION['guest_id'] = $guest['id'];
-        $_SESSION['guest_name'] = $guest['name'];
-        $_SESSION['invite_wedding_id'] = $wedding_id;
-
-        // Don't redirect right away — flag success so the page below
-        // can play the envelope-opening animation before moving on.
-        $just_verified = true;
-        // Typed-number submissions (default link) auto-continue straight
-        // into the opening animation; personalized ?wa= links still wait
-        // for a manual tap on the seal.
-        $verified_via_form = ($_SERVER["REQUEST_METHOD"] == "POST");
-    } elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // Only show the "not on guest list" error for manual typing —
-        // a stale/invalid personalized link falls back to the normal form silently.
-        $error = "Sorry, this number is not on the guest list.";
     }
 }
 
+// Support old legacy wa links
+$legacy_whatsapp_from_link = isset($_GET['wa']) ? trim($_GET['wa']) : '';
+if ($legacy_whatsapp_from_link !== '' && !$just_verified) {
+    $wa_normalized_legacy = normalize_whatsapp_number($legacy_whatsapp_from_link);
+    $stmtLegacy = $pdo->prepare("SELECT id, name, is_opened, whatsapp_number FROM guests WHERE wedding_id = ?");
+    $stmtLegacy->execute([$wedding_id]);
+    $matched_legacy = null;
+
+    while ($row = $stmtLegacy->fetch(PDO::FETCH_ASSOC)) {
+        if (normalize_whatsapp_number($row['whatsapp_number']) === $wa_normalized_legacy) {
+            $matched_legacy = $row;
+            break;
+        }
+    }
+
+    if ($matched_legacy) {
+        if ($matched_legacy['is_opened'] == 0) {
+            $updateStmt = $pdo->prepare("UPDATE guests SET is_opened = 1, opened_at = NOW() WHERE id = ?");
+            $updateStmt->execute([$matched_legacy['id']]);
+        }
+
+        $_SESSION['guest_id'] = $matched_legacy['id'];
+        $_SESSION['guest_name'] = $matched_legacy['name'];
+        $_SESSION['invite_wedding_id'] = $wedding_id;
+
+        $just_verified = true;
+        $verified_via_form = false;
+    }
+}
+
+// Handle Manual Form Submit (අතින් Number එක ඇතුලත් කිරීම)
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $whatsapp = trim($_POST['whatsapp_number']);
+    $wa_normalized = normalize_whatsapp_number($whatsapp);
+
+    $stmtManual = $pdo->prepare("SELECT id, name, is_opened, whatsapp_number FROM guests WHERE wedding_id = ?");
+    $stmtManual->execute([$wedding_id]);
+    $matched_guest = null;
+
+    while ($row = $stmtManual->fetch(PDO::FETCH_ASSOC)) {
+        if (normalize_whatsapp_number($row['whatsapp_number']) === $wa_normalized) {
+            $matched_guest = $row;
+            break;
+        }
+    }
+
+    if ($matched_guest) {
+        if ($matched_guest['is_opened'] == 0) {
+            $updateStmt = $pdo->prepare("UPDATE guests SET is_opened = 1, opened_at = NOW() WHERE id = ?");
+            $updateStmt->execute([$matched_guest['id']]);
+        }
+
+        $_SESSION['guest_id'] = $matched_guest['id'];
+        $_SESSION['guest_name'] = $matched_guest['name'];
+        $_SESSION['invite_wedding_id'] = $wedding_id;
+
+        $just_verified = true;
+        $verified_via_form = true; // Form එකෙන් ආ නිසා කෙලින්ම Auto open වේ!
+    } else {
+        $error = "Sorry, this number is not on the guest list.";
+    }
+}
 
 $wedding_date_formatted = date("d F Y", strtotime($wedding['wedding_date']));
 $bride_name = htmlspecialchars($wedding['bride_name']);
@@ -327,10 +394,6 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
         .envelope-wrap {
             position: relative;
             perspective: 1600px;
-            /* One fluid variable drives the flap height, seal position and
-               size, and the closed envelope's body height — everything
-               scales together with viewport width instead of snapping at
-               breakpoints. */
             --flap-h: clamp(108px, 36vw, 168px);
         }
 
@@ -341,10 +404,6 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
             border-radius: 10px;
             box-shadow: 0 30px 90px rgba(0,0,0,0.55), inset 0 1px 0 rgba(var(--gold-rgb),0.12);
             padding-top: var(--flap-h);
-            /* Closed envelope keeps a proper body below the flap, sized
-               relative to the flap so the whole shape matches a real
-               envelope's proportions rather than collapsing to just the
-               triangle. */
             min-height: calc(var(--flap-h) * 1.6);
             animation: envIn 0.7s ease;
             overflow: hidden;
@@ -418,10 +477,6 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
             transition:opacity .4s ease;
         }
 
-        /* Letter / card content, tucked inside the envelope.
-           Collapsed to zero height until the seal is tapped, so the
-           envelope itself stays flap-sized instead of reserving space
-           for the whole letter underneath. */
         .card {
             position: relative;
             background: linear-gradient(180deg, var(--paper-a), var(--paper-b));
@@ -529,7 +584,6 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
 
         .redirect-note { margin-top: 16px; font-size: 0.78rem; color: var(--paper-accent-mid); letter-spacing: 0.5px; }
 
-        /* Opening state, toggled on <body> once the seal is tapped */
         body.opening .envelope-flap { transform: rotateX(180deg); z-index: 0; }
         body.opening .wax-seal { animation: crack 0.4s ease forwards; }
         body.opening .envelope { min-height: 0; padding-top: 0; }
@@ -690,3 +744,4 @@ openInvitationFlow();
 </script>
 </body>
 </html>
+

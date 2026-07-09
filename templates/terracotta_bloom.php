@@ -822,7 +822,110 @@ if (!empty($wedding['hero_image'])) {
     <span class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></span>
     <img src="" id="lightbox-img" alt="">
 </div>
+<!-- =====================================================================
+         📸 GUEST SHARED GALLERY SECTION (පැකේජය අනුව පමණක් පෙන්වයි)
+         ===================================================================== -->
+    <?php if (isset($has_guest_gallery) && $has_guest_gallery): ?>
+    <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-icon"><i class="fas fa-images"></i></div>
+        <div class="section-divider-line right"></div>
+    </div>
+    <h2 class="section-heading"><em>Guest</em> Shared Moments</h2>
+    <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
+    <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
+    <div style="background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+        <?php if ($guest_id == 0): ?>
+            <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
+        <?php else: ?>
+            <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold); margin-bottom: 12px; display: block;"></i>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: #1a1a2e; margin-bottom: 6px;">Share a Photo from Your Phone</h5>
+            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
+            
+            <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
+            <button type="button" class="btn-map" onclick="document.getElementById('guest-image-input').click()" style="border: none; cursor: pointer;">
+                <i class="fas fa-cloud-upload-alt"></i> Upload Wedding Photo
+            </button>
+            
+            <!-- Uploading Loader -->
+            <div id="guest-upload-loader" style="display: none; margin-top: 15px;" class="fw-bold text-success small">
+                <i class="fas fa-spinner fa-spin me-1"></i> Optimizing & Uploading... Please wait!
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Guest Shared Grid Display -->
+    <div class="gallery-grid" id="guest-gallery-grid" style="margin-bottom: 30px;">
+        <?php if (isset($guest_images) && count($guest_images) > 0): ?>
+            <?php foreach ($guest_images as $g_img): ?>
+            <div class="gallery-item" onclick="openLightbox('<?php echo htmlspecialchars($g_img['image_path']); ?>')" style="border-color: #22c55e;">
+                <img src="<?php echo htmlspecialchars($g_img['image_path']); ?>" alt="Guest moment" loading="lazy">
+                <!-- පින්තූරය එවූ අමුත්තාගේ නම යටින් පෙන්වයි -->
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; padding: 4px; font-family: 'Inter', sans-serif; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2;">
+                    By <?php echo htmlspecialchars($g_img['guest_name']); ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <div class="col-12 text-center text-muted small py-4" style="font-style: italic;" id="no-guest-pics">
+                No guest photos shared yet. Be the first to share a moment! 🌸
+            </div>
+        <?php endif; ?>
+    </div>
+    
+    <!-- Compressor.js Load කිරීම (නොමැති නම් පමණක්) -->
+    <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
+    <script>
+    document.getElementById('guest-image-input')?.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const loader = document.getElementById('guest-upload-loader');
+        loader.style.display = 'block';
+
+        // Compressor.js භාවිතයෙන් අමුත්තාගේ පින්තූරය 0.6 quality එකට WebP කර Compress කිරීම
+        new Compressor(file, {
+            quality: 0.6,
+            mimeType: 'image/webp',
+            maxWidth: 1200,
+            success(result) {
+                const formData = new FormData();
+                const cleanName = file.name.substring(0, file.name.lastIndexOf('.')) + '.webp';
+                
+                formData.append('guest_image', result, cleanName);
+                formData.append('action', 'guest_upload_image');
+
+                // AJAX POST Request (view_invitation.php වෙත යැවීම)
+                fetch('view_invitation.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loader.style.display = 'none';
+                    if (data.success) {
+                        alert("Thank you! Your wedding photo has been shared successfully. 🎉");
+                        location.reload(); // Reload කර පින්තූරය පෙන්වීම
+                    } else {
+                        alert("Upload failed: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    loader.style.display = 'none';
+                    console.error('Error:', error);
+                    alert("An error occurred during upload.");
+                });
+            },
+            error(err) {
+                loader.style.display = 'none';
+                console.error(err.message);
+                alert("Image optimization failed.");
+            }
+        });
+    });
+    </script>
+    <?php endif; ?>
 <!-- RSVP -->
 <div class="rsvp-section">
     <div class="section-divider" style="max-width:680px; margin:0 auto 20px;">

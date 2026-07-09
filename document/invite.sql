@@ -5,10 +5,10 @@ DROP TABLE IF EXISTS `events`;
 CREATE TABLE IF NOT EXISTS `events` (
   `id` int NOT NULL AUTO_INCREMENT,
   `wedding_id` int DEFAULT NULL,
-  `event_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `event_name` varchar(100)  DEFAULT NULL,
   `event_date_time` datetime DEFAULT NULL,
-  `location_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `google_map_link` text COLLATE utf8mb4_unicode_ci,
+  `location_name` varchar(255)  DEFAULT NULL,
+  `google_map_link` text ,
   PRIMARY KEY (`id`),
   KEY `wedding_id` (`wedding_id`)
 );
@@ -20,7 +20,7 @@ DROP TABLE IF EXISTS `gallery`;
 CREATE TABLE IF NOT EXISTS `gallery` (
   `id` int NOT NULL AUTO_INCREMENT,
   `wedding_id` int DEFAULT NULL,
-  `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_path` varchar(255)  DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `wedding_id` (`wedding_id`)
 );
@@ -31,28 +31,30 @@ DROP TABLE IF EXISTS `guests`;
 CREATE TABLE IF NOT EXISTS `guests` (
   `id` int NOT NULL AUTO_INCREMENT,
   `wedding_id` int DEFAULT NULL,
-  `name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `whatsapp_number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `category` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `side` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `name` varchar(150)  DEFAULT NULL,
+  `whatsapp_number` varchar(20)  DEFAULT NULL,
+  `category` varchar(50)  DEFAULT NULL,
+  `side` varchar(50)  DEFAULT NULL,
   `is_opened` tinyint(1) DEFAULT '0',
   `opened_at` datetime DEFAULT NULL,
-  `rsvp_status` enum('pending','accepted','rejected') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
-  `guest_note` text COLLATE utf8mb4_unicode_ci,
+  `rsvp_status` enum('pending','accepted','rejected')  DEFAULT 'pending',
+  `guest_note` text  DEFAULT NULL,
   `seats_reserved` int DEFAULT '1',
+  `invite_token` VARCHAR(20) DEFAULT NULL,
+ 
   PRIMARY KEY (`id`),
   KEY `wedding_id` (`wedding_id`)
 );
 
---
 
+CREATE UNIQUE INDEX idx_guests_invite_token ON guests (invite_token);
 --
 
 DROP TABLE IF EXISTS `tasks`;
 CREATE TABLE IF NOT EXISTS `tasks` (
   `id` int NOT NULL AUTO_INCREMENT,
   `wedding_id` int DEFAULT NULL,
-  `task_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `task_name` varchar(255)  DEFAULT NULL,
   `is_completed` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `wedding_id` (`wedding_id`)
@@ -67,27 +69,27 @@ CREATE TABLE IF NOT EXISTS `tasks` (
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `role` enum('admin','couple') COLLATE utf8mb4_unicode_ci DEFAULT 'couple',
-  `status` enum('pending','active') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `name` varchar(100)  DEFAULT NULL,
+  `email` varchar(100)  DEFAULT NULL,
+  `password` varchar(255)  DEFAULT NULL,
+  `role` enum('admin','couple')  DEFAULT 'couple',
+  `status` enum('pending','active')  DEFAULT 'pending',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `payment_slip` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `payment_slip` varchar(255)  DEFAULT NULL,
+  `deletion_notice_sent_at` DATETIME DEFAULT NULL,
+  `refund_requested_at` DATETIME NULL,
+  `refund_status` ENUM('none', 'pending', 'approved', 'details_submitted', 'rejected', 'completed') DEFAULT 'none',
+  `refund_bank_details` TEXT NULL,
+  `refund_reason` TEXT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 );
 
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `status`, `created_at`, `payment_slip`) VALUES
-(1, 'admin', 'hatheesha6504@gmail.com', '$2y$10$gQzRGMvmB7QvL3zT5nVTgez0PsP00lgSAD/xTVCrwj3FAxgnurv9i', 'couple', 'active', '0000-00-00 00:00:00', NULL);
-
--- --------------------------------------------------------
-
---
+ALTER TABLE users ADD COLUMN package ENUM('basic', 'standard', 'premium') DEFAULT 'basic';
+ALTER TABLE users ADD COLUMN has_guest_gallery TINYINT(1) DEFAULT 0;
+ALTER TABLE users ADD COLUMN upgrade_slip VARCHAR(255) NULL;
+ALTER TABLE users ADD COLUMN pending_upgrade_plan VARCHAR(100) NULL;
+ALTER TABLE guests ADD COLUMN is_sent TINYINT(1) DEFAULT 0 AFTER seats_reserved, ADD COLUMN sent_at DATETIME NULL AFTER is_sent;
 -- Table structure for table `weddings`
 --
 
@@ -95,14 +97,23 @@ DROP TABLE IF EXISTS `weddings`;
 CREATE TABLE IF NOT EXISTS `weddings` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
-  `bride_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `groom_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `bride_name` varchar(100)  DEFAULT NULL,
+  `groom_name` varchar(100)  DEFAULT NULL,
   `wedding_date` date DEFAULT NULL,
-  `cover_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `love_story` text COLLATE utf8mb4_unicode_ci,
-  `hero_image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `template_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'default',
-  `slug` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `cover_image` varchar(255)  DEFAULT NULL,
+  `love_story` text  DEFAULT NULL,
+  `hero_image` varchar(255)   DEFAULT NULL,
+  `template_name` varchar(100)   DEFAULT 'default',
+  `slug` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
+);
+
+CREATE TABLE IF NOT EXISTS guest_gallery (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    wedding_id INT,
+    guest_name VARCHAR(150),
+    image_path VARCHAR(255),
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (wedding_id) REFERENCES weddings(id) ON DELETE CASCADE
 );

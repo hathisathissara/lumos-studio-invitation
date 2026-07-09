@@ -39,8 +39,10 @@ if ($preview_mode && $wedding_id > 0) {
     $wedding_id = intval($_SESSION['invite_wedding_id']);
 }
 
-// Security: check status
-$stmtStatus = $pdo->prepare("SELECT u.status, w.user_id FROM weddings w JOIN users u ON w.user_id = u.id WHERE w.id = ?");
+// ============================================
+// 1. ආරක්ෂක පියවර: Wedding එකේ Status එක, Package එක සහ Owner කවුදැයි පරීක්ෂා කිරීම
+// ============================================
+$stmtStatus = $pdo->prepare("SELECT u.status, u.package, u.has_guest_gallery, w.user_id FROM weddings w JOIN users u ON w.user_id = u.id WHERE w.id = ?");
 $stmtStatus->execute([$wedding_id]);
 $status_data = $stmtStatus->fetch();
 
@@ -51,11 +53,55 @@ if (!$status_data) {
 $is_owner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $status_data['user_id']);
 $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
 
+// Account එක Active නැත්නම් සහ Couple/Admin නොවේ නම් Block කිරීම
 if ($status_data['status'] !== 'active' && !$is_owner && !$is_admin) {
     die("This invitation is currently pending activation.");
 }
 
-// RSVP Submit කිරීම්
+// Couple එක සතුව Guest Gallery පහසුකම තිබේදැයි පරීක්ෂා කිරීම
+// (Premium plan එකේ තිබේ නම් හෝ Standard/Basic වලදී රු. 2000 add-on එක මිලදී ගෙන තිබේ නම් සක්‍රීය වේ)
+$has_guest_gallery = ($status_data['package'] === 'premium' || intval($status_data['has_guest_gallery']) === 1);
+
+
+// ============================================
+// 2. AJAX: අමුත්තෙක් පින්තූරයක් Upload කල විට ක්‍රියාත්මක වන කොටස
+// ============================================
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] === 'guest_upload_image') {
+    header('Content-Type: application/json');
+    
+    if (!$has_guest_gallery) {
+        echo json_encode(['success' => false, 'message' => 'Guest Gallery is not unlocked for this wedding.']);
+        exit();
+    }
+
+    if (isset($_FILES['guest_image'])) {
+        $file = $_FILES['guest_image'];
+        
+        $target_dir = "uploads/guest_gallery/";
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        
+        $new_filename = uniqid('guest_') . '.webp';
+        $target_file = $target_dir . $new_filename;
+        
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            // guest_gallery table එකට සේව් කිරීම
+            $stmtGuestImg = $pdo->prepare("INSERT INTO guest_gallery (wedding_id, guest_name, image_path) VALUES (?, ?, ?)");
+            $stmtGuestImg->execute([$wedding_id, $guest_name, $target_file]);
+            
+            echo json_encode(['success' => true, 'message' => 'Moment shared successfully!']);
+            exit();
+        }
+    }
+    echo json_encode(['success' => false, 'message' => 'Failed to save image.']);
+    exit();
+}
+
+
+// ============================================
+// 3. RSVP Submit කිරීම්
+// ============================================
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_rsvp'])) {
     if ($guest_id == 0) {
         $msg = "<div class='flash flash-info'>This is a preview — RSVP is disabled.</div>";
@@ -69,6 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_rsvp'])) {
     }
 }
 
+// ============================================
+// 4. දත්ත Database එකෙන් ලබාගැනීම
+// ============================================
 // Fetch Wedding Details
 $stmtWed = $pdo->prepare("SELECT * FROM weddings WHERE id = ?");
 $stmtWed->execute([$wedding_id]);
@@ -79,10 +128,18 @@ $stmtEvents = $pdo->prepare("SELECT * FROM events WHERE wedding_id = ? ORDER BY 
 $stmtEvents->execute([$wedding_id]);
 $wedding_events = $stmtEvents->fetchAll();
 
-// Fetch Gallery Images
+// Fetch Gallery Images (Couple එක දාපු ඒවා)
 $stmtGallery = $pdo->prepare("SELECT * FROM gallery WHERE wedding_id = ? ORDER BY id ASC");
 $stmtGallery->execute([$wedding_id]);
 $gallery_images = $stmtGallery->fetchAll();
+
+// Guest Gallery Shared Images (අමුත්තන් එවූ පින්තූර DB එකෙන් ලබාගැනීම)
+$guest_images = [];
+if ($has_guest_gallery) {
+    $stmtGuestGallery = $pdo->prepare("SELECT * FROM guest_gallery WHERE wedding_id = ? ORDER BY id DESC");
+    $stmtGuestGallery->execute([$wedding_id]);
+    $guest_images = $stmtGuestGallery->fetchAll();
+}
 
 // Fetch Guest Status (මෙහි seats_reserved ද එකතු කර ඇත)
 if ($guest_id == 0) {
