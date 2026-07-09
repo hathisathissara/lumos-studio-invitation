@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS `guests` (
   `rsvp_status` enum('pending','accepted','rejected')  DEFAULT 'pending',
   `guest_note` text  DEFAULT NULL,
   `seats_reserved` int DEFAULT '1',
+  `is_sent` TINYINT(1) DEFAULT '0',
+  `sent_at` DATETIME NULL,
   `invite_token` VARCHAR(20) DEFAULT NULL,
  
   PRIMARY KEY (`id`),
@@ -81,15 +83,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `refund_status` ENUM('none', 'pending', 'approved', 'details_submitted', 'rejected', 'completed') DEFAULT 'none',
   `refund_bank_details` TEXT NULL,
   `refund_reason` TEXT NULL,
+  `package` ENUM('basic', 'standard', 'premium') DEFAULT 'basic';
+  `has_guest_gallery` TINYINT(1) DEFAULT 0;
+  `upgrade_slip` VARCHAR(255) NULL;
+  `pending_upgrade_plan` VARCHAR(100) NULL;
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 );
 
-ALTER TABLE users ADD COLUMN package ENUM('basic', 'standard', 'premium') DEFAULT 'basic';
-ALTER TABLE users ADD COLUMN has_guest_gallery TINYINT(1) DEFAULT 0;
-ALTER TABLE users ADD COLUMN upgrade_slip VARCHAR(255) NULL;
-ALTER TABLE users ADD COLUMN pending_upgrade_plan VARCHAR(100) NULL;
-ALTER TABLE guests ADD COLUMN is_sent TINYINT(1) DEFAULT 0 AFTER seats_reserved, ADD COLUMN sent_at DATETIME NULL AFTER is_sent;
+
+
 -- Table structure for table `weddings`
 --
 
