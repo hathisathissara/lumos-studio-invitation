@@ -88,11 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['bank_slip'])) {
 // 5. Handle UPGRADE Slip Submission (දැනටමත් සක්‍රීය ගිණුමක Upgrade slip එකක් එවද්දී)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upgrade_slip_file'])) {
     $file = $_FILES['upgrade_slip_file'];
-    $upgrade_target_package = $_POST['upgrade_package'] ?? 'standard';
-    $upgrade_target_gallery = isset($_POST['upgrade_add_gallery']) ? 1 : 0;
-    if ($upgrade_target_package === 'premium') $upgrade_target_gallery = 1;
     
-    $pending_plan_str = $upgrade_target_package . "|" . $upgrade_target_gallery;
+    // Unified option එක කියවා ගැනීම (e.g. "standard|1")
+    $target_str = $_POST['upgrade_package_target'] ?? 'standard|0';
 
     $target_dir = "../uploads/slips/";
     if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
@@ -107,9 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upgrade_slip_file']))
         if (move_uploaded_file($file['tmp_name'], $target_file)) {
             $db_path = "uploads/slips/" . $new_filename;
             
-            // upgrade_slip සහ pending_upgrade_plan update කරයි (status එක active පිටම තබයි!)
+            // upgrade_slip සහ pending_upgrade_plan update කරයි!
             $stmt = $pdo->prepare("UPDATE users SET upgrade_slip = ?, pending_upgrade_plan = ? WHERE id = ?");
-            if ($stmt->execute([$db_path, $pending_plan_str, $user_id])) {
+            if ($stmt->execute([$db_path, $target_str, $user_id])) {
                 $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Upgrade slip submitted! We will process your upgrade shortly. Your current invitation remains LIVE.</div>";
             }
         } else {
@@ -128,7 +126,7 @@ $user_data = $stmtGetSlip->fetch();
 $couple_name = !empty($user_data['name']) ? $user_data['name'] : ($_SESSION['user_name'] ?? 'Couple');
 $couple_email = $user_data['email'] ?? '';
 
-// වර්තමාන පැකේජයේ වටිනාකම හැදීම
+// වර්තමාන පැකේජයේ මුළු වටිනාකම හැදීම
 $current_val = 2500;
 if ($user_data['package'] === 'standard') $current_val = 5000;
 if ($user_data['package'] === 'premium') $current_val = 10000;
@@ -171,7 +169,7 @@ require 'layouts/header.php';
     .pkg-desc { font-size: 0.78rem; color: #9ea3b0; margin-bottom: 12px; }
     .pkg-price { font-size: 1.6rem; font-weight: 800; color: #c9a96e; line-height: 1; margin-bottom: 16px; }
     .pkg-price span { font-size: 0.8rem; font-weight: 500; color: #9ea3b0; }
-    .pkg-features { list-style: none; padding: 0; margin: 0; text-align: left; }
+    .pkg-features { list-style: none; text-align: left; display: flex; flex-direction: column; gap: 8px; }
     .pkg-features li { font-size: 0.78rem; color: #4a5568; padding: 5px 0; display: flex; align-items: center; gap: 8px; }
     .pkg-features li i { color: #22c55e; font-size: 0.8rem; }
 
@@ -228,13 +226,14 @@ require 'layouts/header.php';
 <div class="payment-wrapper">
     <?php if ($msg) echo $msg; ?>
 
-    <!-- 1. NOTIFICATION: REFUND APPROVED -->
+    <!-- 1. NOTIFICATION: REFUND APPROVED ➡️ ASKING FOR BANK DETAILS -->
     <?php if ($user_data['status'] === 'pending' && $user_data['refund_status'] === 'approved'): ?>
         <div class="card card-custom bg-white p-4 text-start mb-4 border-success">
             <div class="active-icon" style="color:#22c55e; background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.2); margin:0 auto 20px;"><i class="fas fa-check-circle"></i></div>
             <h4 class="fw-bold text-success text-center">Refund Approved! 💸</h4>
             <p class="text-muted small text-center">We have approved your refund request. Please provide your bank account details below so we can process your transfer reversal instantly.</p>
             
+            <!-- බැංකු විස්තර ලබාගන්නා Form එක -->
             <form id="bankDetailsForm" class="mt-4">
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -276,7 +275,7 @@ require 'layouts/header.php';
         <div class="card card-custom bg-white p-4 text-center mb-4 border-success">
             <div class="active-icon" style="color:#16a34a; background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.2);"><i class="fas fa-receipt"></i></div>
             <h4 class="fw-bold text-success">Refund Completed! 💸</h4>
-            <p class="text-muted small">Your Rs. 1000 refund has been successfully transferred to your bank account. We appreciate your journey with us.</p>
+            <p class="text-muted small">Your refund has been successfully transferred to your bank account. We appreciate your journey with us.</p>
             <a href="payment.php?dismiss_refund=1" class="btn-dismiss-refund">Okay, Close Banner</a>
         </div>
     <?php endif; ?>
@@ -306,7 +305,7 @@ require 'layouts/header.php';
             </a>
             
             <!-- Upgrade Button: Premium නොවන අයට පමණක් පෙන්වයි -->
-            <?php if ($user_data['package'] !== 'premium'): ?>
+            <?php if ($user_data['package'] !== 'premium' || $user_data['has_guest_gallery'] == 0): ?>
                 <button class="btn-upgrade-toggle" onclick="toggleUpgradeForm()">
                     <i class="fas fa-arrow-circle-up" style="color:#c9a96e;"></i> Upgrade Plan / Add-ons
                 </button>
@@ -329,7 +328,7 @@ require 'layouts/header.php';
         </div>
     <?php endif; ?>
 
-    <!-- 7. PENDING UPGRADE BANNER (upgrade එකක් කරලා review එකේ තියෙන කොට) -->
+    <!-- 7. PENDING UPGRADE BANNER -->
     <?php if (!empty($user_data['pending_upgrade_plan'])): ?>
         <div class="alert alert-info text-center rounded-3 p-4 mb-4">
             <h5 class="fw-bold" style="color:#1a1a2e;"><i class="fas fa-clock"></i> Upgrade Request Under Review</h5>
@@ -338,7 +337,7 @@ require 'layouts/header.php';
     <?php endif; ?>
 
     <!-- DYNAMIC UPGRADE FORM CARD (Active State එකේදී පමණක් පෙනේ) -->
-    <?php if ($user_data['package'] !== 'premium'): ?>
+    <?php if ($user_data['package'] !== 'premium' || $user_data['has_guest_gallery'] == 0): ?>
     <div class="card card-custom bg-white p-4 mb-4" id="upgrade-form-card" style="display: none; animation: slideDown 0.3s ease-out;">
         <h5 class="mb-3 text-start" style="color:#1a1a2e;"><i class="fas fa-arrow-circle-up me-2" style="color:#c9a96e;"></i> Upgrade Your Package</h5>
         <p class="text-muted small text-start mb-4">ඔබට අවශ්‍ය නව පැකේජය තෝරා, පහත දැක්වෙන <strong>මිල වෙනස පමණක් (Upgrade Balance)</strong> අපගේ බැංකු ගිණුමට තැන්පත් කර රිසිට්පත මෙතැනින් යොමු කරන්න.</p>
@@ -348,34 +347,36 @@ require 'layouts/header.php';
             <input type="hidden" id="current_val" value="<?php echo $current_val; ?>">
             
             <div class="row text-start">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold small text-muted">Choose Upgrade Path</label>
-                    <select name="upgrade_package" id="upgrade_package" class="form-control-custom" onchange="calculateUpgradePrice()" required>
-                        <?php if ($user_data['package'] === 'basic'): ?>
-                            <option value="standard" data-price="5000">Upgrade to Standard Plan (Max 300 Guests)</option>
-                            <option value="premium" data-price="10000">Upgrade to Premium Plan (Unlimited Guests & Guest Gallery)</option>
-                        <?php elseif ($user_data['package'] === 'standard'): ?>
-                            <option value="premium" data-price="10000">Upgrade to Premium Plan (Unlimited Guests & Guest Gallery)</option>
+                <div class="col-12 mb-3">
+                    <label class="form-label fw-bold small text-muted text-uppercase" style="font-size:0.7rem; letter-spacing:0.8px;">Choose Upgrade Target (පැකේජය තෝරන්න)</label>
+                    <select name="upgrade_package_target" id="upgrade_package_target" class="form-control-custom" onchange="calculateUpgradePrice()" required>
+                        <?php 
+                        $pkg = $user_data['package'];
+                        $gallery = intval($user_data['has_guest_gallery']);
+                        ?>
+                        <?php if ($pkg === 'basic' && $gallery === 0): ?>
+                            <option value="basic|1" data-price="4500">Buy Guest Gallery Add-on Only (+ Rs. 2,000)</option>
+                            <option value="standard|0" data-price="5000">Upgrade to Standard Plan (Max 300 Guests) (+ Rs. 2,500)</option>
+                            <option value="standard|1" data-price="7000">Upgrade to Standard Plan + Guest Gallery (+ Rs. 4,500)</option>
+                            <option value="premium|1" data-price="10000">Upgrade to Premium Plan (Unlimited Guests + Gallery) (+ Rs. 7,500)</option>
+                        <?php elseif ($pkg === 'basic' && $gallery === 1): ?>
+                            <option value="standard|1" data-price="7000">Upgrade to Standard Plan (Keep Gallery) (+ Rs. 2,500)</option>
+                            <option value="premium|1" data-price="10000">Upgrade to Premium Plan (Unlimited) (+ Rs. 5,500)</option>
+                        <?php elseif ($pkg === 'standard' && $gallery === 0): ?>
+                            <option value="standard|1" data-price="7000">Buy Guest Gallery Add-on Only (+ Rs. 2,000)</option>
+                            <option value="premium|1" data-price="10000">Upgrade to Premium Plan (Unlimited + Gallery) (+ Rs. 5,000)</option>
+                        <?php elseif ($pkg === 'standard' && $gallery === 1): ?>
+                            <option value="premium|1" data-price="10000">Upgrade to Premium Plan (Unlimited) (+ Rs. 3,000)</option>
                         <?php endif; ?>
                     </select>
                 </div>
-                
-                <!-- Add-on selection (Basic/Standard වලදී පමණක් add-on එක නැත්නම් පෙන්වයි) -->
-                <?php if ($user_data['has_guest_gallery'] == 0): ?>
-                <div class="col-md-6 mb-3 d-flex align-items-center" id="upgrade-gallery-wrapper" style="margin-top: 24px;">
-                    <div class="form-check form-switch fs-5">
-                        <input class="form-check-input" type="checkbox" name="upgrade_add_gallery" id="upgrade_add_gallery" onchange="calculateUpgradePrice()" style="cursor:pointer;">
-                        <label class="form-check-label small fw-bold text-dark" style="margin-left:8px;">Add Guest Gallery Support (+ Rs. 2,000)</label>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
 
             <!-- Calculated Balance Box -->
             <div class="bank-details mt-2">
                 <div class="bank-details-title">Upgrade Payout Summary</div>
                 <div class="bank-row">
-                    <span class="bank-row-label">Target Value</span>
+                    <span class="bank-row-label">Target Package Value</span>
                     <span class="bank-row-value" id="target-value-display">Rs. 5,000</span>
                 </div>
                 <div class="bank-row">
@@ -388,7 +389,7 @@ require 'layouts/header.php';
                 </div>
             </div>
 
-            <!-- Wamp standard slip upload inside active/upgrade state -->
+            <!-- Upgrade Slip Upload -->
             <?php if (empty($user_data['pending_upgrade_plan'])): ?>
             <div class="mb-3 text-start">
                 <label class="form-label fw-bold small text-muted text-uppercase" style="font-size:0.7rem; letter-spacing:0.8px;">Upload Upgrade Receipt / Bank Slip</label>
@@ -417,7 +418,7 @@ require 'layouts/header.php';
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold small text-uppercase text-muted" style="font-size:0.7rem; letter-spacing:0.8px;">Plan Purchased</label>
-                    <input type="text" id="ref_plan" class="form-control-custom" value="Standard Activation - Rs. 1000" readonly>
+                    <input type="text" id="ref_plan" class="form-control-custom" value="<?php echo ucfirst($user_data['package'] ?? 'basic') . ($user_data['has_guest_gallery'] ? ' + Guest Gallery' : ''); ?> Plan" readonly>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold small text-uppercase text-muted" style="font-size:0.7rem; letter-spacing:0.8px;">Date of Payment</label>
@@ -475,7 +476,7 @@ require 'layouts/header.php';
                     <div class="pkg-price">Rs. 5,000 <span>/one-time</span></div>
                     <ul class="pkg-features">
                         <li><i class="fas fa-check-circle"></i> 2 Invitation Templates</li>
-                        <li><i class="fas fa-check-circle"></i> Up to 300 guests (seats)</li>
+                        <li><i class="fas fa-check-circle"></i> <strong>Up to 300 guests (seats)</strong></li>
                         <li><i class="fas fa-check-circle"></i> RSVP & Open Tracking</li>
                         <li><i class="fas fa-check-circle"></i> Countdown, Maps, Calendar</li>
                     </ul>
@@ -592,8 +593,8 @@ require 'layouts/header.php';
             <button type="submit" class="btn-upload">
                 <i class="fas fa-upload"></i> Submit Bank Slip
             </button>
-        </form>
-    </div>
+        </div>
+    </form>
     <?php endif; ?>
 </div>
 
@@ -619,39 +620,20 @@ function toggleUpgradeForm() {
     }
 }
 
-// Dynamic Upgrade Balance Price Calculator
+// Dynamic Upgrade Balance Price Calculator (Highly Optimized!)
 function calculateUpgradePrice() {
     const currentVal = parseInt(document.getElementById('current_val').value) || 2500;
-    const upgradePackageSelect = document.getElementById('upgrade_package');
-    if (!upgradePackageSelect) return;
+    const upgradeSelect = document.getElementById('upgrade_package_target');
+    if (!upgradeSelect) return;
 
-    const selectedOption = upgradePackageSelect.options[upgradePackageSelect.selectedIndex];
-    let targetPrice = parseInt(selectedOption.getAttribute('data-price')) || 5000;
+    const selectedOption = upgradeSelect.options[upgradeSelect.selectedIndex];
+    const targetPrice = parseInt(selectedOption.getAttribute('data-price')) || 5000;
     
-    // Checkbox add-on check
-    const addonCheckbox = document.getElementById('upgrade_add_gallery');
-    const targetPackageValue = upgradePackageSelect.value;
-    
-    if (addonCheckbox && addonCheckbox.checked && targetPackageValue !== 'premium') {
-        targetPrice += 2000; // Add guest gallery fee if checked
-    }
-
-    // Balance = Target - Current Credit
     let balance = targetPrice - currentVal;
-    if (balance < 0) balance = 0; // Negative check safety net
+    if (balance < 0) balance = 0;
 
     document.getElementById('target-value-display').textContent = `Rs. ${targetPrice.toLocaleString()}`;
     document.getElementById('upgrade-amount-display').textContent = `Rs. ${balance.toLocaleString()}`;
-    
-    // Auto-disable addon checkbox if upgrade target is Premium
-    if (targetPackageValue === 'premium' && addonCheckbox) {
-        addonCheckbox.checked = true;
-        addonCheckbox.disabled = true;
-        document.getElementById('upgrade-gallery-wrapper').style.opacity = '0.5';
-    } else if (addonCheckbox) {
-        addonCheckbox.disabled = false;
-        document.getElementById('upgrade-gallery-wrapper').style.opacity = '1';
-    }
 }
 
 // Toggle Refund Form
@@ -665,7 +647,7 @@ function toggleRefundForm() {
     }
 }
 
-// Package Selector
+// Package Selector (For Initial Activations)
 function selectPackage(pkg) {
     const radio = document.getElementById('pkg-' + pkg);
     if (radio) radio.checked = true;

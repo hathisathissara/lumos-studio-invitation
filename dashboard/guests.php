@@ -159,15 +159,36 @@ require 'layouts/header.php';
     .flash-warn    { background: rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); color: #d97706; }
     .flash-info    { background: rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.25); color: #2563eb; }
 
-    .add-guest-card { background: white; border: 1px solid #e8ecf0; border-radius: 16px; padding: 28px; position: sticky; top: 80px; }
-    .add-guest-card h5 { font-size: 0.95rem; font-weight: 700; color: #1a1a2e; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; }
     .form-field { margin-bottom: 16px; }
     .form-field label { display: block; font-size: 0.73rem; font-weight: 600; color: #9ea3b0; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 7px; }
     .form-field input, .form-field select { width: 100%; border: 1px solid #e8ecf0; border-radius: 10px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: #1a1a2e; background: #fafbfc; outline: none; transition: border-color 0.2s; }
     .form-field input:focus, .form-field select:focus { border-color: #c9a96e; background: #fffdf9; }
     .form-field .hint { font-size: 0.73rem; color: #9ea3b0; margin-top: 4px; }
     .btn-add-guest { width: 100%; background: linear-gradient(135deg, #1a1a2e, #2d2d50); color: #c9a96e; border: none; border-radius: 10px; padding: 12px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s; }
-    .btn-add-guest:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,26,46,0.3); }
+    .btn-add-guest:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,26,46,0.3); color: #c9a96e; }
+
+    /* Page header / toolbar */
+    .page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    .page-toolbar h1 { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
+    .page-toolbar p { font-size: 0.85rem; color: #9ea3b0; margin: 0; }
+    .btn-open-add-guest {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, #c9a96e, #a07840);
+        color: #0f0f1a; border: none; border-radius: 10px;
+        padding: 11px 20px; font-family: 'Inter', sans-serif;
+        font-size: 0.85rem; font-weight: 700; cursor: pointer;
+        transition: all 0.2s; white-space: nowrap; box-shadow: 0 4px 14px rgba(201,169,110,0.25);
+    }
+    .btn-open-add-guest:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(201,169,110,0.35); }
+
+    /* Modal styling to match theme */
+    #addGuestModal .modal-content { border-radius: 18px; border: none; overflow: hidden; }
+    #addGuestModal .modal-header { background: linear-gradient(135deg, #1a1a2e, #2d2d50); border: none; padding: 22px 26px; }
+    #addGuestModal .modal-header .modal-title { color: #f8f5ef; font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; }
+    #addGuestModal .modal-header .modal-title i { color: #c9a96e; }
+    #addGuestModal .btn-close { filter: invert(1) grayscale(1) brightness(2); opacity: 0.7; }
+    #addGuestModal .modal-body { padding: 26px; }
+    #addGuestModal .modal-footer { border: none; padding: 0 26px 26px; }
 
     .guest-list-header { background: white; border: 1px solid #e8ecf0; border-radius: 16px 16px 0 0; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .guest-count { font-size: 0.85rem; font-weight: 700; color: #1a1a2e; }
@@ -227,52 +248,72 @@ require 'layouts/header.php';
 
 <?php if ($msg) echo $msg; ?>
 
-<div class="row g-3">
-    <!-- Left: Add Guest Form -->
-    <div class="col-lg-4">
-        <div class="add-guest-card">
-            <h5><i class="fas fa-user-plus" style="color:#c9a96e; margin-right:8px;"></i> Add New Guest</h5>
+<!-- Page toolbar -->
+<div class="page-toolbar">
+    <div>
+        <h1>Guest List</h1>
+        <p>Manage invitations, track RSVPs, and keep your seat count on point.</p>
+    </div>
+    <button type="button" class="btn-open-add-guest" data-bs-toggle="modal" data-bs-target="#addGuestModal">
+        <i class="fas fa-user-plus"></i> Add New Guest
+    </button>
+</div>
+
+<!-- Add Guest Modal -->
+<div class="modal fade" id="addGuestModal" tabindex="-1" aria-labelledby="addGuestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addGuestModalLabel"><i class="fas fa-user-plus"></i> Add New Guest</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form method="POST" action="guests.php">
-                <div class="form-field">
-                    <label>Guest Name <span style="color:#c9a96e;">*</span></label>
-                    <input type="text" name="name" placeholder="e.g. Kamal Perera" required>
+                <div class="modal-body">
+                    <div class="form-field">
+                        <label>Guest Name <span style="color:#c9a96e;">*</span></label>
+                        <input type="text" name="name" placeholder="e.g. Kamal Perera" required>
+                    </div>
+                    <div class="form-field">
+                        <label>WhatsApp Number <span style="color:#c9a96e;">*</span></label>
+                        <input type="text" name="whatsapp_number" placeholder="e.g. 0771234567" required>
+                        <div class="hint">Guests enter this to open their invitation</div>
+                    </div>
+                    <div class="form-field">
+                        <label>Category</label>
+                        <select name="category">
+                            <option value="Family">👨‍👩‍👧 Family</option>
+                            <option value="Friends">👥 Friends</option>
+                            <option value="Office">💼 Office</option>
+                            <option value="VIP">⭐ VIP</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Side</label>
+                        <select name="side">
+                            <option value="Bride">Bride's Side</option>
+                            <option value="Groom">Groom's Side</option>
+                            <option value="Both">Both Sides</option>
+                        </select>
+                    </div>
+                    <div class="form-field" style="margin-bottom:0;">
+                        <label>Seats Reserved (ආසන ගණන)</label>
+                        <input type="number" name="seats_reserved" value="1" min="1" required>
+                        <div class="hint">වෙන් කර ඇති උපරිම ආසන ගණන</div>
+                    </div>
                 </div>
-                <div class="form-field">
-                    <label>WhatsApp Number <span style="color:#c9a96e;">*</span></label>
-                    <input type="text" name="whatsapp_number" placeholder="e.g. 0771234567" required>
-                    <div class="hint">Guests enter this to open their invitation</div>
+                <div class="modal-footer">
+                    <button type="submit" name="add_guest" class="btn-add-guest">
+                        <i class="fas fa-plus" style="margin-right:6px;"></i> Add to Guest List
+                    </button>
                 </div>
-                <div class="form-field">
-                    <label>Category</label>
-                    <select name="category">
-                        <option value="Family">👨‍👩‍👧 Family</option>
-                        <option value="Friends">👥 Friends</option>
-                        <option value="Office">💼 Office</option>
-                        <option value="VIP">⭐ VIP</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Side</label>
-                    <select name="side">
-                        <option value="Bride">Bride's Side</option>
-                        <option value="Groom">Groom's Side</option>
-                        <option value="Both">Both Sides</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label>Seats Reserved (ආසන ගණන)</label>
-                    <input type="number" name="seats_reserved" value="1" min="1" required>
-                    <div class="hint">වෙන් කර ඇති උපරිම ආසන ගණන</div>
-                </div>
-                <button type="submit" name="add_guest" class="btn-add-guest">
-                    <i class="fas fa-plus" style="margin-right:6px;"></i> Add to Guest List
-                </button>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Right: Guest Table -->
-    <div class="col-lg-8">
+<!-- Guest Table -->
+<div class="row g-3">
+    <div class="col-12">
         <div class="guest-list-header">
             <div class="guest-count">
                 Total Guests (Seats)
@@ -422,7 +463,7 @@ require 'layouts/header.php';
             <?php else: ?>
             <div class="empty-state">
                 <div><i class="fas fa-users"></i></div>
-                <p>No guests yet. Add your first guest using the form.</p>
+                <p>No guests yet. Click "Add New Guest" above to get started.</p>
             </div>
             <?php endif; ?>
         </div>

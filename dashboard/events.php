@@ -210,46 +210,89 @@ require 'layouts/header.php';
     }
     .empty-events i { font-size: 2.5rem; opacity: 0.3; margin-bottom: 14px; display: block; }
     .empty-events p { font-size: 0.9rem; }
+
+    /* Page toolbar */
+    .page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    .page-toolbar h1 { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
+    .page-toolbar p { font-size: 0.85rem; color: #9ea3b0; margin: 0; }
+    .btn-open-add-event {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, #c9a96e, #a07840);
+        color: #0f0f1a; border: none; border-radius: 10px;
+        padding: 11px 20px; font-family: 'Inter', sans-serif;
+        font-size: 0.85rem; font-weight: 700; cursor: pointer;
+        transition: all 0.2s; white-space: nowrap; box-shadow: 0 4px 14px rgba(201,169,110,0.25);
+    }
+    .btn-open-add-event:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(201,169,110,0.35); }
+
+    /* Modal styling to match theme */
+    #addEventModal .modal-content { border-radius: 18px; border: none; overflow: hidden; }
+    #addEventModal .modal-header { background: linear-gradient(135deg, #1a1a2e, #2d2d50); border: none; padding: 22px 26px; }
+    #addEventModal .modal-header .modal-title { color: #f8f5ef; font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 10px; }
+    #addEventModal .modal-header .modal-title i { color: #c9a96e; }
+    #addEventModal .btn-close { filter: invert(1) grayscale(1) brightness(2); opacity: 0.7; }
+    #addEventModal .modal-body { padding: 26px; }
+    #addEventModal .modal-footer { border: none; padding: 0 26px 26px; }
 </style>
 
 <?php if ($msg) echo $msg; ?>
 
-<div class="row g-3">
-    <!-- Left: Add Form -->
-    <div class="col-lg-4">
-        <div class="form-card">
-            <h5><i class="fas fa-calendar-plus"></i> Add Wedding Event</h5>
+<!-- Page toolbar -->
+<div class="page-toolbar">
+    <div>
+        <h1>Wedding Events</h1>
+        <p>Add every ceremony guests need to know about — Poruwa, Reception, Church, Homecoming.</p>
+    </div>
+    <button type="button" class="btn-open-add-event" data-bs-toggle="modal" data-bs-target="#addEventModal">
+        <i class="fas fa-calendar-plus"></i> Add Event
+    </button>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel"><i class="fas fa-calendar-plus"></i> Add Wedding Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
             <form method="POST" action="events.php">
-                <div class="form-field">
-                    <label>Event Name <span style="color:#c9a96e;">*</span></label>
-                    <input type="text" name="event_name" placeholder="e.g. Poruwa Ceremony, Reception" required>
+                <div class="modal-body">
+                    <div class="form-field">
+                        <label>Event Name <span style="color:#c9a96e;">*</span></label>
+                        <input type="text" name="event_name" placeholder="e.g. Poruwa Ceremony, Reception" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Date & Time <span style="color:#c9a96e;">*</span></label>
+                        <input type="datetime-local" name="event_date_time" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Venue / Location <span style="color:#c9a96e;">*</span></label>
+                        <input type="text" name="location_name" placeholder="Hotel or hall name" required>
+                    </div>
+                    <div class="form-field" style="margin-bottom:0;">
+                        <label>Google Maps Link</label>
+                        <input type="url" name="google_map_link" placeholder="https://maps.google.com/...">
+                        <div class="hint">Paste the share link from Google Maps</div>
+                    </div>
                 </div>
-                <div class="form-field">
-                    <label>Date & Time <span style="color:#c9a96e;">*</span></label>
-                    <input type="datetime-local" name="event_date_time" required>
+                <div class="modal-footer">
+                    <button type="submit" name="add_event" class="btn-add">
+                        <i class="fas fa-plus"></i> Add Event
+                    </button>
                 </div>
-                <div class="form-field">
-                    <label>Venue / Location <span style="color:#c9a96e;">*</span></label>
-                    <input type="text" name="location_name" placeholder="Hotel or hall name" required>
-                </div>
-                <div class="form-field">
-                    <label>Google Maps Link</label>
-                    <input type="url" name="google_map_link" placeholder="https://maps.google.com/...">
-                    <div class="hint">Paste the share link from Google Maps</div>
-                </div>
-                <button type="submit" name="add_event" class="btn-add">
-                    <i class="fas fa-plus"></i> Add Event
-                </button>
             </form>
         </div>
     </div>
+</div>
 
-    <!-- Right: Events Grid -->
-    <div class="col-lg-8">
+<!-- Events Grid -->
+<div class="row g-3">
+    <div class="col-12">
         <?php if (count($eventsList) > 0): ?>
         <div class="row g-3">
             <?php foreach ($eventsList as $event): ?>
-            <div class="col-sm-6">
+            <div class="col-sm-6 col-xl-4">
                 <div class="event-card">
                     <div class="event-card-name"><?php echo htmlspecialchars($event['event_name']); ?></div>
                     <div class="event-meta-row">
@@ -285,7 +328,7 @@ require 'layouts/header.php';
         <?php else: ?>
         <div class="empty-events">
             <i class="fas fa-calendar-alt"></i>
-            <p>No events added yet.<br>Add your first event using the form — Poruwa, Reception, Church, Homecoming.</p>
+            <p>No events added yet.<br>Click "Add Event" above to add your first — Poruwa, Reception, Church, Homecoming.</p>
         </div>
         <?php endif; ?>
     </div>

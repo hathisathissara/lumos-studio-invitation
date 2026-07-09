@@ -99,7 +99,7 @@ $current = basename($_SERVER['PHP_SELF']);
             position: fixed;
             top: 0; left: 0; bottom: 0;
             width: var(--sidebar-width);
-            background: var(--sidebar-bg);
+            background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg2) 100%);
             border-right: 1px solid var(--sidebar-border);
             display: flex;
             flex-direction: column;
@@ -107,6 +107,7 @@ $current = basename($_SERVER['PHP_SELF']);
             overflow-y: auto;
             overflow-x: hidden;
             transition: transform 0.3s ease;
+            box-shadow: 14px 0 30px rgba(15, 15, 26, 0.16);
         }
 
         .sidebar-brand {
@@ -186,7 +187,7 @@ $current = basename($_SERVER['PHP_SELF']);
         }
 
         /* Nav sections */
-        .sidebar-nav { padding: 12px 0; flex: 1; }
+        .sidebar-nav { padding: 14px 8px 12px; flex: 1; }
         .nav-section-label {
             padding: 14px 20px 6px;
             font-size: 0.62rem;
@@ -199,7 +200,7 @@ $current = basename($_SERVER['PHP_SELF']);
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 11px 20px;
+            padding: 11px 16px;
             color: var(--sidebar-text);
             text-decoration: none;
             font-size: 0.86rem;
@@ -207,6 +208,8 @@ $current = basename($_SERVER['PHP_SELF']);
             transition: all 0.2s;
             border-left: 3px solid transparent;
             position: relative;
+            border-radius: 12px;
+            margin: 2px 0;
         }
         .nav-item i {
             width: 18px;
@@ -221,7 +224,7 @@ $current = basename($_SERVER['PHP_SELF']);
         }
         .nav-item:hover i { opacity: 1; }
         .nav-item.active {
-            background: var(--sidebar-active);
+            background: linear-gradient(90deg, rgba(201,169,110,0.18), rgba(201,169,110,0.08));
             color: var(--gold);
             border-left-color: var(--gold);
             font-weight: 500;
@@ -252,13 +255,15 @@ $current = basename($_SERVER['PHP_SELF']);
             left: var(--sidebar-width);
             right: 0;
             height: 64px;
-            background: white;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--card-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 32px;
             z-index: 100;
+            box-shadow: 0 8px 24px rgba(15, 15, 26, 0.04);
         }
         .topbar-left {
             display: flex;
@@ -338,7 +343,7 @@ $current = basename($_SERVER['PHP_SELF']);
         .main-content {
             margin-left: var(--sidebar-width);
             margin-top: 64px;
-            padding: 32px;
+            padding: 28px 32px 40px;
             min-height: calc(100vh - 64px);
         }
 
@@ -346,8 +351,8 @@ $current = basename($_SERVER['PHP_SELF']);
         .card-custom {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(15, 15, 26, 0.04);
         }
 
         /* ============ MOBILE TOGGLE ============ */

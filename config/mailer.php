@@ -177,16 +177,17 @@ function send_refund_rejected_mail($to_email, $couple_name) {
     );
 }
 
+
 /**
  * 6) Sent when the admin marks the bank payout as fully completed.
  */
-function send_refund_completed_mail($to_email, $couple_name) {
-    $subject = "Refund Completed - Lumos Studio";
+function send_refund_completed_mail($to_email, $couple_name, $refund_amount) {
+    $subject = "Refund Completed - Lumus Studio";
     
     $body = '
         <p>Dear <strong>' . htmlspecialchars($couple_name) . '</strong>,</p>
         <p>We are pleased to inform you that your refund has been **fully processed and completed**.</p>
-        <p>The activation fee of **Rs. 1000** has been transferred back to the bank account details you provided.</p>
+        <p>Your total activated package and add-on payment value of **Rs. ' . number_format($refund_amount) . '** has been transferred back to the bank account details you provided.</p>
         <p>Please allow some time for the funds to reflect in your account, depending on your bank\'s processing times.</p>
         <p>Thank you for your cooperation throughout this process. We wish you all the very best.</p>';
 

@@ -81,6 +81,83 @@ require 'layouts/header.php';
 ?>
 
 <style>
+    .page-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 24px 28px;
+        background: linear-gradient(135deg, #ffffff 0%, #fcfbf7 100%);
+    }
+    .page-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(201,169,110,0.12);
+        color: #a07840;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 12px;
+    }
+    .page-hero h1 {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0 0 8px;
+    }
+    .page-hero p {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin: 0;
+        line-height: 1.6;
+    }
+    .page-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+    }
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid #e2e8f0;
+    }
+    .countdown-card {
+        min-width: 260px;
+        padding: 16px 18px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #242440 100%);
+        color: #f8f5ef;
+        box-shadow: 0 10px 24px rgba(15, 15, 26, 0.12);
+    }
+    .countdown-card .eyebrow {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: rgba(201,169,110,0.7);
+        margin-bottom: 8px;
+    }
+    .countdown-card .countdown-value {
+        font-size: 1.55rem;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .countdown-card .countdown-caption {
+        font-size: 0.8rem;
+        color: rgba(248,245,239,0.72);
+    }
+
     .stat-card {
         background: white;
         border: 1px solid #e8ecf0;
@@ -245,24 +322,109 @@ require 'layouts/header.php';
         letter-spacing: 1px;
     }
     .cd-sep { font-size: 1.4rem; color: rgba(201,169,110,0.3); margin-top: -6px; }
+
+    @media (max-width: 768px) {
+        .page-hero {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        .countdown-card {
+            width: 100%;
+            min-width: 0;
+        }
+        .link-card-actions {
+            width: 100%;
+        }
+        .btn-copy-link,
+        .link-card-actions a {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+
+    /* Quick actions */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: white;
+        border: 1px solid #e8ecf0;
+        border-radius: 14px;
+        padding: 16px 18px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(15,15,26,0.08);
+        border-color: rgba(201,169,110,0.35);
+    }
+    .quick-action-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .quick-action-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+    .quick-action-sub {
+        font-size: 0.72rem;
+        color: #9ea3b0;
+    }
+    @media (max-width: 900px) {
+        .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+        .quick-actions { grid-template-columns: 1fr; }
+    }
+
+    /* Guest avatar in recent table */
+    .guest-avatar-sm {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c9a96e, #a07840);
+        color: #0f0f1a;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.68rem;
+        font-weight: 700;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    .guest-name-flex { display: flex; align-items: center; }
 </style>
 
 <!-- PAGE HEADER -->
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px;">
+<div class="page-hero card-custom mb-4">
     <div>
-        <h1 style="font-size:1.5rem; font-weight:700; color:#1a1a2e; margin:0;">Welcome back 👋</h1>
-        <p style="color:#9ea3b0; font-size:0.88rem; margin:4px 0 0;"><?php echo htmlspecialchars($user_name); ?> — your wedding dashboard</p>
+        <div class="page-hero-badge"><i class="fas fa-sparkles"></i> Wedding dashboard</div>
+        <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h1>
+        <p>Your planning hub is ready. Review guest activity, share the invitation, and keep momentum going toward your celebration.</p>
+        <div class="page-hero-meta">
+            <span class="status-pill"><i class="fas fa-users"></i> <?php echo $total_guests; ?> guests</span>
+            <span class="status-pill"><i class="fas fa-check-circle"></i> <?php echo $tasks_done; ?>/<?php echo $tasks_total; ?> tasks done</span>
+            <span class="status-pill"><i class="fas fa-heart"></i> RSVP progress live</span>
+        </div>
     </div>
     <?php if ($wedding && $wedding['wedding_date']): ?>
-    <div style="background:white; border:1px solid #e8ecf0; border-radius:14px; padding:14px 20px;">
-        <div style="font-size:0.65rem; color:#9ea3b0; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">Counting down to your day</div>
-        <div class="wedding-countdown" id="dash-countdown">
-            <div class="cd-unit"><span class="cd-num" id="dc-d">--</span><span class="cd-lbl">Days</span></div>
-            <div class="cd-sep">:</div>
-            <div class="cd-unit"><span class="cd-num" id="dc-h">--</span><span class="cd-lbl">Hrs</span></div>
-            <div class="cd-sep">:</div>
-            <div class="cd-unit"><span class="cd-num" id="dc-m">--</span><span class="cd-lbl">Min</span></div>
-        </div>
+    <div class="countdown-card">
+        <div class="eyebrow">Counting down to your day</div>
+        <div class="countdown-value" id="dash-countdown">--</div>
+        <div class="countdown-caption">Days to go</div>
     </div>
     <?php endif; ?>
 </div>
@@ -282,6 +444,38 @@ require 'layouts/header.php';
             <i class="fas fa-copy"></i> Copy Link
         </button>
     </div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="quick-actions">
+    <a href="guests.php" class="quick-action-btn">
+        <div class="quick-action-icon" style="background:rgba(201,169,110,0.12); color:#c9a96e;"><i class="fas fa-user-plus"></i></div>
+        <div>
+            <div class="quick-action-label">Add Guest</div>
+            <div class="quick-action-sub">Grow your guest list</div>
+        </div>
+    </a>
+    <a href="events.php" class="quick-action-btn">
+        <div class="quick-action-icon" style="background:rgba(59,130,246,0.12); color:#3b82f6;"><i class="fas fa-calendar-plus"></i></div>
+        <div>
+            <div class="quick-action-label">Add Event</div>
+            <div class="quick-action-sub">Poruwa, Reception & more</div>
+        </div>
+    </a>
+    <a href="gallery.php" class="quick-action-btn">
+        <div class="quick-action-icon" style="background:rgba(34,197,94,0.12); color:#22c55e;"><i class="fas fa-images"></i></div>
+        <div>
+            <div class="quick-action-label">Upload Photos</div>
+            <div class="quick-action-sub">Share your love story</div>
+        </div>
+    </a>
+    <a href="checklist.php" class="quick-action-btn">
+        <div class="quick-action-icon" style="background:rgba(245,158,11,0.12); color:#d97706;"><i class="fas fa-tasks"></i></div>
+        <div>
+            <div class="quick-action-label">Checklist</div>
+            <div class="quick-action-sub"><?php echo $task_pct; ?>% planning complete</div>
+        </div>
+    </a>
 </div>
 
 <!-- STAT CARDS -->
@@ -356,8 +550,20 @@ require 'layouts/header.php';
                     <tbody>
                         <?php if (count($recent_guests) > 0): ?>
                             <?php foreach ($recent_guests as $guest): ?>
+                            <?php
+                                $g_parts = explode(' ', trim($guest['name']));
+                                $g_initials = '';
+                                foreach (array_slice($g_parts, 0, 2) as $gp) {
+                                    $g_initials .= strtoupper(mb_substr($gp, 0, 1));
+                                }
+                            ?>
                             <tr>
-                                <td style="font-weight:600; color:#1a1a2e;"><?php echo htmlspecialchars($guest['name']); ?></td>
+                                <td style="font-weight:600; color:#1a1a2e;">
+                                    <div class="guest-name-flex">
+                                        <span class="guest-avatar-sm"><?php echo htmlspecialchars($g_initials); ?></span>
+                                        <?php echo htmlspecialchars($guest['name']); ?>
+                                    </div>
+                                </td>
                                 <td><?php echo htmlspecialchars($guest['whatsapp_number']); ?></td>
                                 <td>
                                     <?php if ($guest['is_opened']): ?>
@@ -399,13 +605,12 @@ require 'layouts/header.php';
     const target = new Date("<?php echo $wedding['wedding_date']; ?> 00:00:00").getTime();
     function update() {
         const dist = target - Date.now();
-        if (dist < 0) { document.getElementById('dash-countdown').innerHTML = '<span style="color:#c9a96e;">Just Married! 🎉</span>'; return; }
+        const countdown = document.getElementById('dash-countdown');
+        if (dist < 0) { countdown.textContent = 'Just Married! 🎉'; return; }
         const d = Math.floor(dist / 86400000);
         const h = Math.floor((dist % 86400000) / 3600000);
         const m = Math.floor((dist % 3600000) / 60000);
-        document.getElementById('dc-d').textContent = String(d).padStart(2,'0');
-        document.getElementById('dc-h').textContent = String(h).padStart(2,'0');
-        document.getElementById('dc-m').textContent = String(m).padStart(2,'0');
+        countdown.textContent = `${String(d).padStart(2,'0')}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m`;
     }
     update();
     setInterval(update, 60000);
