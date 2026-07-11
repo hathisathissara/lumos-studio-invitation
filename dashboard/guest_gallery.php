@@ -18,6 +18,16 @@ $user_plan = $stmtStatus->fetch();
 
 $has_guest_gallery = ($user_plan['package'] === 'premium' || intval($user_plan['has_guest_gallery']) === 1);
 
+// AJAX: සජීවීව අමුත්තන් එවූ අලුත් ඡායාරූප check කිරීම
+if ($has_guest_gallery && isset($_GET['action']) && $_GET['action'] === 'live_check') {
+    header('Content-Type: application/json');
+    $stmtLiveImgs = $pdo->prepare("SELECT id, image_path, guest_name, uploaded_at FROM guest_gallery WHERE wedding_id = ? ORDER BY id DESC");
+    $stmtLiveImgs->execute([$wedding_id]);
+    $liveImgs = $stmtLiveImgs->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode(['images' => $liveImgs]);
+    exit();
+}
+
 // 2. අමුත්තෙක් එවූ පින්තූරයක් mකා දැමීම
 if ($has_guest_gallery && isset($_GET['delete_img'])) {
     $img_id = intval($_GET['delete_img']);
@@ -99,10 +109,11 @@ require 'layouts/header.php';
     <!-- 📸 ACTUALLY ACTIVE: PHOTO GRID DISPLAY -->
     <div class="card card-custom bg-white p-4">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h5 class="m-0">Shared Moments (<?php echo count($guest_images); ?> Photos)</h5>
+            <h5 class="m-0">Shared Moments (<span id="gallery-photo-count"><?php echo count($guest_images); ?></span> Photos)</h5>
             <span class="badge bg-success" style="font-size: 0.72rem; padding: 5px 12px;"><i class="fas fa-check-circle"></i> Live Sharing Active</span>
         </div>
 
+        <div id="gallery-photos-wrapper">
         <?php if (count($guest_images) > 0): ?>
             <div class="gallery-grid">
                 <?php foreach ($guest_images as $g_pic): ?>
@@ -143,7 +154,85 @@ require 'layouts/header.php';
                 තවමත් කිසිදු අමුත්තෙක් ඡායාරූපයක් අප්ලෝඩ් කර නැත. <br>විවාහ උත්සවය දවසේදී අමුත්තන් ලින්ක් එකෙන් පින්තූර එවූ පසු ඒවා මෙහි දිස්වේවි!
             </div>
         <?php endif; ?>
+        </div>
     </div>
+<?php endif; ?>
+
+<?php if ($has_guest_gallery): ?>
+<script>
+// =====================================================================
+// 🔥 සජීවීව අමුත්තන් එවූ අලුත් ඡායාරූප Check කිරීම — 6s Polling
+// =====================================================================
+let lastKnownPhotoIds = <?php echo json_encode(array_column($guest_images, 'id')); ?>;
+
+function renderGalleryCard(img) {
+    return `
+        <div class="gallery-item-card">
+            <div class="img-container">
+                <img src="../${img.image_path}" alt="Guest upload">
+            </div>
+            <div class="meta-container">
+                <div class="meta-uploader" title="${img.guest_name}">
+                    <i class="far fa-user text-muted me-1"></i> By ${img.guest_name}
+                </div>
+                <div class="meta-date">
+                    <i class="far fa-clock text-muted me-1"></i> ${img.uploaded_at_formatted}
+                </div>
+            </div>
+            <div class="action-button-row">
+                <a href="download_jpg.php?id=${img.id}" class="btn-download-moment" title="Download as high-quality JPG image">
+                    <i class="fas fa-download"></i> JPG
+                </a>
+                <a href="guest_gallery.php?delete_img=${img.id}"
+                   class="btn-delete-moment"
+                   onclick="return confirm('මෙම ඡායාරූපය සදහටම මකා දැමීමට අවශ්‍ය බව විශ්වාසද?');"
+                   title="Permanently delete from platform">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </a>
+            </div>
+        </div>`;
+}
+
+function fetchGuestGalleryLive() {
+    fetch('guest_gallery.php?action=live_check')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.images) return;
+
+            const newIds = data.images.map(i => i.id);
+            const sameAsBefore = newIds.length === lastKnownPhotoIds.length
+                && newIds.every((id, idx) => id === lastKnownPhotoIds[idx]);
+            if (sameAsBefore) return;
+
+            lastKnownPhotoIds = newIds;
+            document.getElementById('gallery-photo-count').textContent = data.images.length;
+
+            const wrapper = document.getElementById('gallery-photos-wrapper');
+            if (data.images.length === 0) {
+                wrapper.innerHTML = `<div class="text-center text-muted py-5" style="font-style: italic;">
+                    <i class="fas fa-camera-retro mb-2" style="font-size: 2.2rem; opacity: 0.3; display:block; margin: 0 auto;"></i>
+                    තවමත් කිසිදු අමුත්තෙක් ඡායාරූපයක් අප්ලෝඩ් කර නැත. <br>විවාහ උත්සවය දවසේදී අමුත්තන් ලින්ක් එකෙන් පින්තූර එවූ පසු ඒවා මෙහි දිස්වේවි!
+                </div>`;
+                return;
+            }
+
+            let html = '<div class="gallery-grid">';
+            data.images.forEach(img => {
+                const d = new Date(img.uploaded_at.replace(' ', 'T'));
+                img.uploaded_at_formatted = isNaN(d.getTime()) ? '' : d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+                html += renderGalleryCard(img);
+            });
+            html += '</div>';
+            wrapper.innerHTML = html;
+
+            if (typeof showToast === 'function') {
+                showToast('📸 New guest photo received!');
+            }
+        })
+        .catch(err => console.error('Error syncing guest gallery:', err));
+}
+setInterval(fetchGuestGalleryLive, 6000);
+</script>
 <?php endif; ?>
 
 <?php require 'layouts/footer.php'; ?>

@@ -11,6 +11,65 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 $msg = "";
 
+// AJAX: සජීවීව (Live) Refund Phase Counts + Table Rows Update කිරීම
+if (isset($_GET['action']) && $_GET['action'] === 'live_counts') {
+    header('Content-Type: application/json');
+
+    // Phase 1: Pending refund requests (full row data, same as main query below)
+    $stmtLiveRequests = $pdo->prepare("SELECT users.id as user_id, users.name, users.email, users.payment_slip, users.refund_requested_at, users.refund_reason, weddings.id as wedding_id
+                                        FROM users
+                                        JOIN weddings ON users.id = weddings.user_id
+                                        WHERE users.refund_status = 'pending' AND users.refund_requested_at IS NOT NULL
+                                        ORDER BY users.refund_requested_at DESC");
+    $stmtLiveRequests->execute();
+    $liveRequests = $stmtLiveRequests->fetchAll();
+
+    $liveRequestsFormatted = [];
+    foreach ($liveRequests as $ref) {
+        $stmtCheckGuest = $pdo->prepare("SELECT COUNT(*) as c FROM guests WHERE wedding_id = ? AND (is_opened = 1 OR rsvp_status != 'pending')");
+        $stmtCheckGuest->execute([$ref['wedding_id']]);
+        $openedGuestsCount = (int) ($stmtCheckGuest->fetch()['c'] ?? 0);
+
+        $liveRequestsFormatted[] = [
+            'user_id' => (int) $ref['user_id'],
+            'name' => htmlspecialchars($ref['name']),
+            'email' => htmlspecialchars($ref['email']),
+            'requested_at' => date('d M Y, h:i A', strtotime($ref['refund_requested_at'])),
+            'reason' => htmlspecialchars($ref['refund_reason']),
+            'is_eligible' => ($openedGuestsCount == 0),
+            'opened_count' => $openedGuestsCount,
+            'payment_slip' => !empty($ref['payment_slip']) ? htmlspecialchars($ref['payment_slip']) : null,
+        ];
+    }
+
+    // Phase 2: Pending bank payouts (full row data)
+    $stmtLivePayouts = $pdo->prepare("SELECT users.id as user_id, users.name, users.email, users.refund_bank_details, users.payment_slip
+                                       FROM users
+                                       WHERE users.refund_status = 'details_submitted'
+                                       ORDER BY users.id DESC");
+    $stmtLivePayouts->execute();
+    $livePayouts = $stmtLivePayouts->fetchAll();
+
+    $livePayoutsFormatted = [];
+    foreach ($livePayouts as $pay) {
+        $livePayoutsFormatted[] = [
+            'user_id' => (int) $pay['user_id'],
+            'name' => htmlspecialchars($pay['name']),
+            'email' => htmlspecialchars($pay['email']),
+            'bank_details' => htmlspecialchars($pay['refund_bank_details']),
+            'payment_slip' => !empty($pay['payment_slip']) ? htmlspecialchars($pay['payment_slip']) : null,
+        ];
+    }
+
+    echo json_encode([
+        'pending_count' => count($liveRequestsFormatted),
+        'payout_count' => count($livePayoutsFormatted),
+        'refund_requests' => $liveRequestsFormatted,
+        'payouts' => $livePayoutsFormatted,
+    ]);
+    exit();
+}
+
 // 1. Action: Reject Refund (Refund එක ප්‍රතික්ෂේප කිරීම)
 if (isset($_GET['action']) && $_GET['action'] === 'reject' && isset($_GET['uid'])) {
     $u_id = intval($_GET['uid']);
@@ -221,7 +280,7 @@ require 'layouts/header.php';
         <div class="refund-stat">
             <div class="refund-stat-icon" style="background:rgba(239,68,68,0.12); color:var(--danger);"><i class="fas fa-exclamation-circle"></i></div>
             <div>
-                <div class="refund-stat-num"><?php echo count($refundRequests); ?></div>
+                <div class="refund-stat-num" id="live-refund-stat-pending"><?php echo count($refundRequests); ?></div>
                 <div class="refund-stat-label">Pending Reviews</div>
             </div>
         </div>
@@ -230,7 +289,7 @@ require 'layouts/header.php';
         <div class="refund-stat">
             <div class="refund-stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success);"><i class="fas fa-university"></i></div>
             <div>
-                <div class="refund-stat-num"><?php echo count($payoutsList); ?></div>
+                <div class="refund-stat-num" id="live-refund-stat-payout"><?php echo count($payoutsList); ?></div>
                 <div class="refund-stat-label">Awaiting Payout</div>
             </div>
         </div>
@@ -241,7 +300,7 @@ require 'layouts/header.php';
 <div class="table-card border" style="border-color: rgba(239,68,68,0.2) !important;">
     <div class="table-card-header text-danger" style="background: rgba(239,68,68,0.04);">
         <h5><i class="fas fa-exclamation-circle"></i> Phase 1: Pending Refund Reviews (අනුමැතිය අපේක්ෂාවෙන්)
-            <span class="header-count" style="color:var(--danger);"><?php echo count($refundRequests); ?></span>
+            <span class="header-count" id="live-refund-pending-count" style="color:var(--danger);"><?php echo count($refundRequests); ?></span>
         </h5>
     </div>
 
@@ -256,7 +315,7 @@ require 'layouts/header.php';
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="live-refund-requests-tbody">
                 <?php if (count($refundRequests) > 0): ?>
                     <?php foreach ($refundRequests as $ref):
                         $stmtCheckGuest = $pdo->prepare("SELECT COUNT(*) as c FROM guests WHERE wedding_id = ? AND (is_opened = 1 OR rsvp_status != 'pending')");
@@ -325,7 +384,7 @@ require 'layouts/header.php';
 <div class="table-card border" style="border-color: rgba(16,185,129,0.2) !important;">
     <div class="table-card-header text-success" style="background: rgba(16,185,129,0.04);">
         <h5><i class="fas fa-university"></i> Phase 2: Pending Bank Payouts (බැංකු විස්තර ලැබී ඇති - ගෙවීම් කිරීමට ඇති ගිණුම්)
-            <span class="header-count" style="color:var(--success);"><?php echo count($payoutsList); ?></span>
+            <span class="header-count" id="live-refund-payout-count" style="color:var(--success);"><?php echo count($payoutsList); ?></span>
         </h5>
     </div>
 
@@ -339,7 +398,7 @@ require 'layouts/header.php';
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="live-payouts-tbody">
                 <?php if (count($payoutsList) > 0): ?>
                     <?php foreach ($payoutsList as $pay): ?>
                     <tr>
@@ -380,5 +439,138 @@ require 'layouts/header.php';
         </table>
     </div>
 </div>
+
+<script>
+// =====================================================================
+// 🔥 සජීවීව Refund Phase Counts Update කිරීම — 5s Polling (Table rows untouched)
+// =====================================================================
+function updateLiveText(id, newValue) {
+    const el = document.getElementById(id);
+    if (el && el.textContent != newValue) {
+        el.style.transition = 'opacity 0.2s';
+        el.style.opacity = '0.2';
+        setTimeout(() => {
+            el.textContent = newValue;
+            el.style.opacity = '1';
+        }, 200);
+    }
+}
+
+function buildRefundRequestRow(ref) {
+    const avatarLetter = ref.name.charAt(0).toUpperCase();
+    const eligibleBadge = ref.is_eligible
+        ? `<span class="badge-eligible"><i class="fas fa-check-circle"></i> Eligible (0 opened)</span>`
+        : `<span class="badge-non-eligible" title="This couple has already shared the link with guests."><i class="fas fa-times-circle"></i> Non-Refundable (${ref.opened_count} opened)</span>`;
+    const slipCell = ref.payment_slip
+        ? `<a href="../${ref.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
+        : `<span class="text-muted small">No Slip</span>`;
+
+    return `<tr>
+        <td data-label="Couple">
+            <div class="couple-cell">
+                <div class="couple-avatar avatar-danger">${avatarLetter}</div>
+                <div>
+                    <div class="fw-bold text-dark" style="font-size:0.9rem;">${ref.name}</div>
+                    <div class="text-muted small" style="margin-top:2px;">${ref.email}</div>
+                </div>
+            </div>
+        </td>
+        <td data-label="Request">
+            <div>
+                <div class="small fw-bold text-muted"><i class="far fa-clock"></i> ${ref.requested_at}</div>
+                <div class="reason-box">"${ref.reason}"</div>
+            </div>
+        </td>
+        <td data-label="Validation">${eligibleBadge}</td>
+        <td data-label="Slip">${slipCell}</td>
+        <td data-label="Actions" class="action-cell" style="white-space:nowrap;">
+            <a href="admin_refunds.php?action=approve&uid=${ref.user_id}" class="btn-action btn-action-approve" onclick="return confirm('Approve refund for ${ref.name.replace(/'/g, "\\'")}? This will deactivated their account and ask them for bank details.');"><i class="fas fa-check"></i> Approve Refund</a>
+            <a href="admin_refunds.php?action=reject&uid=${ref.user_id}" class="btn-action btn-action-reject" onclick="return confirm('Reject refund request for ${ref.name.replace(/'/g, "\\'")}?');"><i class="fas fa-times"></i> Reject</a>
+        </td>
+    </tr>`;
+}
+
+function buildPayoutRow(pay) {
+    const avatarLetter = pay.name.charAt(0).toUpperCase();
+    const slipCell = pay.payment_slip
+        ? `<a href="../${pay.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
+        : `<span class="text-muted small">No Slip</span>`;
+
+    return `<tr>
+        <td data-label="Couple">
+            <div class="couple-cell">
+                <div class="couple-avatar avatar-success">${avatarLetter}</div>
+                <div>
+                    <div class="fw-bold text-dark" style="font-size:0.9rem;">${pay.name}</div>
+                    <div class="text-muted small" style="margin-top:2px;">${pay.email}</div>
+                </div>
+            </div>
+        </td>
+        <td data-label="Bank Details"><div class="bank-box"><i class="fas fa-university me-1 text-success"></i> ${pay.bank_details}</div></td>
+        <td data-label="Receipt">${slipCell}</td>
+        <td data-label="Action">
+            <a href="admin_refunds.php?action=complete&uid=${pay.user_id}" class="btn-action-complete" onclick="return confirm('Confirm payout to ${pay.name.replace(/'/g, "\\'")}? This will send a refund completed receipt email and close this request.');"><i class="fas fa-check-circle"></i> Mark Payout as Completed</a>
+        </td>
+    </tr>`;
+}
+
+let lastRequestsSnapshot = null;
+let lastPayoutsSnapshot = null;
+let refundPollPaused = false;
+
+// Pause live refresh briefly whenever an action link inside either table is pressed,
+// so an in-flight 5s poll can never replace the row out from under a click mid-navigation.
+document.addEventListener('mousedown', function(e) {
+    if (e.target.closest('#live-refund-requests-tbody') || e.target.closest('#live-payouts-tbody')) {
+        refundPollPaused = true;
+        setTimeout(() => { refundPollPaused = false; }, 3000);
+    }
+});
+
+function fetchRefundLiveCounts() {
+    if (refundPollPaused) return;
+
+    fetch('admin_refunds.php?action=live_counts')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+
+            // 1. Counters (header badges + top stat cards)
+            updateLiveText('live-refund-pending-count', data.pending_count);
+            updateLiveText('live-refund-payout-count', data.payout_count);
+            updateLiveText('live-refund-stat-pending', data.pending_count);
+            updateLiveText('live-refund-stat-payout', data.payout_count);
+
+            // 2. Phase 1 table — Pending Refund Requests (only rebuild if data actually changed,
+            //    to avoid wiping out rows mid-click and unnecessary flicker)
+            const requestsSnapshot = JSON.stringify(data.refund_requests);
+            if (requestsSnapshot !== lastRequestsSnapshot) {
+                lastRequestsSnapshot = requestsSnapshot;
+
+                const reqTbody = document.getElementById('live-refund-requests-tbody');
+                if (reqTbody && data.refund_requests) {
+                    reqTbody.innerHTML = data.refund_requests.length > 0
+                        ? data.refund_requests.map(buildRefundRequestRow).join('')
+                        : `<tr><td colspan="5" class="text-center py-5 text-muted empty-table-row"><i class="fas fa-inbox"></i>Review කිරීමට කිසිදු Refund ඉල්ලීමක් දැනට නැත.</td></tr>`;
+                }
+            }
+
+            // 3. Phase 2 table — Pending Bank Payouts (same diffing guard)
+            const payoutsSnapshot = JSON.stringify(data.payouts);
+            if (payoutsSnapshot !== lastPayoutsSnapshot) {
+                lastPayoutsSnapshot = payoutsSnapshot;
+
+                const payTbody = document.getElementById('live-payouts-tbody');
+                if (payTbody && data.payouts) {
+                    payTbody.innerHTML = data.payouts.length > 0
+                        ? data.payouts.map(buildPayoutRow).join('')
+                        : `<tr><td colspan="4" class="text-center py-5 text-muted empty-table-row"><i class="fas fa-check-double"></i>ගෙවීම් කිරීමට ඇති කිසිදු බැංකු ගිණුමක් දැනට ලැබී නැත.</td></tr>`;
+                }
+            }
+        })
+        .catch(err => console.error('Error syncing refund live counts:', err));
+}
+setInterval(fetchRefundLiveCounts, 5000);
+</script>
 
 <?php require 'layouts/footer.php'; ?>

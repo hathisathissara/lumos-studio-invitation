@@ -25,6 +25,17 @@ if (isset($_GET['action']) && $_GET['action'] === 'mark_sent' && isset($_GET['id
     exit();
 }
 
+// ============================================
+// 2. AJAX ACTION: සජීවී (Live) Guest Status ලබාගැනීම — Opened/Sent/RSVP
+// ============================================
+if (isset($_GET['action']) && $_GET['action'] === 'live_status') {
+    header('Content-Type: application/json');
+    $stmtLive = $pdo->prepare("SELECT id, is_opened, opened_at, is_sent, sent_at, rsvp_status FROM guests WHERE wedding_id = ?");
+    $stmtLive->execute([$wedding_id]);
+    echo json_encode(['guests' => $stmtLive->fetchAll(PDO::FETCH_ASSOC)]);
+    exit();
+}
+
 function normalize_whatsapp_number($value) {
     $value = trim((string) $value);
     $digits = preg_replace('/\D+/', '', $value);
@@ -360,6 +371,7 @@ require 'layouts/header.php';
                     <tbody>
                         <?php foreach ($guestsList as $g): ?>
                         <tr
+                            data-id="<?php echo $g['id']; ?>"
                             data-name="<?php echo strtolower(htmlspecialchars($g['name'])); ?>"
                             data-cat="<?php echo htmlspecialchars($g['category']); ?>"
                             data-rsvp="<?php echo htmlspecialchars($g['rsvp_status']); ?>"
@@ -418,7 +430,7 @@ require 'layouts/header.php';
                                 <?php endif; ?>
                             </td>
                             
-                            <td>
+                            <td class="rsvp-status-cell">
                                 <?php
                                 if ($g['rsvp_status'] == 'accepted')
                                     echo "<span class='badge badge-attending'><i class='fas fa-check'></i> Attending</span>";
@@ -558,6 +570,59 @@ document.querySelectorAll('.btn-wa-send').forEach(btn => {
         }
     });
 });
+
+// =====================================================================
+// 🔥 සජීවීව Guest Status Update කිරීම (Opened / Sent / RSVP) — 5s Polling
+// Note: WA/Delete buttons ම untouched ව තියෙනවා, status cells විතරයි update වෙන්නේ.
+// =====================================================================
+function formatLiveDateTime(mysqlDatetime) {
+    if (!mysqlDatetime) return '';
+    const d = new Date(mysqlDatetime.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function renderOpenedStatusCell(g) {
+    if (g.is_opened == 1) {
+        let html = `<span class="badge badge-opened"><i class="fas fa-check-double"></i> Opened</span>`;
+        if (g.opened_at) html += `<br><small style="color:#9ea3b0; font-size:0.7rem; margin-top:3px; display:block;">${formatLiveDateTime(g.opened_at)}</small>`;
+        return html;
+    } else if (g.is_sent == 1) {
+        let html = `<span class="badge badge-sent"><i class="fas fa-paper-plane"></i> Sent</span>`;
+        if (g.sent_at) html += `<br><small style="color:#9ea3b0; font-size:0.7rem; margin-top:3px; display:block;">${formatLiveDateTime(g.sent_at)}</small>`;
+        return html;
+    }
+    return `<span class="badge badge-not-sent">Not sent</span>`;
+}
+
+function renderRsvpStatusCell(rsvp) {
+    if (rsvp === 'accepted') return `<span class='badge badge-attending'><i class='fas fa-check'></i> Attending</span>`;
+    if (rsvp === 'rejected') return `<span class='badge badge-declined'><i class='fas fa-times'></i> Declined</span>`;
+    return `<span class='badge badge-pending-rsvp'>Pending</span>`;
+}
+
+function fetchGuestsLiveStatus() {
+    fetch('guests.php?action=live_status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.guests) return;
+            data.guests.forEach(g => {
+                const row = document.querySelector(`#guest-table tr[data-id="${g.id}"]`);
+                if (!row) return;
+
+                const openedCell = row.querySelector('.opened-status-cell');
+                if (openedCell) openedCell.innerHTML = renderOpenedStatusCell(g);
+
+                const rsvpCell = row.querySelector('.rsvp-status-cell');
+                if (rsvpCell) rsvpCell.innerHTML = renderRsvpStatusCell(g.rsvp_status);
+
+                // Keep the RSVP filter dropdown accurate against live data
+                row.dataset.rsvp = g.rsvp_status;
+            });
+        })
+        .catch(err => console.error('Error syncing guest live status:', err));
+}
+setInterval(fetchGuestsLiveStatus, 5000);
 </script>
 
 <?php require 'layouts/footer.php'; ?>

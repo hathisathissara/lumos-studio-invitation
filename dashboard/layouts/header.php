@@ -21,6 +21,13 @@ if ($role !== 'admin' && !empty($_SESSION['user_id']) && isset($pdo)) {
     }
 }
 
+// AJAX: සජීවීව (Live) Header/Sidebar Status Check කිරීම — admin deactivate/activate කලොත් couple pages ලට reflect වෙන්න
+if (isset($_GET['header_status_check'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => $role !== 'admin' ? $status : null]);
+    exit();
+}
+
 $invite_url_for_header = '';
 $invite_share_message_header = '';
 if ($role !== 'admin' && !empty($_SESSION['wedding_id']) && isset($pdo)) {
@@ -599,4 +606,24 @@ document.addEventListener('click', function(e) {
         sidebar.classList.remove('open');
     }
 });
+
+<?php if ($role !== 'admin'): ?>
+// =====================================================================
+// 🔥 සජීවීව Header/Sidebar Status Check කිරීම — Admin Activate/Deactivate කලොත් Auto-refresh (8s Polling)
+// =====================================================================
+const headerInitialStatus = <?php echo json_encode($status); ?>;
+
+function checkHeaderStatusLive() {
+    fetch('index.php?header_status_check=1')
+        .then(r => r.json())
+        .then(data => {
+            if (data.status && data.status !== headerInitialStatus) {
+                showToast(data.status === 'active' ? '🎉 Your invitation is now active!' : '⚠️ Your account status has changed');
+                setTimeout(() => location.reload(), 1800);
+            }
+        })
+        .catch(err => console.error('Error checking header status:', err));
+}
+setInterval(checkHeaderStatusLive, 8000);
+<?php endif; ?>
 </script>

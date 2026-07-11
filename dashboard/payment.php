@@ -10,6 +10,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'couple') {
 $user_id = $_SESSION['user_id'];
 $msg = "";
 
+// Pick up a flash message left by a previous POST-then-redirect (see upload blocks below).
+// This is what lets us redirect after upload instead of re-rendering a POST result page.
+if (isset($_SESSION['flash_msg'])) {
+    $msg = $_SESSION['flash_msg'];
+    unset($_SESSION['flash_msg']);
+}
+
 // 1. Handle Dismiss Refund
 if (isset($_GET['dismiss_refund'])) {
     $pdo->prepare("UPDATE users SET refund_status = 'none', refund_reason = NULL, refund_bank_details = NULL WHERE id = ?")
@@ -50,6 +57,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     exit();
 }
 
+// Helper: PHP upload error codes -> human readable messages (used to diagnose "Upload failed")
+function upload_error_message($errorCode) {
+    switch ($errorCode) {
+        case UPLOAD_ERR_OK:
+            return null;
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return "The file is too large. Please upload a smaller image or PDF (under the server's upload limit).";
+        case UPLOAD_ERR_PARTIAL:
+            return "The file was only partially uploaded. Please check your connection and try again.";
+        case UPLOAD_ERR_NO_FILE:
+            return "No file was selected. Please choose a file before submitting.";
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return "Server is missing a temporary folder for uploads. Please contact support.";
+        case UPLOAD_ERR_CANT_WRITE:
+            return "Server failed to write the file to disk. Please contact support.";
+        case UPLOAD_ERR_EXTENSION:
+            return "A server extension blocked this upload. Please contact support.";
+        default:
+            return "Upload failed due to an unknown error (code {$errorCode}). Please contact support.";
+    }
+}
+
 // 4. Handle Bank Slip Submission WITH chosen Plan configuration (මුල්වරට Activate කරද්දී)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['bank_slip'])) {
     $file = $_FILES['bank_slip'];
@@ -60,29 +90,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['bank_slip'])) {
         $add_gallery = 1;
     }
 
-    $target_dir = "../uploads/slips/";
-    if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+    $upload_error = upload_error_message($file['error']);
 
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
-
-    if (in_array($ext, $allowed)) {
-        $new_filename = "slip_" . $user_id . "_" . time() . "." . $ext;
-        $target_file  = $target_dir . $new_filename;
-
-        if (move_uploaded_file($file['tmp_name'], $target_file)) {
-            $db_path = "uploads/slips/" . $new_filename;
-            
-            $stmt = $pdo->prepare("UPDATE users SET payment_slip = ?, status = 'pending', package = ?, has_guest_gallery = ?, refund_status = 'none', refund_requested_at = NULL WHERE id = ?");
-            if ($stmt->execute([$db_path, $selected_package, $add_gallery, $user_id])) {
-                $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Bank slip uploaded! We will review and activate your <strong>" . ucfirst($selected_package) . " plan</strong> soon.</div>";
-            }
-        } else {
-            $msg = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
-        }
+    if ($upload_error) {
+        $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> " . htmlspecialchars($upload_error) . "</div>";
     } else {
-        $msg = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Please upload a JPG, PNG, WEBP, or PDF file.</div>";
+        $target_dir = "../uploads/slips/";
+        if (!file_exists($target_dir)) {
+            @mkdir($target_dir, 0777, true);
+        }
+
+        if (!is_dir($target_dir) || !is_writable($target_dir)) {
+            error_log("payment.php: upload directory missing or not writable: " . realpath('..') . '/uploads/slips/');
+            $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
+        } else {
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
+            if (in_array($ext, $allowed)) {
+                $new_filename = "slip_" . $user_id . "_" . time() . "." . $ext;
+                $target_file  = $target_dir . $new_filename;
+
+                if (move_uploaded_file($file['tmp_name'], $target_file)) {
+                    $db_path = "uploads/slips/" . $new_filename;
+
+                    $stmt = $pdo->prepare("UPDATE users SET payment_slip = ?, status = 'pending', package = ?, has_guest_gallery = ?, refund_status = 'none', refund_requested_at = NULL WHERE id = ?");
+                    if ($stmt->execute([$db_path, $selected_package, $add_gallery, $user_id])) {
+                        $_SESSION['flash_msg'] = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Bank slip uploaded! We will review and activate your <strong>" . ucfirst($selected_package) . " plan</strong> soon.</div>";
+                    }
+                } else {
+                    error_log("payment.php: move_uploaded_file failed for user {$user_id}. tmp_name={$file['tmp_name']} target={$target_file}");
+                    $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
+                }
+            } else {
+                $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Please upload a JPG, PNG, WEBP, or PDF file.</div>";
+            }
+        }
     }
+
+    // Redirect (PRG pattern) instead of falling through to render this POST result directly.
+    // Without this, the 8s live status-check poll's location.reload() could resubmit this
+    // exact upload a second time (browsers re-POST on reload of a POST result page).
+    header("Location: payment.php");
+    exit();
 }
 
 // 5. Handle UPGRADE Slip Submission (දැනටමත් සක්‍රීය ගිණුමක Upgrade slip එකක් එවද්දී)
@@ -92,30 +142,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upgrade_slip_file']))
     // Unified option එක කියවා ගැනීම (e.g. "standard|1")
     $target_str = $_POST['upgrade_package_target'] ?? 'standard|0';
 
-    $target_dir = "../uploads/slips/";
-    if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
+    $upload_error = upload_error_message($file['error']);
 
-    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
-
-    if (in_array($ext, $allowed)) {
-        $new_filename = "upgrade_slip_" . $user_id . "_" . time() . "." . $ext;
-        $target_file  = $target_dir . $new_filename;
-
-        if (move_uploaded_file($file['tmp_name'], $target_file)) {
-            $db_path = "uploads/slips/" . $new_filename;
-            
-            // upgrade_slip සහ pending_upgrade_plan update කරයි!
-            $stmt = $pdo->prepare("UPDATE users SET upgrade_slip = ?, pending_upgrade_plan = ? WHERE id = ?");
-            if ($stmt->execute([$db_path, $target_str, $user_id])) {
-                $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Upgrade slip submitted! We will process your upgrade shortly. Your current invitation remains LIVE.</div>";
-            }
-        } else {
-            $msg = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
-        }
+    if ($upload_error) {
+        $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> " . htmlspecialchars($upload_error) . "</div>";
     } else {
-        $msg = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Please upload a JPG, PNG, WEBP, or PDF file.</div>";
+        $target_dir = "../uploads/slips/";
+        if (!file_exists($target_dir)) {
+            @mkdir($target_dir, 0777, true);
+        }
+
+        if (!is_dir($target_dir) || !is_writable($target_dir)) {
+            error_log("payment.php: upgrade upload directory missing or not writable: " . realpath('..') . '/uploads/slips/');
+            $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
+        } else {
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
+            if (in_array($ext, $allowed)) {
+                $new_filename = "upgrade_slip_" . $user_id . "_" . time() . "." . $ext;
+                $target_file  = $target_dir . $new_filename;
+
+                if (move_uploaded_file($file['tmp_name'], $target_file)) {
+                    $db_path = "uploads/slips/" . $new_filename;
+
+                    // upgrade_slip සහ pending_upgrade_plan update කරයි!
+                    $stmt = $pdo->prepare("UPDATE users SET upgrade_slip = ?, pending_upgrade_plan = ? WHERE id = ?");
+                    if ($stmt->execute([$db_path, $target_str, $user_id])) {
+                        $_SESSION['flash_msg'] = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Upgrade slip submitted! We will process your upgrade shortly. Your current invitation remains LIVE.</div>";
+                    }
+                } else {
+                    error_log("payment.php: move_uploaded_file failed (upgrade) for user {$user_id}. tmp_name={$file['tmp_name']} target={$target_file}");
+                    $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Upload failed. Please try again.</div>";
+                }
+            } else {
+                $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> Please upload a JPG, PNG, WEBP, or PDF file.</div>";
+            }
+        }
     }
+
+    // Redirect (PRG pattern) — same reasoning as the bank_slip block above.
+    header("Location: payment.php");
+    exit();
+}
+
+// 6. AJAX: සජීවීව (Live) Account Status Check කිරීම — Admin action gත් ගිණුමට Auto-refresh කිරීම සඳහා
+if (isset($_GET['action']) && $_GET['action'] === 'status_check') {
+    header('Content-Type: application/json');
+    $stmtLiveStatus = $pdo->prepare("SELECT status, refund_status, package, has_guest_gallery, pending_upgrade_plan FROM users WHERE id = ?");
+    $stmtLiveStatus->execute([$user_id]);
+    $live = $stmtLiveStatus->fetch();
+    echo json_encode([
+        'fingerprint' => md5(implode('|', [
+            $live['status'],
+            $live['refund_status'],
+            $live['package'],
+            $live['has_guest_gallery'],
+            !empty($live['pending_upgrade_plan']) ? '1' : '0',
+        ]))
+    ]);
+    exit();
 }
 
 // Get user status & plan details
@@ -125,6 +211,14 @@ $user_data = $stmtGetSlip->fetch();
 
 $couple_name = !empty($user_data['name']) ? $user_data['name'] : ($_SESSION['user_name'] ?? 'Couple');
 $couple_email = $user_data['email'] ?? '';
+
+$initial_status_fingerprint = md5(implode('|', [
+    $user_data['status'],
+    $user_data['refund_status'],
+    $user_data['package'],
+    $user_data['has_guest_gallery'],
+    !empty($user_data['pending_upgrade_plan']) ? '1' : '0',
+]));
 
 // වර්තමාන පැකේජයේ මුළු වටිනාකම හැදීම
 $current_val = 2500;
@@ -815,6 +909,26 @@ document.getElementById('bankDetailsForm')?.addEventListener('submit', function(
         alert("An error occurred. Please try again.");
     });
 });
+
+// =====================================================================
+// 🔥 සජීවීව Account Status Check කිරීම — Admin action ගත්තොත් auto-refresh (8s Polling)
+// =====================================================================
+const initialStatusFingerprint = <?php echo json_encode($initial_status_fingerprint); ?>;
+
+function checkAccountStatusLive() {
+    fetch('payment.php?action=status_check')
+        .then(r => r.json())
+        .then(data => {
+            if (data.fingerprint && data.fingerprint !== initialStatusFingerprint) {
+                if (typeof showToast === 'function') {
+                    showToast('✨ Your account was just updated! Refreshing...');
+                }
+                setTimeout(() => location.reload(), 1800);
+            }
+        })
+        .catch(err => console.error('Error checking live account status:', err));
+}
+setInterval(checkAccountStatusLive, 8000);
 </script>
 
 <?php require 'layouts/footer.php'; ?>

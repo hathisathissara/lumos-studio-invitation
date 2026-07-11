@@ -116,6 +116,103 @@ if (isset($_GET['action']) && $_GET['action'] === 'notify_delete' && isset($_GET
     }
 }
 
+// 5. AJAX: සජීවීව (Live) Admin Stat Cards + Registered Couples Table Update කිරීම
+if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
+    header('Content-Type: application/json');
+
+    $stmtLiveList = $pdo->prepare("
+        SELECT users.id, users.name, users.email, users.status, users.payment_slip, users.upgrade_slip, users.pending_upgrade_plan, users.created_at, users.deletion_notice_sent_at, users.refund_requested_at, users.package, users.has_guest_gallery,
+               weddings.wedding_date, weddings.bride_name, weddings.groom_name, weddings.id as wedding_id,
+               weddings.slug
+        FROM users
+        LEFT JOIN weddings ON users.id = weddings.user_id
+        WHERE users.role = 'couple'
+        ORDER BY users.id DESC
+    ");
+    $stmtLiveList->execute();
+    $liveUsersList = $stmtLiveList->fetchAll();
+
+    $liveDomain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF'])), '/');
+
+    $liveTotal   = count($liveUsersList);
+    $liveActive  = count(array_filter($liveUsersList, fn($u) => $u['status'] === 'active'));
+    $livePending = $liveTotal - $liveActive;
+    $liveRefunds = count(array_filter($liveUsersList, fn($u) => !empty($u['refund_requested_at'])));
+
+    $liveRowsFormatted = [];
+    foreach ($liveUsersList as $user) {
+        $wedding_past = !empty($user['wedding_date']) && strtotime($user['wedding_date']) < strtotime('today');
+        $invite_slug  = !empty($user['slug']) ? $user['slug'] : ('invite.php?w_id=' . $user['wedding_id']);
+        $invite_url   = $liveDomain . '/' . $invite_slug;
+
+        $notice_sent = !empty($user['deletion_notice_sent_at']);
+        $days_left = 0;
+        $can_delete_now = false;
+        if ($notice_sent) {
+            $delete_eligible_at = strtotime($user['deletion_notice_sent_at'] . ' +7 days');
+            $seconds_left = $delete_eligible_at - time();
+            $days_left = $seconds_left > 0 ? (int) ceil($seconds_left / 86400) : 0;
+            $can_delete_now = $seconds_left <= 0;
+        }
+
+        $slip_ext = null;
+        if (!empty($user['payment_slip'])) {
+            $slip_ext = strtolower(pathinfo($user['payment_slip'], PATHINFO_EXTENSION));
+        }
+
+        $liveRowsFormatted[] = [
+            'id' => (int) $user['id'],
+            'name' => htmlspecialchars($user['name']),
+            'email' => htmlspecialchars($user['email']),
+            'status' => $user['status'],
+            'package' => ucfirst($user['package'] ?? 'Basic'),
+            'has_guest_gallery' => !empty($user['has_guest_gallery']),
+            'wedding_date' => $user['wedding_date'] ? date('d M Y', strtotime($user['wedding_date'])) : null,
+            'wedding_past' => $wedding_past,
+            'payment_slip' => !empty($user['payment_slip']) ? htmlspecialchars('../' . $user['payment_slip']) : null,
+            'slip_is_pdf' => ($slip_ext === 'pdf'),
+            'refund_requested' => !empty($user['refund_requested_at']),
+            'upgrade_pending' => !empty($user['pending_upgrade_plan']),
+            'wedding_id' => $user['wedding_id'] ? (int) $user['wedding_id'] : null,
+            'has_slug' => !empty($user['slug']),
+            'invite_url' => htmlspecialchars($invite_url),
+            'notice_sent' => $notice_sent,
+            'notice_sent_at' => $notice_sent ? date('d M Y', strtotime($user['deletion_notice_sent_at'])) : null,
+            'days_left' => $days_left,
+            'can_delete_now' => $can_delete_now,
+        ];
+    }
+
+    $liveUpgradeRequests = array_filter($liveUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip']));
+    $liveUpgradeFormatted = [];
+    foreach ($liveUpgradeRequests as $upg) {
+        $parts = explode('|', $upg['pending_upgrade_plan']);
+        $req_pkg = $parts[0] ?? 'standard';
+        $req_gal = intval($parts[1] ?? 0);
+        $req_text = ucfirst($req_pkg) . ($req_gal ? " + Guest Gallery" : "");
+
+        $liveUpgradeFormatted[] = [
+            'id' => (int) $upg['id'],
+            'name' => htmlspecialchars($upg['name']),
+            'email' => htmlspecialchars($upg['email']),
+            'package' => ucfirst($upg['package'] ?? 'Basic'),
+            'has_guest_gallery' => !empty($upg['has_guest_gallery']),
+            'req_text' => htmlspecialchars($req_text),
+            'upgrade_slip' => !empty($upg['upgrade_slip']) ? htmlspecialchars('../' . $upg['upgrade_slip']) : null,
+        ];
+    }
+
+    echo json_encode([
+        'total' => $liveTotal,
+        'active' => $liveActive,
+        'pending' => $livePending,
+        'refund_requests_count' => $liveRefunds,
+        'users' => $liveRowsFormatted,
+        'upgrade_requests' => $liveUpgradeFormatted,
+    ]);
+    exit();
+}
+
 // Main Users List Retrieval (සියලුම upgrade properties නිවැරදිව ලබාගෙන ඇත)
 $stmtUsers = $pdo->prepare("
     SELECT users.id, users.name, users.email, users.status, users.payment_slip, users.upgrade_slip, users.pending_upgrade_plan, users.created_at, users.deletion_notice_sent_at, users.refund_requested_at, users.package, users.has_guest_gallery,
@@ -221,21 +318,21 @@ require 'layouts/header.php';
     <div class="admin-stat">
         <div class="admin-stat-icon icon-gold"><i class="fas fa-users"></i></div>
         <div>
-            <div class="admin-stat-num"><?php echo $total; ?></div>
+            <div class="admin-stat-num" id="live-admin-total"><?php echo $total; ?></div>
             <div class="admin-stat-label">Total Couples</div>
         </div>
     </div>
     <div class="admin-stat">
         <div class="admin-stat-icon icon-green"><i class="fas fa-check-circle"></i></div>
         <div>
-            <div class="admin-stat-num"><?php echo $active; ?></div>
+            <div class="admin-stat-num" id="live-admin-active"><?php echo $active; ?></div>
             <div class="admin-stat-label">Active</div>
         </div>
     </div>
     <div class="admin-stat">
         <div class="admin-stat-icon icon-amber"><i class="fas fa-clock"></i></div>
         <div>
-            <div class="admin-stat-num"><?php echo $pending; ?></div>
+            <div class="admin-stat-num" id="live-admin-pending"><?php echo $pending; ?></div>
             <div class="admin-stat-label">Pending Review</div>
         </div>
     </div>
@@ -243,7 +340,7 @@ require 'layouts/header.php';
     <a href="admin_refunds.php" class="admin-stat text-decoration-none">
         <div class="admin-stat-icon icon-red"><i class="fas fa-undo-alt"></i></div>
         <div>
-            <div class="admin-stat-num text-danger"><?php echo $refund_requests_count; ?></div>
+            <div class="admin-stat-num text-danger" id="live-admin-refunds"><?php echo $refund_requests_count; ?></div>
             <div class="admin-stat-label text-danger">Refund Requests</div>
         </div>
     </a>
@@ -255,8 +352,8 @@ require 'layouts/header.php';
 <?php
 $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip']));
 ?>
-<?php if (count($upgradeRequests) > 0): ?>
-<div class="table-card border border-primary">
+<?php $hasUpgradeRequests = count($upgradeRequests) > 0; ?>
+<div class="table-card border border-primary" id="upgrade-requests-card" style="<?php echo $hasUpgradeRequests ? '' : 'display:none;'; ?>">
     <div class="table-card-header bg-light text-primary" style="background: rgba(59,130,246,0.03) !important;">
         <h5 class="fw-bold" style="color: var(--info);"><i class="fas fa-arrow-circle-up me-1"></i> Pending Package Upgrade Reviews (පැකේජ් උසස් කිරීම්)</h5>
     </div>
@@ -271,7 +368,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="upgrade-requests-tbody">
                 <?php foreach ($upgradeRequests as $upg): 
                     $parts = explode('|', $upg['pending_upgrade_plan']);
                     $req_pkg = $parts[0] ?? 'standard';
@@ -317,7 +414,6 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
         </table>
     </div>
 </div>
-<?php endif; ?>
 
 <!-- Table: Registered Couples -->
 <div class="table-card">
@@ -342,7 +438,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="admin-table-tbody">
                 <?php if (count($allUsersList) > 0): ?>
                     <?php foreach ($allUsersList as $user):
                         $wedding_past = !empty($user['wedding_date']) && strtotime($user['wedding_date']) < strtotime('today');
@@ -513,6 +609,193 @@ function closeLightbox() {
     document.getElementById('lightbox').classList.remove('open');
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// =====================================================================
+// 🔥 සජීවීව Admin Stat Cards Update කිරීම — 5s Polling (Table එක untouched)
+// =====================================================================
+function updateLiveText(id, newValue) {
+    const el = document.getElementById(id);
+    if (el && el.textContent != newValue) {
+        el.style.transition = 'opacity 0.2s';
+        el.style.opacity = '0.2';
+        setTimeout(() => {
+            el.textContent = newValue;
+            el.style.opacity = '1';
+        }, 200);
+    }
+}
+
+function esc(str) {
+    // Basic JS-side escape as a safety net (server already sends pre-escaped strings)
+    return String(str).replace(/'/g, "\\'");
+}
+
+function buildCoupleRow(user) {
+    let badges = '';
+    if (user.refund_requested) {
+        badges += `<span class="badge-refund-req"><i class="fas fa-exclamation-triangle"></i> Refund Requested</span>`;
+    }
+    if (user.upgrade_pending) {
+        badges += `<span class="badge-upgrade-req"><i class="fas fa-arrow-circle-up"></i> Upgrade Pending</span>`;
+    }
+
+    const packageHtml = `<span class="badge bg-secondary">${user.package}</span>` +
+        (user.has_guest_gallery ? `<br><small class="text-success fw-bold"><i class="fas fa-images"></i> Guest Gallery</small>` : '');
+
+    let dateHtml = `<span style="color:#d1d5db;">—</span>`;
+    if (user.wedding_date) {
+        dateHtml = user.wedding_date;
+        if (user.wedding_past) {
+            dateHtml += `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.08);color:#dc2626;border-radius:6px;padding:2px 7px;font-size:0.68rem;font-weight:700;margin-left:4px;"><i class="fas fa-clock" style="font-size:0.6rem;"></i> Passed</span>`;
+        }
+    }
+
+    let slipHtml = `<span style="color:#d1d5db; font-size:0.78rem; font-style:italic;">No slip yet</span>`;
+    if (user.payment_slip) {
+        slipHtml = user.slip_is_pdf
+            ? `<a href="${user.payment_slip}" target="_blank" style="font-size:0.78rem; color:#c9a96e; text-decoration:none;"><i class="fas fa-file-pdf"></i> View PDF</a>`
+            : `<img src="${user.payment_slip}" class="slip-thumb" onclick="openLightbox(this.src)" alt="Payment slip">`;
+    }
+
+    const statusHtml = user.status === 'active'
+        ? `<span class="badge-active"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Active</span>`
+        : `<span class="badge-pending"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pending</span>`;
+
+    let linkHtml = `<span style="color:#d1d5db;">—</span>`;
+    if (user.wedding_id && user.has_slug) {
+        linkHtml = `<div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:0.78rem;color:#4a5568;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${user.invite_url}">${user.invite_url}</span>
+            <button onclick="adminCopyLink('${user.invite_url}', this)" style="background:none;border:1px solid #e8ecf0;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:0.72rem;color:#9ea3b0;flex-shrink:0;" title="Copy link"><i class="fas fa-copy"></i></button>
+        </div>`;
+    } else if (user.wedding_id) {
+        linkHtml = `<span style="font-size:0.75rem;color:#d1d5db;">No slug yet</span>`;
+    }
+
+    let actionsHtml = '';
+    if (user.wedding_id) {
+        actionsHtml += `<a href="../view_invitation.php?w_id=${user.wedding_id}&preview=1" target="_blank" class="btn-preview"><i class="fas fa-eye"></i> Preview</a>`;
+    }
+    if (user.status === 'pending') {
+        actionsHtml += `<a href="admin_dashboard.php?action=activate&uid=${user.id}" class="btn-action btn-activate" onclick="return confirm('Activate account for ${esc(user.name)}?');"><i class="fas fa-check"></i> Activate</a>`;
+    } else {
+        actionsHtml += `<a href="admin_dashboard.php?action=deactivate&uid=${user.id}" class="btn-action btn-deactivate" onclick="return confirm('Deactivate account for ${esc(user.name)}?');"><i class="fas fa-times"></i> Deactivate</a>`;
+    }
+    if (user.wedding_past) {
+        if (!user.notice_sent) {
+            actionsHtml += `<a href="admin_dashboard.php?action=notify_delete&uid=${user.id}" class="btn-action btn-notify-delete" onclick="return confirm('Email ${esc(user.name)} that their invitation will be deleted in 7 days?');" title="Send 7-day deletion notice"><i class="fas fa-bell"></i> Notify</a>`;
+        } else if (!user.can_delete_now) {
+            actionsHtml += `<span class="badge-countdown" title="Notice sent on ${user.notice_sent_at}"><i class="fas fa-hourglass-half"></i> ${user.days_left}d left</span>`;
+        } else {
+            actionsHtml += `<a href="admin_delete_account.php?uid=${user.id}" class="btn-delete-account" onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');" title="Notice period ended — delete this account"><i class="fas fa-trash-alt"></i></a>`;
+        }
+    }
+
+    return `<tr data-search="${(user.name + ' ' + user.email).toLowerCase()}">
+        <td>
+            <div class="couple-name">${user.name}</div>
+            <div class="couple-email">${user.email}</div>
+            ${badges}
+        </td>
+        <td>${packageHtml}</td>
+        <td>${dateHtml}</td>
+        <td>${slipHtml}</td>
+        <td>${statusHtml}</td>
+        <td>${linkHtml}</td>
+        <td style="white-space:nowrap;">${actionsHtml}</td>
+    </tr>`;
+}
+
+function buildUpgradeRow(upg) {
+    const galleryNote = upg.has_guest_gallery ? `<br><small class="text-success fw-bold">With Gallery</small>` : '';
+    const slipHtml = upg.upgrade_slip
+        ? `<img src="${upg.upgrade_slip}" class="slip-thumb border border-primary" onclick="openLightbox(this.src)" alt="Upgrade Receipt">`
+        : '';
+
+    return `<tr>
+        <td>
+            <div class="fw-bold text-dark">${upg.name}</div>
+            <div class="text-muted small">${upg.email}</div>
+        </td>
+        <td><span class="badge bg-secondary">${upg.package}</span>${galleryNote}</td>
+        <td><strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> ${upg.req_text}</strong></td>
+        <td>${slipHtml}</td>
+        <td style="white-space:nowrap;">
+            <a href="admin_dashboard.php?action=approve_upgrade&uid=${upg.id}" class="btn-action btn-activate" onclick="return confirm('Approve package upgrade to ${esc(upg.req_text)} for ${esc(upg.name)}?');"><i class="fas fa-check"></i> Approve Upgrade</a>
+            <a href="admin_dashboard.php?action=reject_upgrade&uid=${upg.id}" class="btn-action btn-deactivate" style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);" onclick="return confirm('Reject upgrade request for ${esc(upg.name)}? This will delete the slip receipt.');"><i class="fas fa-times"></i> Reject</a>
+        </td>
+    </tr>`;
+}
+
+let lastUsersSnapshot = null;
+let lastUpgradeSnapshot = null;
+let adminPollPaused = false;
+
+// Pause live refresh briefly whenever an action link/button inside the tables is pressed,
+// so an in-flight 5s poll can never replace the row out from under a click mid-navigation.
+document.addEventListener('mousedown', function(e) {
+    if (e.target.closest('#admin-table-tbody') || e.target.closest('#upgrade-requests-tbody')) {
+        adminPollPaused = true;
+        setTimeout(() => { adminPollPaused = false; }, 3000);
+    }
+});
+
+function fetchAdminLiveStats() {
+    if (adminPollPaused) return;
+
+    fetch('admin_dashboard.php?action=live_stats')
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+            updateLiveText('live-admin-total', data.total);
+            updateLiveText('live-admin-active', data.active);
+            updateLiveText('live-admin-pending', data.pending);
+            updateLiveText('live-admin-refunds', data.refund_requests_count);
+
+            // Only touch the DOM if the underlying data actually changed —
+            // avoids wiping out rows mid-click and avoids needless flicker.
+            const usersSnapshot = JSON.stringify(data.users);
+            if (usersSnapshot !== lastUsersSnapshot) {
+                lastUsersSnapshot = usersSnapshot;
+
+                const tbody = document.getElementById('admin-table-tbody');
+                if (tbody && data.users) {
+                    if (data.users.length > 0) {
+                        tbody.innerHTML = data.users.map(buildCoupleRow).join('');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="8" class="empty-table">No couples registered yet.</td></tr>`;
+                    }
+                    // Re-apply the active search filter to the freshly rebuilt rows
+                    const searchBox = document.getElementById('admin-search');
+                    if (searchBox && searchBox.value) {
+                        const q = searchBox.value.toLowerCase();
+                        tbody.querySelectorAll('tr').forEach(row => {
+                            row.style.display = (row.dataset.search || '').includes(q) ? '' : 'none';
+                        });
+                    }
+                }
+            }
+
+            // Upgrade Requests card — show/hide as a whole, and rebuild rows only if changed
+            const upgradeSnapshot = JSON.stringify(data.upgrade_requests);
+            if (upgradeSnapshot !== lastUpgradeSnapshot) {
+                lastUpgradeSnapshot = upgradeSnapshot;
+
+                const upgradeCard = document.getElementById('upgrade-requests-card');
+                const upgradeTbody = document.getElementById('upgrade-requests-tbody');
+                if (upgradeCard && upgradeTbody && data.upgrade_requests) {
+                    if (data.upgrade_requests.length > 0) {
+                        upgradeTbody.innerHTML = data.upgrade_requests.map(buildUpgradeRow).join('');
+                        upgradeCard.style.display = '';
+                    } else {
+                        upgradeTbody.innerHTML = '';
+                        upgradeCard.style.display = 'none';
+                    }
+                }
+            }
+        })
+        .catch(err => console.error('Error syncing admin live stats:', err));
+}
+setInterval(fetchAdminLiveStats, 5000);
 
 // Admin copy invite link
 function adminCopyLink(url, btn) {
