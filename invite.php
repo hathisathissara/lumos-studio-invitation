@@ -6,6 +6,7 @@ $wedding_id = isset($_GET['w_id']) ? intval($_GET['w_id']) : 0;
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
 $error = '';
 
+// නම්බර් එක සත්‍යාපනය කිරීමට normalization function එක invite.php එකටද එකතු කිරීම
 function normalize_whatsapp_number($value) {
     $value = trim((string) $value);
     $digits = preg_replace('/\D+/', '', $value);
@@ -22,15 +23,15 @@ function normalize_whatsapp_number($value) {
     return $digits;
 }
 
-// 1. Wedding & user status
+// 1. Wedding & user status ලබාගැනීම
 if ($wedding_id > 0) {
-    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id 
+    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id, w.hero_image 
                               FROM weddings w
                               JOIN users u ON w.user_id = u.id
                               WHERE w.id = ?");
     $stmtWed->execute([$wedding_id]);
 } else if (!empty($slug)) {
-    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id 
+    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id, w.hero_image 
                               FROM weddings w
                               JOIN users u ON w.user_id = u.id
                               WHERE w.slug = ? LIMIT 1");
@@ -46,9 +47,7 @@ if ($wedding) {
 }
 
 // ---------------------------------------------------------------------
-// Theme colors: derive the envelope/seal/paper palette from the same
-// template_name the couple picked in Settings, so this page matches
-// whatever theme view_invitation.php renders once the guest gets in.
+// Theme colors
 // ---------------------------------------------------------------------
 function tc_hex2rgb($hex) {
     $hex = ltrim($hex, '#');
@@ -101,10 +100,10 @@ $c_paper2  = $pal['paper2'];
 $c_ink     = $pal['ink'];
 $c_ink_rgb = tc_rgbstr($c_ink);
 
-$c_paper_accent_strong = tc_darken($c_accent, 0.55); 
-$c_paper_accent_mid    = tc_darken($c_accent, 0.35); 
-$c_paper_accent_rgb    = tc_rgbstr(tc_darken($c_accent, 0.45)); 
-$c_seal_ink            = tc_darken($c_accent, 0.75); 
+$c_paper_accent_strong = tc_darken($c_accent, 0.55);
+$c_paper_accent_mid    = tc_darken($c_accent, 0.35);
+$c_paper_accent_rgb    = tc_rgbstr(tc_darken($c_accent, 0.45));
+$c_seal_ink            = tc_darken($c_accent, 0.75);
 
 $is_owner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $wedding['user_id']);
 $is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
@@ -302,6 +301,21 @@ $bride_name = htmlspecialchars($wedding['bride_name']);
 $groom_name = htmlspecialchars($wedding['groom_name']);
 $monogram = mb_strtoupper(mb_substr($wedding['bride_name'], 0, 1)) . ' · ' . mb_strtoupper(mb_substr($wedding['groom_name'], 0, 1));
 $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_name']) && !$just_verified) ? null : null;
+
+
+// =====================================================================
+// 🌎 🔥 සැබෑ Absolute URL එක සහ පින්තූරය සර්වර් එකෙන්ම සකසා ගැනීම
+// =====================================================================
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+$base_dir_path = rtrim($protocol . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']), '/');
+
+// Default image එක ලෙස Lumus brand logo එක සකසයි
+$og_image_url = $base_dir_path . '/uploads/lumos.jpg';
+
+// Couple එක hero_image එකක් දාලා තියෙනවා නම්, ඒක og:image එක විදියට සෘජුවම ලබාගනී!
+if (!empty($wedding['hero_image'])) {
+    $og_image_url = $base_dir_path . '/' . ltrim($wedding['hero_image'], './');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -310,6 +324,24 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $bride_name . ' &amp; ' . $groom_name; ?> — Wedding Invitation</title>
     <meta name="description" content="You're invited! Open your personal wedding invitation.">
+    
+    <!-- =====================================================================
+         🔥 DYNAMIC OPEN GRAPH METADATA (WhatsApp Rich Link Previews සඳහා)
+         ===================================================================== -->
+    <meta property="og:title" content="<?php echo $bride_name . ' &amp; ' . $groom_name; ?> — Wedding Invitation" />
+    <meta property="og:description" content="Together with our families, we joyfully invite you to celebrate our wedding. Click to open your personal digital invitation." />
+    <meta property="og:image" content="<?php echo $og_image_url; ?>" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="<?php echo $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']; ?>" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo $bride_name . ' &amp; ' . $groom_name; ?> — Wedding Invitation">
+    <meta name="twitter:description" content="You're invited! Open your personal digital wedding invitation.">
+    <meta name="twitter:image" content="<?php echo $og_image_url; ?>">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Great+Vibes&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
@@ -394,6 +426,10 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
         .envelope-wrap {
             position: relative;
             perspective: 1600px;
+            /* One fluid variable drives the flap height, seal position and
+               size, and the closed envelope's body height — everything
+               scales together with viewport width instead of snapping at
+               breakpoints. */
             --flap-h: clamp(108px, 36vw, 168px);
         }
 
@@ -404,6 +440,10 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
             border-radius: 10px;
             box-shadow: 0 30px 90px rgba(0,0,0,0.55), inset 0 1px 0 rgba(var(--gold-rgb),0.12);
             padding-top: var(--flap-h);
+            /* Closed envelope keeps a proper body below the flap, sized
+               relative to the flap so the whole shape matches a real
+               envelope's proportions rather than collapsing to just the
+               triangle. */
             min-height: calc(var(--flap-h) * 1.6);
             animation: envIn 0.7s ease;
             overflow: hidden;
@@ -477,6 +517,10 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
             transition:opacity .4s ease;
         }
 
+        /* Letter / card content, tucked inside the envelope.
+           Collapsed to zero height until the seal is tapped, so the
+           envelope itself stays flap-sized instead of reserving space
+           for the whole letter underneath. */
         .card {
             position: relative;
             background: linear-gradient(180deg, var(--paper-a), var(--paper-b));
@@ -584,6 +628,7 @@ $guest_greeting = (isset($_SESSION['guest_name']) && !empty($_SESSION['guest_nam
 
         .redirect-note { margin-top: 16px; font-size: 0.78rem; color: var(--paper-accent-mid); letter-spacing: 0.5px; }
 
+        /* Opening state, toggled on <body> once the seal is tapped */
         body.opening .envelope-flap { transform: rotateX(180deg); z-index: 0; }
         body.opening .wax-seal { animation: crack 0.4s ease forwards; }
         body.opening .envelope { min-height: 0; padding-top: 0; }
@@ -744,4 +789,3 @@ openInvitationFlow();
 </script>
 </body>
 </html>
-
