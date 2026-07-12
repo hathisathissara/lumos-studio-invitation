@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['bank_slip'])) {
     if ($upload_error) {
         $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> " . htmlspecialchars($upload_error) . "</div>";
     } else {
-        $target_dir = "../uploads/slips/";
+        $target_dir = "../../uploads/slips/";
         if (!file_exists($target_dir)) {
             @mkdir($target_dir, 0777, true);
         }
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_FILES['upgrade_slip_file']))
     if ($upload_error) {
         $_SESSION['flash_msg'] = "<div class='flash flash-error'><i class='fas fa-times-circle'></i> " . htmlspecialchars($upload_error) . "</div>";
     } else {
-        $target_dir = "../uploads/slips/";
+        $target_dir = "../../uploads/slips/";
         if (!file_exists($target_dir)) {
             @mkdir($target_dir, 0777, true);
         }

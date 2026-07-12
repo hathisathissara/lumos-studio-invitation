@@ -206,6 +206,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
             'has_guest_gallery' => !empty($upg['has_guest_gallery']),
             'req_text' => htmlspecialchars($req_text),
             'upgrade_slip' => !empty($upg['upgrade_slip']) ? htmlspecialchars('../../' . $upg['upgrade_slip']) : null,
+            'upgrade_slip_is_pdf' => !empty($upg['upgrade_slip']) && strtolower(pathinfo($upg['upgrade_slip'], PATHINFO_EXTENSION)) === 'pdf',
         ];
     }
 
@@ -412,10 +413,18 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                     </td>
                     <td data-label="Receipt">
                         <?php if (!empty($upg['upgrade_slip'])): ?>
-                            <img src="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" 
-                                 class="slip-thumb border border-primary" 
-                                 onclick="openLightbox(this.src)" 
-                                 alt="Upgrade Receipt">
+                            <?php $ext_upg_slip = strtolower(pathinfo($upg['upgrade_slip'], PATHINFO_EXTENSION)); ?>
+                            <?php if ($ext_upg_slip === 'pdf'): ?>
+                                <a href="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" target="_blank"
+                                   style="font-size:0.78rem; color:#c9a96e; text-decoration:none;">
+                                    <i class="fas fa-file-pdf"></i> View PDF
+                                </a>
+                            <?php else: ?>
+                                <img src="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" 
+                                     class="slip-thumb border border-primary" 
+                                     onclick="openLightbox(this.src)" 
+                                     alt="Upgrade Receipt">
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                     <td data-label="Actions" style="white-space:nowrap;">
@@ -521,7 +530,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                 $ext_slip = strtolower(pathinfo($user['payment_slip'], PATHINFO_EXTENSION));
                                 ?>
                                 <?php if ($ext_slip === 'pdf'): ?>
-                                    <a href="<?php echo $slip_path; ?>" target="_blank"
+                                    <a href="../../<?php echo htmlspecialchars($slip_path); ?>" target="_blank"
                                        style="font-size:0.78rem; color:#c9a96e; text-decoration:none;">
                                         <i class="fas fa-file-pdf"></i> View PDF
                                     </a>
@@ -730,9 +739,12 @@ function buildCoupleRow(user) {
 
 function buildUpgradeRow(upg) {
     const galleryNote = upg.has_guest_gallery ? `<br><small class="text-success fw-bold">With Gallery</small>` : '';
-    const slipHtml = upg.upgrade_slip
-        ? `<img src="${upg.upgrade_slip}" class="slip-thumb border border-primary" onclick="openLightbox(this.src)" alt="Upgrade Receipt">`
-        : '';
+    let slipHtml = '';
+    if (upg.upgrade_slip) {
+        slipHtml = upg.upgrade_slip_is_pdf
+            ? `<a href="${upg.upgrade_slip}" target="_blank" style="font-size:0.78rem; color:#c9a96e; text-decoration:none;"><i class="fas fa-file-pdf"></i> View PDF</a>`
+            : `<img src="${upg.upgrade_slip}" class="slip-thumb border border-primary" onclick="openLightbox(this.src)" alt="Upgrade Receipt">`;
+    }
 
     return `<tr>
         <td data-label="Couple Info">
