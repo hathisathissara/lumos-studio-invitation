@@ -530,7 +530,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <style>
 /* indian_royal unique overrides – Ornate Mandala */
 .hero { box-shadow: none; }
-.hero-media { background: linear-gradient(160deg, #6e1626, #3a1015) !important; border-right: 5px solid #e0a527; }
+.hero-media { background: linear-gradient(160deg, #6e1626, #3a1015); border-right: 5px solid #e0a527; }
 .wax-seal { background: #e0a527 !important; color: #3a1015 !important; border: 4px double rgba(58,16,21,0.3) !important; box-shadow: 0 0 0 6px rgba(224,165,39,0.3), 0 10px 30px rgba(58,16,21,0.4) !important; font-family: 'Great Vibes', cursive !important; }
 .hero-panel { border-left: none; }
 .eyebrow { color: #e0a527 !important; letter-spacing: 4px !important; }

@@ -528,7 +528,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
 <style>
 /* beach_tropical unique overrides – Tropical Ticket */
-.hero-media { background: linear-gradient(160deg, #2f7d9c, #1a5570) !important; }
+.hero-media { background: linear-gradient(160deg, #2f7d9c, #1a5570); }
 .wax-seal { background: linear-gradient(135deg, var(--plum), var(--plum-dark)) !important; box-shadow: 0 10px 30px rgba(239,130,100,0.4) !important; }
 .countdown-section { background: linear-gradient(135deg, var(--sage-dark), #1a5570) !important; }
 .countdown-section::before, .countdown-section::after { background: var(--parchment) !important; width: 28px !important; height: 28px !important; }

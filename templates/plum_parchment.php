@@ -528,7 +528,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <style>
 /* plum_parchment unique overrides – Sage Asymmetry */
 .hero { border-radius: 0 0 0 80px; overflow: hidden; }
-.hero-media { background: linear-gradient(160deg, #4a2c3b, #2e1a25) !important; }
+.hero-media { background: linear-gradient(160deg, #4a2c3b, #2e1a25); }
 .wax-seal { background: #8a9a7e !important; color: white !important; border: none !important; box-shadow: 0 8px 25px rgba(74,44,59,0.4) !important; }
 .hero-panel { padding: 60px 50px !important; }
 .eyebrow { color: #8a9a7e !important; }

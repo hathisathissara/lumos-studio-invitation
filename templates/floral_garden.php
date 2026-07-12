@@ -528,7 +528,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <style>
 /* floral_garden unique overrides – Watercolor Garden */
 .hero { border-radius: 0 0 60px 60px; overflow: hidden; box-shadow: 0 20px 60px rgba(169,96,124,0.12); }
-.hero-media { background: linear-gradient(160deg, #a9607c, #7d4a5e) !important; }
+.hero-media { background: linear-gradient(160deg, #a9607c, #7d4a5e); }
 .wax-seal { background: rgba(255,255,255,0.2) !important; border: 2px dashed rgba(255,255,255,0.5) !important; backdrop-filter: blur(10px); font-size: 1.4rem !important; }
 .hero-panel { background: linear-gradient(135deg, #fffdf8, #fbf3ea) !important; }
 .couple-title .amp { color: #a9607c !important; }

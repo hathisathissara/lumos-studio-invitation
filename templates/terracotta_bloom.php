@@ -628,41 +628,80 @@ if (!empty($wedding['hero_image'])) {
     </style>
 
 <style>
-/* Slideshow-like animation for gallery items */
-@keyframes slideShowAnim {
-    0% { opacity: 0; transform: scale(0.95) translateY(20px); }
-    10% { opacity: 1; transform: scale(1) translateY(0); }
-    90% { opacity: 1; transform: scale(1) translateY(0); }
-    100% { opacity: 0; transform: scale(1.05) translateY(-20px); }
+/* ======= SWEET MOMENTS SLIDESHOW (couple's gallery only) ======= */
+.sweet-slideshow {
+    position: relative;
+    max-width: 640px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.14);
+    background: #000;
 }
-.gallery-grid {
+.sweet-slideshow-track {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 15px;
-    padding: 10px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    animation: scrollGallery 20s linear infinite;
+    transition: transform 0.5s ease;
 }
-.gallery-grid:hover {
-    animation-play-state: paused;
+.sweet-slide {
+    flex: 0 0 100%;
+    aspect-ratio: 4/3;
+    cursor: pointer;
 }
-@keyframes scrollGallery {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+.sweet-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
-.gallery-item {
-    flex: 0 0 auto;
-    width: 280px;
-    height: 280px;
+.sweet-slide-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.85);
+    color: var(--gold-dark);
+    border: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    transition: all 0.2s;
+    z-index: 2;
+}
+.sweet-slide-nav:hover { background: var(--gold); color: #fff; }
+.sweet-slide-nav.prev { left: 14px; }
+.sweet-slide-nav.next { right: 14px; }
+.sweet-slide-dots {
+    position: absolute;
+    bottom: 14px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 2;
+}
+.sweet-slide-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.25s;
+}
+.sweet-slide-dot.active { background: var(--gold); width: 22px; border-radius: 5px; }
+@media (max-width: 560px) {
+    .sweet-slide-nav { width: 34px; height: 34px; font-size: 0.8rem; }
 }
 </style>
 
 <style>
 /* terracotta_bloom unique overrides – Warm Organic */
-.hero-header { background: linear-gradient(180deg, #3d1e14 0%, #5a2e1e 40%, var(--cream) 100%) !important; }
-.hero-header::before { background: radial-gradient(ellipse 120% 80% at 50% 30%, rgba(193,99,61,0.15), transparent) !important; }
+.hero-header { background: linear-gradient(180deg, #3d1e14 0%, #5a2e1e 40%, var(--cream) 100%); }
+.hero-header::before { background: radial-gradient(ellipse 120% 80% at 50% 30%, rgba(193,99,61,0.15), transparent); }
 .hero-ornament-top { font-size: 16rem !important; color: rgba(193,99,61,0.05) !important; }
 .couple-names-hero { text-shadow: 2px 4px 20px rgba(60,20,10,0.6) !important; }
 .countdown-section { background: linear-gradient(135deg, #5a2e1e, #3d1e14) !important; border: none !important; }
@@ -859,12 +898,19 @@ if (!empty($wedding['hero_image'])) {
     <h2 class="section-heading"><em>Sweet</em> Moments</h2>
     <p class="section-sub">Our engagement memories</p>
 
-    <div class="gallery-grid" id="gallery-grid">
-        <?php foreach ($gallery_images as $img): ?>
-        <div class="gallery-item" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
-            <img src="<?php echo htmlspecialchars($img['image_path']); ?>" alt="Our moment" loading="lazy">
+    <div class="sweet-slideshow" id="sweet-slideshow">
+        <div class="sweet-slideshow-track" id="sweet-slideshow-track">
+            <?php foreach ($gallery_images as $img): ?>
+            <div class="sweet-slide" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
+                <img src="<?php echo htmlspecialchars($img['image_path']); ?>" alt="Our moment" loading="lazy">
+            </div>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
+        <?php if (count($gallery_images) > 1): ?>
+        <button type="button" class="sweet-slide-nav prev" onclick="sweetSlideMove(-1)" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
+        <button type="button" class="sweet-slide-nav next" onclick="sweetSlideMove(1)" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
+        <div class="sweet-slide-dots" id="sweet-slide-dots"></div>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
@@ -1088,6 +1134,51 @@ function closeLightbox() {
     document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// Sweet Moments Slideshow
+(function() {
+    const track = document.getElementById('sweet-slideshow-track');
+    if (!track) return;
+    const slides = track.children;
+    const total = slides.length;
+    let idx = 0;
+    const dotsWrap = document.getElementById('sweet-slide-dots');
+    if (dotsWrap && total > 1) {
+        for (let i = 0; i < total; i++) {
+            const dot = document.createElement('span');
+            dot.className = 'sweet-slide-dot' + (i === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(i);
+            dotsWrap.appendChild(dot);
+        }
+    }
+    function updateSlide() {
+        track.style.transform = `translateX(-${idx * 100}%)`;
+        if (dotsWrap) {
+            Array.from(dotsWrap.children).forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+    }
+    function goToSlide(i) { idx = (i + total) % total; updateSlide(); }
+    window.sweetSlideMove = function(dir) { goToSlide(idx + dir); };
+
+    let autoTimer;
+    function startAuto() { if (total > 1) autoTimer = setInterval(() => goToSlide(idx + 1), 4000); }
+    function stopAuto() { clearInterval(autoTimer); }
+
+    const wrap = document.getElementById('sweet-slideshow');
+    wrap.addEventListener('mouseenter', stopAuto);
+    wrap.addEventListener('mouseleave', startAuto);
+
+    let touchStartX = 0;
+    track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; stopAuto(); }, { passive: true });
+    track.addEventListener('touchend', e => {
+        const diff = e.changedTouches[0].clientX - touchStartX;
+        if (diff > 50) goToSlide(idx - 1);
+        else if (diff < -50) goToSlide(idx + 1);
+        startAuto();
+    }, { passive: true });
+
+    startAuto();
+})();
 </script>
 </body>
 </html>

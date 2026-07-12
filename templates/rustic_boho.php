@@ -528,7 +528,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <style>
 /* rustic_boho unique overrides – Earthy Hand-drawn */
 .hero { border-radius: 0 0 40px 40px; overflow: hidden; }
-.hero-media { background: linear-gradient(160deg, #7a4225, #4a2815) !important; }
+.hero-media { background: linear-gradient(160deg, #7a4225, #4a2815); }
 .wax-seal { background: transparent !important; border: 3px dashed rgba(217,155,111,0.6) !important; box-shadow: none !important; }
 .hero-panel { background: #faf3e7 !important; }
 .eyebrow { color: #d99b6f !important; font-style: italic; }

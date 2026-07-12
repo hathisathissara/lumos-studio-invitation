@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     header('Content-Type: application/json');
     if (isset($_FILES['gallery_image'])) {
         $file = $_FILES['gallery_image'];
-        $target_dir = "../uploads/gallery/";
+        $target_dir = "../../uploads/gallery/";
         if (!file_exists($target_dir)) mkdir($target_dir, 0777, true);
         $new_filename = uniqid() . '.webp';
         $target_file  = $target_dir . $new_filename;
