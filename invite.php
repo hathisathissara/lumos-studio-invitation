@@ -72,15 +72,18 @@ function tc_lighten($hex, $amount) { return tc_mix($hex, '#ffffff', $amount); }
 function tc_rgbstr($hex) { $r = tc_hex2rgb($hex); return round($r[0]) . ',' . round($r[1]) . ',' . round($r[2]); }
 
 $theme_palettes = [
-    'premium_gold'     => ['primary' => '#8a6520', 'accent' => '#b78a44', 'accent_light' => '#e8d5a3', 'paper' => '#fdfaf5', 'paper2' => '#f9f5ee', 'ink' => '#2d2115'],
-    'minimal_light'    => ['primary' => '#5c755a', 'accent' => '#8ba888', 'accent_light' => '#d6e2d4', 'paper' => '#ffffff', 'paper2' => '#f8f9fa', 'ink' => '#333333'],
-    'terracotta_bloom' => ['primary' => '#8f4526', 'accent' => '#c1633d', 'accent_light' => '#e3a880', 'paper' => '#faf5ec', 'paper2' => '#f4ece0', 'ink' => '#362b21'],
-    'plum_parchment'   => ['primary' => '#4a2c3b', 'accent' => '#8a9a7e', 'accent_light' => '#b7c3ac', 'paper' => '#f8f2e9', 'paper2' => '#f0e6d6', 'ink' => '#2e2a28'],
-    'floral_garden'    => ['primary' => '#a9607c', 'accent' => '#9caf88', 'accent_light' => '#c3d3b1', 'paper' => '#fffdf8', 'paper2' => '#fbf3ea', 'ink' => '#40352f'],
-    'beach_tropical'   => ['primary' => '#2f7d9c', 'accent' => '#ef8264', 'accent_light' => '#f4a688', 'paper' => '#fffdf9', 'paper2' => '#fbf1e2', 'ink' => '#2b3a42'],
-    'rustic_boho'      => ['primary' => '#7a4225', 'accent' => '#d99b6f', 'accent_light' => '#e6bd97', 'paper' => '#faf3e7', 'paper2' => '#f0e3ce', 'ink' => '#3b2a1e'],
-    'royal_classic'    => ['primary' => '#4d1219', 'accent' => '#c6a15b', 'accent_light' => '#dcc189', 'paper' => '#faf7f0', 'paper2' => '#f1e9d8', 'ink' => '#1c2340'],
-    'indian_royal'     => ['primary' => '#6e1626', 'accent' => '#e0a527', 'accent_light' => '#edc873', 'paper' => '#fff8ec', 'paper2' => '#fbecc9', 'ink' => '#3a1015'],
+    // Group A — Centered-Hero templates (use --gold / --cream / --text-dark CSS vars)
+    'premium_gold'     => ['primary' => '#8a6520', 'accent' => '#b78a44',  'accent_light' => '#e8d5a3', 'paper' => '#fdfaf5', 'paper2' => '#f9f5ee', 'ink' => '#2d2115'],
+    'minimal_light'    => ['primary' => '#5c755a', 'accent' => '#8ba888',  'accent_light' => '#d6e2d4', 'paper' => '#ffffff',  'paper2' => '#f8f9fa', 'ink' => '#333333'],
+    'terracotta_bloom' => ['primary' => '#8f4526', 'accent' => '#c1633d',  'accent_light' => '#e3a880', 'paper' => '#faf5ec', 'paper2' => '#f4ece0', 'ink' => '#362b21'],
+
+    // Group B — Split-Hero templates (use --plum-dark / --sage-dark / --parchment / --ink CSS vars)
+    'plum_parchment'   => ['primary' => '#4a2c3b', 'accent' => '#8a9a7e',  'accent_light' => '#a97e93', 'paper' => '#f8f2e9', 'paper2' => '#f0e6d6', 'ink' => '#2e2a28'],
+    'floral_garden'    => ['primary' => '#a9607c', 'accent' => '#9caf88',  'accent_light' => '#eab8c8', 'paper' => '#fffdf8', 'paper2' => '#fbf3ea', 'ink' => '#40352f'],
+    'beach_tropical'   => ['primary' => '#2f7d9c', 'accent' => '#ef8264',  'accent_light' => '#f4a688', 'paper' => '#fffdf9', 'paper2' => '#fbf1e2', 'ink' => '#2b3a42'],
+    'rustic_boho'      => ['primary' => '#7a4225', 'accent' => '#b5673a',  'accent_light' => '#d99b6f', 'paper' => '#faf3e7', 'paper2' => '#f0e3ce', 'ink' => '#3b2a1e'],
+    'royal_classic'    => ['primary' => '#4d1219', 'accent' => '#c6a15b',  'accent_light' => '#dcc189', 'paper' => '#faf7f0', 'paper2' => '#f1e9d8', 'ink' => '#1c2340'],
+    'indian_royal'     => ['primary' => '#6e1626', 'accent' => '#e0a527',  'accent_light' => '#edc873', 'paper' => '#fff8ec', 'paper2' => '#fbecc9', 'ink' => '#3a1015'],
 ];
 
 $theme_name = !empty($wedding['template_name']) ? $wedding['template_name'] : 'premium_gold';

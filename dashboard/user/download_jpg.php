@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 // පරිශීලකයා ලොග් වී ඇත්දැයි බැලීම
 if (!isset($_SESSION['user_id'])) {
@@ -25,7 +25,7 @@ if (!$img) {
     die("Image not found or unauthorized.");
 }
 
-$relative_path = '../' . $img['image_path'];
+$relative_path = '../../' . $img['image_path'];
 
 if (!file_exists($relative_path)) {
     die("Original image file not found on server.");

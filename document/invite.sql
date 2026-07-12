@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS `weddings` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
 );
+ALTER TABLE weddings ADD COLUMN venue VARCHAR(255) DEFAULT NULL;
 
 CREATE TABLE IF NOT EXISTS guest_gallery (
     id INT AUTO_INCREMENT PRIMARY KEY,

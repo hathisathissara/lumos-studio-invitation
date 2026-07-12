@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -59,7 +59,7 @@ $stmtTasks = $pdo->prepare("SELECT * FROM tasks WHERE wedding_id = ? ORDER BY is
 $stmtTasks->execute([$wedding_id]);
 $tasksList = $stmtTasks->fetchAll();
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -353,4 +353,4 @@ function filterTasks(filter, btn) {
 }
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

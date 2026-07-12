@@ -1,11 +1,11 @@
 <?php
 session_start();
-require '../config/config.php';
-require '../config/mailer.php';
+require '../../config/config.php';
+require '../../config/mailer.php';
 
 // ආරක්ෂාව සඳහා Admin පමණක් ඇතුලත් කර ගැනීම
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -70,6 +70,13 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_counts') {
     exit();
 }
 
+// CSRF Protection for actions
+if (isset($_GET['action']) && in_array($_GET['action'], ['reject', 'approve', 'complete'])) {
+    if (!isset($_GET['csrf_token']) || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF token validation failed.");
+    }
+}
+
 // 1. Action: Reject Refund (Refund එක ප්‍රතික්ෂේප කිරීම)
 if (isset($_GET['action']) && $_GET['action'] === 'reject' && isset($_GET['uid'])) {
     $u_id = intval($_GET['uid']);
@@ -126,11 +133,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'complete' && isset($_GET['uid
         }
 
         // B. සර්වර් එකේ ඇති Slips ගොනු (Files) දෙකම මකා දැමීම (Unlink)
-        if (!empty($userInfo['payment_slip']) && file_exists('../' . $userInfo['payment_slip'])) {
-            unlink('../' . $userInfo['payment_slip']);
+        if (!empty($userInfo['payment_slip']) && file_exists('../../' . $userInfo['payment_slip'])) {
+            unlink('../../' . $userInfo['payment_slip']);
         }
-        if (!empty($userInfo['upgrade_slip']) && file_exists('../' . $userInfo['upgrade_slip'])) {
-            unlink('../' . $userInfo['upgrade_slip']);
+        if (!empty($userInfo['upgrade_slip']) && file_exists('../../' . $userInfo['upgrade_slip'])) {
+            unlink('../../' . $userInfo['upgrade_slip']);
         }
 
         // C. Database එක සම්පූර්ණයෙන්ම Reset කර refund completed තත්ත්වයට පත් කිරීම
@@ -172,7 +179,7 @@ $stmtPayouts = $pdo->prepare("SELECT users.id as user_id, users.name, users.emai
 $stmtPayouts->execute();
 $payoutsList = $stmtPayouts->fetchAll();
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -204,8 +211,9 @@ require 'layouts/header.php';
     .admin-nav-tab .tab-badge { background: rgba(239,68,68,0.12); color: var(--danger); border-radius: 20px; font-size: 0.66rem; font-weight: 800; padding: 1px 7px; }
     .admin-nav-tab.active .tab-badge { background: rgba(239,68,68,0.85); color: white; }
 
-    .refund-stat { background: white; border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 20px 22px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm); height: 100%; }
-    .refund-stat-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .refund-stat { background: white; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
+    .refund-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .refund-stat-icon { width: 44px; height: 44px; font-size: 1.05rem; }
     .refund-stat-num { font-size: 1.7rem; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 3px; }
     .refund-stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; }
 
@@ -265,7 +273,7 @@ require 'layouts/header.php';
         <p class="page-subheading mb-0">පරිපාලක මුදල් ආපසු ගෙවීම් — review and process couple refund requests</p>
     </div>
     <div class="admin-nav-tabs">
-        <a href="admin_dashboard.php" class="admin-nav-tab"><i class="fas fa-shield-alt"></i> Admin Panel</a>
+        <a href="index.php" class="admin-nav-tab"><i class="fas fa-shield-alt"></i> Admin Panel</a>
         <a href="admin_refunds.php" class="admin-nav-tab active">
             <i class="fas fa-undo-alt"></i> Refund Requests
             <?php if (count($refundRequests) > 0): ?><span class="tab-badge"><?php echo count($refundRequests); ?></span><?php endif; ?>
@@ -277,8 +285,8 @@ require 'layouts/header.php';
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
-        <div class="refund-stat">
-            <div class="refund-stat-icon" style="background:rgba(239,68,68,0.12); color:var(--danger);"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="refund-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
+            <div class="refund-stat-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(239,68,68,0.12); color:var(--danger);"><i class="fas fa-exclamation-circle"></i></div>
             <div>
                 <div class="refund-stat-num" id="live-refund-stat-pending"><?php echo count($refundRequests); ?></div>
                 <div class="refund-stat-label">Pending Reviews</div>
@@ -286,8 +294,8 @@ require 'layouts/header.php';
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="refund-stat">
-            <div class="refund-stat-icon" style="background:rgba(16,185,129,0.12); color:var(--success);"><i class="fas fa-university"></i></div>
+        <div class="refund-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
+            <div class="refund-stat-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(16,185,129,0.12); color:var(--success);"><i class="fas fa-university"></i></div>
             <div>
                 <div class="refund-stat-num" id="live-refund-stat-payout"><?php echo count($payoutsList); ?></div>
                 <div class="refund-stat-label">Awaiting Payout</div>
@@ -350,7 +358,7 @@ require 'layouts/header.php';
                         </td>
                         <td data-label="Slip">
                             <?php if (!empty($ref['payment_slip'])): ?>
-                                <a href="../<?php echo htmlspecialchars($ref['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
+                                <a href="../../<?php echo htmlspecialchars($ref['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
                                     <i class="fas fa-file-invoice"></i> View Slip
                                 </a>
                             <?php else: ?>
@@ -416,7 +424,7 @@ require 'layouts/header.php';
                         </td>
                         <td data-label="Receipt">
                             <?php if (!empty($pay['payment_slip'])): ?>
-                                <a href="../<?php echo htmlspecialchars($pay['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
+                                <a href="../../<?php echo htmlspecialchars($pay['payment_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;">
                                     <i class="fas fa-file-invoice"></i> View Slip
                                 </a>
                             <?php else: ?>
@@ -424,7 +432,7 @@ require 'layouts/header.php';
                             <?php endif; ?>
                         </td>
                         <td data-label="Action">
-                            <a href="admin_refunds.php?action=complete&uid=<?php echo $pay['user_id']; ?>" 
+                            <a href="admin_refunds.php?action=complete&uid=<?php echo $pay['user_id']; ?>&csrf_token=<?php echo $csrf_token; ?>" 
                                class="btn-action-complete"
                                onclick="return confirm('Confirm payout to <?php echo addslashes($pay['name']); ?>? This will send a refund completed receipt email and close this request.');">
                                 <i class="fas fa-check-circle"></i> Mark Payout as Completed
@@ -442,7 +450,7 @@ require 'layouts/header.php';
 
 <script>
 // =====================================================================
-// 🔥 සජීවීව Refund Phase Counts Update කිරීම — 5s Polling (Table rows untouched)
+// 🔥 සජීවීව Refund Phase Counts Update කිරීම
 // =====================================================================
 function updateLiveText(id, newValue) {
     const el = document.getElementById(id);
@@ -456,13 +464,15 @@ function updateLiveText(id, newValue) {
     }
 }
 
+let csrfTokenJS = "<?php echo $csrf_token; ?>";
+
 function buildRefundRequestRow(ref) {
     const avatarLetter = ref.name.charAt(0).toUpperCase();
     const eligibleBadge = ref.is_eligible
         ? `<span class="badge-eligible"><i class="fas fa-check-circle"></i> Eligible (0 opened)</span>`
         : `<span class="badge-non-eligible" title="This couple has already shared the link with guests."><i class="fas fa-times-circle"></i> Non-Refundable (${ref.opened_count} opened)</span>`;
     const slipCell = ref.payment_slip
-        ? `<a href="../${ref.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
+        ? `<a href="../../${ref.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
         : `<span class="text-muted small">No Slip</span>`;
 
     return `<tr>
@@ -484,8 +494,8 @@ function buildRefundRequestRow(ref) {
         <td data-label="Validation">${eligibleBadge}</td>
         <td data-label="Slip">${slipCell}</td>
         <td data-label="Actions" class="action-cell" style="white-space:nowrap;">
-            <a href="admin_refunds.php?action=approve&uid=${ref.user_id}" class="btn-action btn-action-approve" onclick="return confirm('Approve refund for ${ref.name.replace(/'/g, "\\'")}? This will deactivated their account and ask them for bank details.');"><i class="fas fa-check"></i> Approve Refund</a>
-            <a href="admin_refunds.php?action=reject&uid=${ref.user_id}" class="btn-action btn-action-reject" onclick="return confirm('Reject refund request for ${ref.name.replace(/'/g, "\\'")}?');"><i class="fas fa-times"></i> Reject</a>
+            <a href="admin_refunds.php?action=approve&uid=${ref.user_id}&csrf_token=${csrfTokenJS}" class="btn-action btn-action-approve" onclick="return confirm('Approve refund for ${ref.name.replace(/'/g, "\\'")}? This will deactivated their account and ask them for bank details.');"><i class="fas fa-check"></i> Approve Refund</a>
+            <a href="admin_refunds.php?action=reject&uid=${ref.user_id}&csrf_token=${csrfTokenJS}" class="btn-action btn-action-reject" onclick="return confirm('Reject refund request for ${ref.name.replace(/'/g, "\\'")}?');"><i class="fas fa-times"></i> Reject</a>
         </td>
     </tr>`;
 }
@@ -493,7 +503,7 @@ function buildRefundRequestRow(ref) {
 function buildPayoutRow(pay) {
     const avatarLetter = pay.name.charAt(0).toUpperCase();
     const slipCell = pay.payment_slip
-        ? `<a href="../${pay.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
+        ? `<a href="../../${pay.payment_slip}" target="_blank" class="btn btn-sm btn-outline-secondary p-2 fw-semibold" style="font-size:0.75rem; border-radius:8px;"><i class="fas fa-file-invoice"></i> View Slip</a>`
         : `<span class="text-muted small">No Slip</span>`;
 
     return `<tr>
@@ -509,7 +519,7 @@ function buildPayoutRow(pay) {
         <td data-label="Bank Details"><div class="bank-box"><i class="fas fa-university me-1 text-success"></i> ${pay.bank_details}</div></td>
         <td data-label="Receipt">${slipCell}</td>
         <td data-label="Action">
-            <a href="admin_refunds.php?action=complete&uid=${pay.user_id}" class="btn-action-complete" onclick="return confirm('Confirm payout to ${pay.name.replace(/'/g, "\\'")}? This will send a refund completed receipt email and close this request.');"><i class="fas fa-check-circle"></i> Mark Payout as Completed</a>
+            <a href="admin_refunds.php?action=complete&uid=${pay.user_id}&csrf_token=${csrfTokenJS}" class="btn-action-complete" onclick="return confirm('Confirm payout to ${pay.name.replace(/'/g, "\\'")}? This will send a refund completed receipt email and close this request.');"><i class="fas fa-check-circle"></i> Mark Payout as Completed</a>
         </td>
     </tr>`;
 }
@@ -517,6 +527,9 @@ function buildPayoutRow(pay) {
 let lastRequestsSnapshot = null;
 let lastPayoutsSnapshot = null;
 let refundPollPaused = false;
+let refundPollingInterval = 5000;
+let refundErrors = 0;
+let refundTimer = null;
 
 // Pause live refresh briefly whenever an action link inside either table is pressed,
 // so an in-flight 5s poll can never replace the row out from under a click mid-navigation.
@@ -528,11 +541,12 @@ document.addEventListener('mousedown', function(e) {
 });
 
 function fetchRefundLiveCounts() {
-    if (refundPollPaused) return;
+    if (refundPollPaused || document.hidden) return;
 
     fetch('admin_refunds.php?action=live_counts')
         .then(r => r.json())
         .then(data => {
+            refundErrors = 0;
             if (data.error) return;
 
             // 1. Counters (header badges + top stat cards)
@@ -541,8 +555,7 @@ function fetchRefundLiveCounts() {
             updateLiveText('live-refund-stat-pending', data.pending_count);
             updateLiveText('live-refund-stat-payout', data.payout_count);
 
-            // 2. Phase 1 table — Pending Refund Requests (only rebuild if data actually changed,
-            //    to avoid wiping out rows mid-click and unnecessary flicker)
+            // 2. Phase 1 table — Pending Refund Requests
             const requestsSnapshot = JSON.stringify(data.refund_requests);
             if (requestsSnapshot !== lastRequestsSnapshot) {
                 lastRequestsSnapshot = requestsSnapshot;
@@ -555,7 +568,7 @@ function fetchRefundLiveCounts() {
                 }
             }
 
-            // 3. Phase 2 table — Pending Bank Payouts (same diffing guard)
+            // 3. Phase 2 table — Pending Bank Payouts
             const payoutsSnapshot = JSON.stringify(data.payouts);
             if (payoutsSnapshot !== lastPayoutsSnapshot) {
                 lastPayoutsSnapshot = payoutsSnapshot;
@@ -564,13 +577,36 @@ function fetchRefundLiveCounts() {
                 if (payTbody && data.payouts) {
                     payTbody.innerHTML = data.payouts.length > 0
                         ? data.payouts.map(buildPayoutRow).join('')
-                        : `<tr><td colspan="4" class="text-center py-5 text-muted empty-table-row"><i class="fas fa-check-double"></i>ගෙවීම් කිරීමට ඇති කිසිදු බැංකු ගිණුමක් දැනට ලැබී නැත.</td></tr>`;
+                        : `<tr><td colspan="4" class="text-center py-5 text-muted empty-table-row"><i class="fas fa-university"></i>Payout කිරීමට කිසිදු ගිණුමක් දැනට නැත.</td></tr>`;
                 }
             }
+
+            if (refundPollingInterval > 5000) {
+                refundPollingInterval = 5000;
+                resetRefundTimer();
+            }
         })
-        .catch(err => console.error('Error syncing refund live counts:', err));
+        .catch(err => {
+            console.error('Error syncing admin refund counts:', err);
+            refundErrors++;
+            if (refundErrors > 2) {
+                refundPollingInterval = Math.min(60000, refundPollingInterval * 2);
+                resetRefundTimer();
+            }
+        });
 }
-setInterval(fetchRefundLiveCounts, 5000);
+
+function resetRefundTimer() {
+    if (refundTimer) clearInterval(refundTimer);
+    refundTimer = setInterval(fetchRefundLiveCounts, refundPollingInterval);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        fetchRefundLiveCounts();
+    }
+});
+resetRefundTimer();
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

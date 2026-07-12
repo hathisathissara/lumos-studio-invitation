@@ -29,9 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $slug .= '-' . rand(100, 999);
         }
 
-        $sql2 = "INSERT INTO weddings (user_id, bride_name, groom_name, wedding_date, slug) VALUES (?, ?, ?, ?, ?)";
+        $sql2 = "INSERT INTO weddings (user_id, bride_name, groom_name, wedding_date, slug, venue) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt2 = $pdo->prepare($sql2);
-        $stmt2->execute([$user_id, $bride, $groom, $date, $slug]);
+        $stmt2->execute([$user_id, $bride, $groom, $date, $slug, $venue]);
 
         $pdo->commit();
         header("Location: login.php?registered=success");

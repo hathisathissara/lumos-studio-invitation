@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -42,7 +42,13 @@ $stmtEvents = $pdo->prepare("SELECT * FROM events WHERE wedding_id = ? ORDER BY 
 $stmtEvents->execute([$wedding_id]);
 $eventsList = $stmtEvents->fetchAll();
 
-require 'layouts/header.php';
+// Fetch default wedding venue
+$stmtWedding = $pdo->prepare("SELECT venue FROM weddings WHERE id = ?");
+$stmtWedding->execute([$wedding_id]);
+$weddingInfo = $stmtWedding->fetch();
+$default_venue = $weddingInfo['venue'] ?? '';
+
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -268,7 +274,7 @@ require 'layouts/header.php';
                     </div>
                     <div class="form-field">
                         <label>Venue / Location <span style="color:#c9a96e;">*</span></label>
-                        <input type="text" name="location_name" placeholder="Hotel or hall name" required>
+                        <input type="text" name="location_name" placeholder="Hotel or hall name" value="<?php echo htmlspecialchars($default_venue); ?>" required>
                     </div>
                     <div class="form-field" style="margin-bottom:0;">
                         <label>Google Maps Link</label>
@@ -334,4 +340,4 @@ require 'layouts/header.php';
     </div>
 </div>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

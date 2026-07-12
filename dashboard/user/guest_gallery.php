@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -37,7 +37,7 @@ if ($has_guest_gallery && isset($_GET['delete_img'])) {
     $img = $stmtImg->fetch();
     
     if ($img) {
-        $physical_path = '../' . $img['image_path'];
+        $physical_path = '../../' . $img['image_path'];
         
         if (file_exists($physical_path)) {
             unlink($physical_path);
@@ -58,7 +58,7 @@ if ($has_guest_gallery) {
     $guest_images = $stmtGet->fetchAll();
 }
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -119,7 +119,7 @@ require 'layouts/header.php';
                 <?php foreach ($guest_images as $g_pic): ?>
                     <div class="gallery-item-card">
                         <div class="img-container">
-                            <img src="../<?php echo htmlspecialchars($g_pic['image_path']); ?>" alt="Guest upload">
+                            <img src="../../<?php echo htmlspecialchars($g_pic['image_path']); ?>" alt="Guest upload">
                         </div>
                         <div class="meta-container">
                             <div class="meta-uploader" title="<?php echo htmlspecialchars($g_pic['guest_name']); ?>">
@@ -169,7 +169,7 @@ function renderGalleryCard(img) {
     return `
         <div class="gallery-item-card">
             <div class="img-container">
-                <img src="../${img.image_path}" alt="Guest upload">
+                <img src="../../${img.image_path}" alt="Guest upload">
             </div>
             <div class="meta-container">
                 <div class="meta-uploader" title="${img.guest_name}">
@@ -235,4 +235,4 @@ setInterval(fetchGuestGalleryLive, 6000);
 </script>
 <?php endif; ?>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

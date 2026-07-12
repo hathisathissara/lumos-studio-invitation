@@ -1,8 +1,13 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -37,10 +42,10 @@ if ($role !== 'admin' && !empty($_SESSION['wedding_id']) && isset($pdo)) {
 
     $invite_slug = !empty($slugForHeader) ? $slugForHeader : 'invite.php?w_id=' . $_SESSION['wedding_id'];
     $host = !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
-    $base_dir = dirname(dirname($_SERVER['PHP_SELF']));
+    $base_dir = dirname(dirname(dirname($_SERVER['PHP_SELF'])));
     // නිවැරදි කල නව කේතය (ඉබේම http/https හඳුනාගනී)
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-    $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+    $domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF'])));
     $ring = "\u{1F48D}";
     $flower = "\u{1F338}"; // 🌸
     $heart = "\u{2764}\u{FE0F}"; // ❤️
@@ -68,7 +73,7 @@ $current = basename($_SERVER['PHP_SELF']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lumus Studio Dashboard</title>
-    <link rel="icon" type="image/x-icon" href="../uploads/lumos.jpg">
+    <link rel="icon" type="image/x-icon" href="../../uploads/lumos.jpg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -440,48 +445,48 @@ $current = basename($_SERVER['PHP_SELF']);
     <nav class="sidebar-nav">
         <?php if ($role === 'admin'): ?>
             <div class="nav-section-label">Administration</div>
-            <a href="admin/index.php" class="nav-item <?php echo $current === 'admin/index.php' ? 'active' : ''; ?>">
+            <a href="index.php" class="nav-item <?php echo $current === 'index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i> Admin Panel
             </a>
-            <a href="admin/refunds.php" class="nav-item <?php echo $current === 'admin/refunds.php' ? 'active' : ''; ?>">
+            <a href="admin_refunds.php" class="nav-item <?php echo $current === 'admin_refunds.php' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i> Refund Requests
             </a>
             
         <?php else: ?>
             <div class="nav-section-label">Overview</div>
-            <a href="user/index.php" class="nav-item <?php echo $current === 'user/index.php' ? 'active' : ''; ?>">
+            <a href="index.php" class="nav-item <?php echo $current === 'index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-home"></i> Dashboard
             </a>
             <div class="nav-section-label">Invitation</div>
-            <a href="user/guests.php" class="nav-item <?php echo $current === 'user/guests.php' ? 'active' : ''; ?>">
+            <a href="guests.php" class="nav-item <?php echo $current === 'guests.php' ? 'active' : ''; ?>">
                 <i class="fas fa-users"></i> Guest List
             </a>
-            <a href="user/events.php" class="nav-item <?php echo $current === 'user/events.php' ? 'active' : ''; ?>">
+            <a href="events.php" class="nav-item <?php echo $current === 'events.php' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-alt"></i> Events
             </a>
-            <a href="user/gallery.php" class="nav-item <?php echo $current === 'user/gallery.php' ? 'active' : ''; ?>">
+            <a href="gallery.php" class="nav-item <?php echo $current === 'gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-images"></i> Gallery & Story
             </a>
-            <a href="user/guest_gallery.php" class="nav-item <?php echo $current === 'user/guest_gallery.php' ? 'active' : ''; ?>">
+            <a href="guest_gallery.php" class="nav-item <?php echo $current === 'guest_gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-camera-retro"></i> Guest Shared Pics
             </a>
             <div class="nav-section-label">Tools</div>
-            <a href="user/checklist.php" class="nav-item <?php echo $current === 'user/checklist.php' ? 'active' : ''; ?>">
+            <a href="checklist.php" class="nav-item <?php echo $current === 'checklist.php' ? 'active' : ''; ?>">
                 <i class="fas fa-tasks"></i> Checklist
             </a>
-            <a href="user/settings.php" class="nav-item <?php echo $current === 'user/settings.php' ? 'active' : ''; ?>">
+            <a href="settings.php" class="nav-item <?php echo $current === 'settings.php' ? 'active' : ''; ?>">
                 <i class="fas fa-cog"></i> Settings
             </a>
 
 
-            <a href="user/payment.php" class="nav-item nav-item-warn <?php echo $current === 'user/payment.php' ? 'active' : ''; ?>">
+            <a href="payment.php" class="nav-item nav-item-warn <?php echo $current === 'payment.php' ? 'active' : ''; ?>">
                 <i class="fas fa-credit-card"></i> Activate Account
             </a>
         <?php endif; ?>
     </nav>
 
     <div class="sidebar-bottom">
-        <a href="logout.php" class="nav-item nav-item-danger">
+        <a href="../logout.php" class="nav-item nav-item-danger">
             <i class="fas fa-sign-out-alt"></i> Sign Out
         </a>
     </div>
@@ -504,7 +509,7 @@ $current = basename($_SERVER['PHP_SELF']);
         <div class="topbar-lock-badge">
             <i class="fas fa-lock"></i> Guest Link Locked
         </div>
-        <a href="../view_invitation.php?w_id=<?php echo $_SESSION['wedding_id']; ?>&preview=1" target="_blank" class="topbar-btn topbar-btn-outline">
+        <a href="../../view_invitation.php?w_id=<?php echo $_SESSION['wedding_id']; ?>&preview=1" target="_blank" class="topbar-btn topbar-btn-outline">
             <i class="fas fa-eye"></i> Preview Only
         </a>
         <a href="payment.php" class="topbar-btn topbar-btn-amber">
@@ -609,21 +614,50 @@ document.addEventListener('click', function(e) {
 
 <?php if ($role !== 'admin'): ?>
 // =====================================================================
-// 🔥 සජීවීව Header/Sidebar Status Check කිරීම — Admin Activate/Deactivate කලොත් Auto-refresh (8s Polling)
+// 🔥 සජීවීව Header/Sidebar Status Check කිරීම
 // =====================================================================
 const headerInitialStatus = <?php echo json_encode($status); ?>;
+let headerPollingInterval = 8000;
+let headerErrors = 0;
+let headerTimer = null;
 
 function checkHeaderStatusLive() {
+    if (document.hidden) return;
+
     fetch('index.php?header_status_check=1')
         .then(r => r.json())
         .then(data => {
+            headerErrors = 0;
             if (data.status && data.status !== headerInitialStatus) {
                 showToast(data.status === 'active' ? '🎉 Your invitation is now active!' : '⚠️ Your account status has changed');
                 setTimeout(() => location.reload(), 1800);
             }
+
+            if (headerPollingInterval > 8000) {
+                headerPollingInterval = 8000;
+                resetHeaderTimer();
+            }
         })
-        .catch(err => console.error('Error checking header status:', err));
+        .catch(err => {
+            console.error('Error checking header status:', err);
+            headerErrors++;
+            if (headerErrors > 2) {
+                headerPollingInterval = Math.min(60000, headerPollingInterval * 2);
+                resetHeaderTimer();
+            }
+        });
 }
-setInterval(checkHeaderStatusLive, 8000);
+
+function resetHeaderTimer() {
+    if (headerTimer) clearInterval(headerTimer);
+    headerTimer = setInterval(checkHeaderStatusLive, headerPollingInterval);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        checkHeaderStatusLive();
+    }
+});
+resetHeaderTimer();
 <?php endif; ?>
 </script>

@@ -1,19 +1,19 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
 if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-    header("Location: admin_dashboard.php");
+    header("Location: ../admin/index.php");
     exit();
 }
 
 if (!isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -64,7 +64,7 @@ $task_pct = $tasks_total > 0 ? round(($tasks_done / $tasks_total) * 100) : 0;
 // Invitation link
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+$domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF'])));
 $ring = "\u{1F48D}";
 $flower = "\u{1F338}"; // 🌸
 $heart = "\u{2764}\u{FE0F}"; // ❤️
@@ -77,76 +77,50 @@ $invite_share_message = $ring . " You're Invited! " . $ring . "\n\n"
     . "We can't wait to celebrate, laugh, and create beautiful memories with you! " . $heart;
 
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
+    /* Bootstrap utility overrides and specific aesthetic styles */
     .page-hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        padding: 24px 28px;
         background: linear-gradient(135deg, #ffffff 0%, #fcfbf7 100%);
+        border-radius: 16px; /* Assuming card-custom covers this, but ensuring it */
     }
     .page-hero-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
         background: rgba(201,169,110,0.12);
         color: #a07840;
         font-size: 0.74rem;
         font-weight: 700;
-        text-transform: uppercase;
         letter-spacing: 0.8px;
-        margin-bottom: 12px;
     }
     .page-hero h1 {
+        color: #1a1a2e;
         font-size: 1.45rem;
         font-weight: 700;
-        color: #1a1a2e;
-        margin: 0 0 8px;
     }
     .page-hero p {
         color: #64748b;
         font-size: 0.95rem;
-        margin: 0;
         line-height: 1.6;
     }
-    .page-hero-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 14px;
-    }
     .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 10px;
-        border-radius: 999px;
         background: #f8fafc;
         color: #475569;
         font-size: 0.8rem;
         font-weight: 600;
         border: 1px solid #e2e8f0;
     }
+    
     .countdown-card {
         min-width: 260px;
-        padding: 16px 18px;
-        border-radius: 16px;
         background: linear-gradient(135deg, #1a1a2e 0%, #242440 100%);
         color: #f8f5ef;
         box-shadow: 0 10px 24px rgba(15, 15, 26, 0.12);
     }
     .countdown-card .eyebrow {
         font-size: 0.7rem;
-        text-transform: uppercase;
         letter-spacing: 1.2px;
         color: rgba(201,169,110,0.7);
-        margin-bottom: 8px;
     }
     .countdown-card .countdown-value {
         font-size: 1.55rem;
@@ -161,8 +135,6 @@ require 'layouts/header.php';
     .stat-card {
         background: white;
         border: 1px solid #e8ecf0;
-        border-radius: 16px;
-        padding: 24px;
         position: relative;
         overflow: hidden;
         transition: all 0.3s;
@@ -187,12 +159,7 @@ require 'layouts/header.php';
 
     .stat-icon {
         width: 44px; height: 44px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 1.1rem;
-        margin-bottom: 16px;
     }
     .stat-icon.gold   { background: rgba(201,169,110,0.12); color: #c9a96e; }
     .stat-icon.blue   { background: rgba(59,130,246,0.12);  color: #3b82f6; }
@@ -219,21 +186,12 @@ require 'layouts/header.php';
         background: linear-gradient(135deg, #1a1a2e 0%, #242440 100%);
         border: 1px solid rgba(201,169,110,0.15);
         border-radius: 16px;
-        padding: 24px 28px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        flex-wrap: wrap;
     }
-    .link-card-left { flex: 1; min-width: 0; }
     .link-card-title {
         font-size: 0.75rem;
         font-weight: 600;
         letter-spacing: 2px;
-        text-transform: uppercase;
         color: rgba(201,169,110,0.6);
-        margin-bottom: 6px;
     }
     .link-display {
         font-family: 'Inter', sans-serif;
@@ -244,7 +202,6 @@ require 'layouts/header.php';
         text-overflow: ellipsis;
         opacity: 0.7;
     }
-    .link-card-actions { display: flex; gap: 10px; flex-shrink: 0; }
     .btn-copy-link {
         background: linear-gradient(135deg, #c9a96e, #a07840);
         color: #0f0f1a;
@@ -344,20 +301,9 @@ require 'layouts/header.php';
     }
 
     /* Quick actions */
-    .quick-actions {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 20px;
-    }
     .quick-action-btn {
-        display: flex;
-        align-items: center;
-        gap: 12px;
         background: white;
         border: 1px solid #e8ecf0;
-        border-radius: 14px;
-        padding: 16px 18px;
         text-decoration: none;
         transition: all 0.2s;
     }
@@ -368,12 +314,7 @@ require 'layouts/header.php';
     }
     .quick-action-icon {
         width: 40px; height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 1rem;
-        flex-shrink: 0;
     }
     .quick-action-label {
         font-size: 0.85rem;
@@ -383,12 +324,6 @@ require 'layouts/header.php';
     .quick-action-sub {
         font-size: 0.72rem;
         color: #9ea3b0;
-    }
-    @media (max-width: 900px) {
-        .quick-actions { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-        .quick-actions { grid-template-columns: 1fr; }
     }
 
     /* Guest avatar in recent table */
@@ -409,21 +344,21 @@ require 'layouts/header.php';
 </style>
 
 <!-- PAGE HEADER -->
-<div class="page-hero card-custom mb-4">
+<div class="page-hero card-custom mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 p-4">
     <div>
-        <div class="page-hero-badge"><i class="fas fa-sparkles"></i> Wedding dashboard</div>
-        <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h1>
-        <p>Your planning hub is ready. Review guest activity, share the invitation, and keep momentum going toward your celebration.</p>
-        <div class="page-hero-meta">
+        <div class="page-hero-badge d-inline-flex align-items-center gap-2 rounded-pill px-3 py-2 text-uppercase mb-3"><i class="fas fa-sparkles"></i> Wedding dashboard</div>
+        <h1 class="mb-2">Welcome back, <?php echo htmlspecialchars($user_name); ?> 👋</h1>
+        <p class="m-0">Your planning hub is ready. Review guest activity, share the invitation, and keep momentum going toward your celebration.</p>
+        <div class="page-hero-meta d-flex flex-wrap gap-2 mt-3">
             <!-- සජීවීව අමුත්තන් ගණන update වීමට id එකතු කර ඇත -->
-            <span class="status-pill"><i class="fas fa-users"></i> <span id="meta-total-guests"><?php echo $total_guests; ?></span> guests</span>
-            <span class="status-pill"><i class="fas fa-check-circle"></i> <?php echo $tasks_done; ?>/<?php echo $tasks_total; ?> tasks done</span>
-            <span class="status-pill"><i class="fas fa-heart"></i> RSVP progress live</span>
+            <span class="status-pill d-inline-flex align-items-center gap-2 rounded-pill px-2 py-1"><i class="fas fa-users"></i> <span id="meta-total-guests"><?php echo $total_guests; ?></span> guests</span>
+            <span class="status-pill d-inline-flex align-items-center gap-2 rounded-pill px-2 py-1"><i class="fas fa-check-circle"></i> <?php echo $tasks_done; ?>/<?php echo $tasks_total; ?> tasks done</span>
+            <span class="status-pill d-inline-flex align-items-center gap-2 rounded-pill px-2 py-1"><i class="fas fa-heart"></i> RSVP progress live</span>
         </div>
     </div>
     <?php if ($wedding && $wedding['wedding_date']): ?>
-    <div class="countdown-card">
-        <div class="eyebrow">Counting down to your day</div>
+    <div class="countdown-card p-3 rounded-4">
+        <div class="eyebrow text-uppercase mb-2">Counting down to your day</div>
         <div class="countdown-value" id="dash-countdown">--</div>
         <div class="countdown-caption">Days to go</div>
     </div>
@@ -431,81 +366,90 @@ require 'layouts/header.php';
 </div>
 
 <!-- INVITATION LINK SHARE CARD -->
-<div class="link-card mb-4">
-    <div class="link-card-left">
-        <div class="link-card-title"><i class="fas fa-link" style="margin-right:6px;"></i> Your Invitation Link — Share this with all guests</div>
+<div class="link-card mb-4 p-3 p-md-4 d-flex align-items-md-center justify-content-between flex-column flex-md-row gap-3">
+    <div class="flex-grow-1" style="min-width: 0;">
+        <div class="link-card-title text-uppercase mb-2"><i class="fas fa-link me-2"></i> Your Invitation Link — Share this with all guests</div>
         <div class="link-display" id="inv-link-display"><?php echo htmlspecialchars($invitation_link); ?></div>
     </div>
-    <div class="link-card-actions">
+    <div class="d-flex gap-2 flex-shrink-0 mt-3 mt-md-0">
         <a href="<?php echo $invitation_link; ?>" target="_blank"
-           style="background:rgba(255,255,255,0.07); color:#c9a96e; border:1px solid rgba(201,169,110,0.2); border-radius:10px; padding:10px 16px; font-size:0.82rem; font-weight:500; text-decoration:none; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s;" title="Preview the invitation">
+           class="d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none rounded-3 flex-grow-1"
+           style="background:rgba(255,255,255,0.07); color:#c9a96e; border:1px solid rgba(201,169,110,0.2); padding:10px 16px; font-size:0.82rem; font-weight:500; transition:all 0.2s;" title="Preview the invitation">
             <i class="fas fa-eye"></i> Preview
         </a>
-        <button class="btn-copy-link" onclick="doCopyLink()">
+        <button class="btn-copy-link flex-grow-1 justify-content-center" onclick="doCopyLink()">
             <i class="fas fa-copy"></i> Copy Link
         </button>
     </div>
 </div>
 
 <!-- QUICK ACTIONS -->
-<div class="quick-actions">
-    <a href="guests.php" class="quick-action-btn">
-        <div class="quick-action-icon" style="background:rgba(201,169,110,0.12); color:#c9a96e;"><i class="fas fa-user-plus"></i></div>
-        <div>
-            <div class="quick-action-label">Add Guest</div>
-            <div class="quick-action-sub">Grow your guest list</div>
-        </div>
-    </a>
-    <a href="events.php" class="quick-action-btn">
-        <div class="quick-action-icon" style="background:rgba(59,130,246,0.12); color:#3b82f6;"><i class="fas fa-calendar-plus"></i></div>
-        <div>
-            <div class="quick-action-label">Add Event</div>
-            <div class="quick-action-sub">Poruwa, Reception & more</div>
-        </div>
-    </a>
-    <a href="gallery.php" class="quick-action-btn">
-        <div class="quick-action-icon" style="background:rgba(34,197,94,0.12); color:#22c55e;"><i class="fas fa-images"></i></div>
-        <div>
-            <div class="quick-action-label">Upload Photos</div>
-            <div class="quick-action-sub">Share your love story</div>
-        </div>
-    </a>
-    <a href="checklist.php" class="quick-action-btn">
-        <div class="quick-action-icon" style="background:rgba(245,158,11,0.12); color:#d97706;"><i class="fas fa-tasks"></i></div>
-        <div>
-            <div class="quick-action-label">Checklist</div>
-            <!-- සජීවීව Checklist ප්‍රතිශතය update වීමට id එකතු කර ඇත -->
-            <div class="quick-action-sub"><span id="meta-task-pct"><?php echo $task_pct; ?></span>% planning complete</div>
-        </div>
-    </a>
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-lg-3">
+        <a href="guests.php" class="quick-action-btn d-flex align-items-center gap-3 p-3 rounded-4 h-100">
+            <div class="quick-action-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(201,169,110,0.12); color:#c9a96e;"><i class="fas fa-user-plus"></i></div>
+            <div>
+                <div class="quick-action-label">Add Guest</div>
+                <div class="quick-action-sub">Grow your guest list</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <a href="events.php" class="quick-action-btn d-flex align-items-center gap-3 p-3 rounded-4 h-100">
+            <div class="quick-action-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(59,130,246,0.12); color:#3b82f6;"><i class="fas fa-calendar-plus"></i></div>
+            <div>
+                <div class="quick-action-label">Add Event</div>
+                <div class="quick-action-sub">Poruwa, Reception & more</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <a href="gallery.php" class="quick-action-btn d-flex align-items-center gap-3 p-3 rounded-4 h-100">
+            <div class="quick-action-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(34,197,94,0.12); color:#22c55e;"><i class="fas fa-images"></i></div>
+            <div>
+                <div class="quick-action-label">Upload Photos</div>
+                <div class="quick-action-sub">Share your love story</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-12 col-sm-6 col-lg-3">
+        <a href="checklist.php" class="quick-action-btn d-flex align-items-center gap-3 p-3 rounded-4 h-100">
+            <div class="quick-action-icon d-flex align-items-center justify-content-center flex-shrink-0 rounded-3" style="background:rgba(245,158,11,0.12); color:#d97706;"><i class="fas fa-tasks"></i></div>
+            <div>
+                <div class="quick-action-label">Checklist</div>
+                <!-- සජීවීව Checklist ප්‍රතිශතය update වීමට id එකතු කර ඇත -->
+                <div class="quick-action-sub"><span id="meta-task-pct"><?php echo $task_pct; ?></span>% planning complete</div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <!-- STAT CARDS (සජීවීව update වීම සඳහා IDs එකතු කර ඇත) -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-xl-3">
-        <div class="stat-card gold">
-            <div class="stat-icon gold"><i class="fas fa-users"></i></div>
+        <div class="stat-card gold p-4 rounded-4">
+            <div class="stat-icon gold d-flex align-items-center justify-content-center rounded-3 mb-3"><i class="fas fa-users"></i></div>
             <div class="stat-number" id="live-total-guests"><?php echo $total_guests; ?></div>
             <div class="stat-label">Total Guests</div>
         </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="stat-card blue">
-            <div class="stat-icon blue"><i class="fas fa-envelope-open"></i></div>
+        <div class="stat-card blue p-4 rounded-4">
+            <div class="stat-icon blue d-flex align-items-center justify-content-center rounded-3 mb-3"><i class="fas fa-envelope-open"></i></div>
             <div class="stat-number" id="live-opened-invitations"><?php echo $opened_invitations; ?></div>
             <div class="stat-label">Opened Invitation</div>
         </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="stat-card green">
-            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-card green p-4 rounded-4">
+            <div class="stat-icon green d-flex align-items-center justify-content-center rounded-3 mb-3"><i class="fas fa-check-circle"></i></div>
             <div class="stat-number" id="live-accepted-rsvp"><?php echo $accepted_rsvp; ?></div>
             <div class="stat-label">Attending (RSVP)</div>
         </div>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="stat-card red">
-            <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+        <div class="stat-card red p-4 rounded-4">
+            <div class="stat-icon red d-flex align-items-center justify-content-center rounded-3 mb-3"><i class="fas fa-times-circle"></i></div>
             <div class="stat-number" id="live-rejected-rsvp"><?php echo $rejected_rsvp; ?></div>
             <div class="stat-label">Not Attending</div>
         </div>
@@ -622,12 +566,23 @@ require 'layouts/header.php';
 <?php endif; ?>
 
 // =====================================================================
-// 🔥 සජීවීව දත්ත ලබාගන්නා REAL-TIME COMMUNICATOR JAVASCRIPT (5s Polling)
+// 🔥 සජීවීව දත්ත ලබාගන්නා REAL-TIME COMMUNICATOR JAVASCRIPT
 // =====================================================================
+let pollingInterval = 5000;
+let consecutiveErrors = 0;
+let statsTimer = null;
+
 function fetchDashboardLiveStats() {
+    // If the tab is not visible, don't poll
+    if (document.hidden) {
+        return;
+    }
+
     fetch('api_get_stats.php')
         .then(response => response.json())
         .then(data => {
+            consecutiveErrors = 0; // Reset errors on success
+            
             if (data.error) return;
 
             // 1. Stats වෙනස් වී ඇත්නම් සුමටව Fade-flash කර වෙනස් කරයි
@@ -691,9 +646,35 @@ function fetchDashboardLiveStats() {
                 }
                 tbody.innerHTML = html;
             }
+            
+            // Adjust polling rate back to normal if it was slowed down
+            if (pollingInterval > 5000) {
+                pollingInterval = 5000;
+                resetStatsTimer();
+            }
         })
-        .catch(err => console.error("Error syncing dashboard live stats:", err));
+        .catch(err => {
+            console.error("Error syncing dashboard live stats:", err);
+            consecutiveErrors++;
+            // Exponential backoff up to 1 minute
+            if (consecutiveErrors > 2) {
+                pollingInterval = Math.min(60000, pollingInterval * 2);
+                resetStatsTimer();
+            }
+        });
 }
+
+function resetStatsTimer() {
+    if (statsTimer) clearInterval(statsTimer);
+    statsTimer = setInterval(fetchDashboardLiveStats, pollingInterval);
+}
+
+// Listen for tab visibility changes to immediately fetch if coming back
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        fetchDashboardLiveStats();
+    }
+});
 
 // Avatar Initials සාදාගන්නා Function එක
 function getInitials(name) {
@@ -720,8 +701,8 @@ function updateLiveText(id, newValue) {
     }
 }
 
-// සෑම තත්පර 5කට වරක් පසුබිමෙන් සර්වර් එක සමඟ Sync වේ
-setInterval(fetchDashboardLiveStats, 5000);
+// Start polling
+resetStatsTimer();
 
 
 function doCopyLink() {
@@ -765,4 +746,4 @@ function copyTextToClipboard(text) {
 }
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

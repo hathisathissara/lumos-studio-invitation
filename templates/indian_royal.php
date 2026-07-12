@@ -16,6 +16,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -493,6 +494,70 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         .inv-footer { text-align: center; padding: 40px 20px; font-size: 0.75rem; color: var(--ink-light); border-top: 1px solid var(--parchment-border); }
         .inv-footer .brand { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.3rem; color: var(--plum); display: block; margin-bottom: 6px; }
     </style>
+
+<style>
+/* Slideshow-like animation for gallery items */
+@keyframes slideShowAnim {
+    0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+    10% { opacity: 1; transform: scale(1) translateY(0); }
+    90% { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: 0; transform: scale(1.05) translateY(-20px); }
+}
+.gallery-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    animation: scrollGallery 20s linear infinite;
+}
+.gallery-grid:hover {
+    animation-play-state: paused;
+}
+@keyframes scrollGallery {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.gallery-item {
+    flex: 0 0 auto;
+    width: 280px;
+    height: 280px;
+}
+</style>
+
+<style>
+/* indian_royal unique overrides – Ornate Mandala */
+.hero { box-shadow: none; }
+.hero-media { background: linear-gradient(160deg, #6e1626, #3a1015) !important; border-right: 5px solid #e0a527; }
+.wax-seal { background: #e0a527 !important; color: #3a1015 !important; border: 4px double rgba(58,16,21,0.3) !important; box-shadow: 0 0 0 6px rgba(224,165,39,0.3), 0 10px 30px rgba(58,16,21,0.4) !important; font-family: 'Great Vibes', cursive !important; }
+.hero-panel { border-left: none; }
+.eyebrow { color: #e0a527 !important; letter-spacing: 4px !important; }
+.couple-title { color: #3a1015 !important; }
+.couple-title .amp { color: #e0a527 !important; }
+.date-chip { background: rgba(224,165,39,0.08); border: 2px solid rgba(224,165,39,0.3) !important; border-radius: 0 !important; }
+.date-chip .val { color: #6e1626 !important; }
+.countdown-section { background: linear-gradient(135deg, #3a1015, #6e1626) !important; border-top: 3px solid #e0a527 !important; border-bottom: 3px solid #e0a527 !important; }
+.countdown-section::before, .countdown-section::after { background: #e0a527 !important; border: 2px solid #3a1015 !important; }
+.time-value { color: #edc873 !important; text-shadow: 0 2px 10px rgba(224,165,39,0.3); }
+.section-head .tag { color: #e0a527 !important; letter-spacing: 3px !important; }
+.section-head h2 em { color: #6e1626 !important; }
+.letter-card { border: 2px double #e0a527 !important; border-radius: 0 !important; }
+.letter-card::before { background: #e0a527 !important; height: 6px !important; }
+.tl-marker { background: linear-gradient(135deg, #6e1626, #3a1015) !important; border: 3px solid #e0a527 !important; border-radius: 4px !important; }
+.tl-card { border: 1px solid rgba(224,165,39,0.25) !important; border-radius: 4px !important; border-top: 3px solid #e0a527 !important; }
+.btn-map { background: #6e1626 !important; border: 1px solid #e0a527 !important; border-radius: 4px !important; }
+.btn-cal { border-radius: 4px !important; }
+.polaroid { background: linear-gradient(135deg, #fff, #fff8ec) !important; border: 2px solid rgba(224,165,39,0.2); padding: 8px 8px 30px !important; }
+.polaroid:hover { box-shadow: 0 10px 30px rgba(110,22,38,0.15) !important; }
+.rsvp-card { border-radius: 4px !important; border: 2px double #e0a527 !important; }
+.rsvp-aside { background: linear-gradient(160deg, #3a1015, #6e1626) !important; border-right: 3px solid #e0a527; }
+.rsvp-option label { border-radius: 4px !important; }
+.btn-rsvp-submit { background: linear-gradient(135deg, #6e1626, #3a1015) !important; border: 1px solid #e0a527; border-radius: 4px !important; letter-spacing: 3px; }
+.inv-footer { background: #3a1015; color: rgba(237,200,115,0.5); }
+.inv-footer .brand { color: #e0a527 !important; }
+</style>
 </head>
 <body>
 
@@ -519,12 +584,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         <span class="eyebrow">You're Warmly Invited</span>
         <p class="guest-line">Dear <?php echo htmlspecialchars($guest_name); ?>,</p>
 
-<?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
-    <div class="reserved-note">
-        <i class="fas fa-chair"></i>
-        <span>We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.</span>
-    </div>
-<?php endif; ?>
+
 
         <h1 class="couple-title">
             <?php echo htmlspecialchars($wedding['bride_name']); ?>
@@ -553,7 +613,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     </div>
 </div>
 
-<div class="invitation-body">
+<div class="invitation-body container py-4">
 
     <!-- LOVE STORY -->
     <?php if (!empty($wedding['love_story'])): ?>
@@ -747,7 +807,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <?php endif; ?>
 <!-- RSVP -->
 <div class="rsvp-section">
-    <div class="rsvp-card">
+    <div class="rsvp-card text-center shadow-lg rounded-4 p-5">
         <div class="rsvp-aside">
             <span class="quote-mark">&ldquo;</span>
             <p>Every love story is beautiful, but ours is our favorite. Come celebrate this new chapter with us.</p>
@@ -755,6 +815,12 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         <div class="rsvp-form-side">
             <h2 class="rsvp-title">RSVP</h2>
             <p class="rsvp-subtitle">Will you be joining us?</p>
+            <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
+    <div class="reserved-note" style="margin-bottom: 20px;">
+        <i class="fas fa-chair"></i>
+        <span>We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.</span>
+    </div>
+<?php endif; ?>
 
             <?php if ($msg): ?>
                 <?php echo $msg; ?>

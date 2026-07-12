@@ -15,6 +15,7 @@ if (!empty($wedding['hero_image'])) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Great+Vibes&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -639,6 +640,54 @@ if (!empty($wedding['hero_image'])) {
             .rsvp-options { grid-template-columns: 1fr 1fr; }
         }
     </style>
+
+<style>
+/* Slideshow-like animation for gallery items */
+@keyframes slideShowAnim {
+    0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+    10% { opacity: 1; transform: scale(1) translateY(0); }
+    90% { opacity: 1; transform: scale(1) translateY(0); }
+    100% { opacity: 0; transform: scale(1.05) translateY(-20px); }
+}
+.gallery-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 0;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    animation: scrollGallery 20s linear infinite;
+}
+.gallery-grid:hover {
+    animation-play-state: paused;
+}
+@keyframes scrollGallery {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.gallery-item {
+    flex: 0 0 auto;
+    width: 280px;
+    height: 280px;
+}
+</style>
+
+<style>
+/* premium_gold unique overrides – Elegant Dark Luxury */
+.hero-header { border-bottom: 3px solid var(--gold); }
+.countdown-section { background: linear-gradient(180deg, var(--cream-2), var(--cream)); border: none; }
+.time-value { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.event-card { border-left: 4px solid var(--gold); border-radius: 0 20px 20px 0; }
+.event-card::before { display: none; }
+.event-card:hover { box-shadow: 0 12px 40px rgba(183,138,68,0.15); }
+.section-heading em { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.rsvp-card { border-top: 4px solid var(--gold); border-radius: 0 0 24px 24px; }
+.btn-rsvp-submit { background: linear-gradient(135deg, var(--gold-dark), #1a1a2e); color: var(--gold-light); border-radius: 50px; }
+.gallery-item { border-radius: 20px; border: 3px solid var(--cream-border); }
+.inv-footer { background: linear-gradient(135deg, #1a1a2e, #242440); color: rgba(245,245,240,0.6); }
+.inv-footer .brand { color: var(--gold); }
+</style>
 </head>
 <body>
 
@@ -664,21 +713,14 @@ if (!empty($wedding['hero_image'])) {
     $hero_style = "style=\"background: linear-gradient(180deg, rgba(26,26,46,0.2) 0%, rgba(36,36,64,0.4) 50%, var(--cream) 100%), url('{$img_path}') center/cover no-repeat;\"";
 }
 ?>
-<div class="hero-header" <?php echo $hero_style; ?>>
+<div class="hero-header position-relative overflow-hidden text-center shadow-lg rounded-bottom-5 border-bottom border-warning border-4" <?php echo $hero_style; ?>>
     <div class="hero-ornament-top">♡</div>
     <div class="hero-content">
         <span class="guest-greeting-tag">You're Warmly Invited</span>
         <div class="guest-name-display">
             Dear <?php echo htmlspecialchars($guest_name); ?>,
         </div>
-<?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
-    <div class="reserved-note">
-        <i class="fas fa-chair"></i>
-        <span>
-            We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.
-        </span>
-    </div>
-<?php endif; ?>
+
         <div class="couple-names-hero">
             <?php echo htmlspecialchars($wedding['bride_name']); ?>
             <span class="amp">&</span>
@@ -688,6 +730,9 @@ if (!empty($wedding['hero_image'])) {
         <div class="hero-date-area">
             <p class="hero-getting-married">We are getting married on</p>
             <p class="hero-date"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></p>
+            <?php if(!empty($wedding['venue'])): ?>
+            <p class="hero-venue mt-3" style="font-family:'Inter',sans-serif; font-size:1.1rem; color:var(--gold);"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($wedding['venue']); ?></p>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -718,7 +763,7 @@ if (!empty($wedding['hero_image'])) {
     </div>
 </div>
 
-<div class="invitation-body">
+<div class="invitation-body container py-4">
 
     <!-- LOVE STORY -->
     <?php if (!empty($wedding['love_story'])): ?>
@@ -744,7 +789,7 @@ if (!empty($wedding['hero_image'])) {
     <p class="section-sub">Join us for these celebrations</p>
 
     <?php if (count($wedding_events) > 0): ?>
-        <div class="event-timeline">
+        <div class="event-timeline row row-cols-1 row-cols-md-2 g-4 justify-content-center">
             <?php foreach ($wedding_events as $ev):
                 $ev_start = date('Ymd\THis', strtotime($ev['event_date_time']));
                 $ev_end = date('Ymd\THis', strtotime($ev['event_date_time']) + 7200);
@@ -754,7 +799,7 @@ if (!empty($wedding['hero_image'])) {
                 $ev_ics = "calendar.php?wedding_id={$wedding_id}&event_id={$ev['id']}";
                 $ev_outlook = "https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=" . $ev_title . "&startdt=" . urlencode(date('c', strtotime($ev['event_date_time']))) . "&enddt=" . urlencode(date('c', strtotime($ev['event_date_time']) + 7200)) . "&location=" . $ev_loc;
             ?>
-            <div class="event-card">
+            <div class="event-card col text-center shadow-lg rounded-4">
                 <div class="event-name"><?php echo htmlspecialchars($ev['event_name']); ?></div>
                 <div class="event-meta">
                     <div class="event-meta-item">
@@ -939,9 +984,17 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-line right"></div>
     </div>
 
-    <div class="rsvp-card">
+    <div class="rsvp-card text-center shadow-lg rounded-4 p-5">
         <h2 class="rsvp-title">RSVP</h2>
         <p class="rsvp-subtitle">Will you be joining us?</p>
+            <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
+    <div class="reserved-note" style="margin-bottom: 20px;">
+        <i class="fas fa-chair"></i>
+        <span>
+            We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.
+        </span>
+    </div>
+<?php endif; ?>
         <?php if ($msg): ?>
             <?php echo $msg; ?>
         <?php endif; ?>

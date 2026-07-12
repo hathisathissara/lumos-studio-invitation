@@ -1,10 +1,10 @@
 <?php
 session_start();
-require '../config/config.php';
-require '../config/mailer.php';
+require '../../config/config.php';
+require '../../config/mailer.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -12,6 +12,13 @@ $msg = "";
 
 if (isset($_GET['deleted'])) {
     $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Account and all associated data permanently deleted.</div>";
+}
+
+// Check CSRF for state-changing actions
+if (isset($_GET['action']) && in_array($_GET['action'], ['activate', 'deactivate', 'approve_upgrade', 'reject_upgrade', 'notify_delete'])) {
+    if (!isset($_GET['csrf_token']) || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF token validation failed.");
+    }
 }
 
 // 1. Activate / Deactivate Standard Activation Flow
@@ -34,7 +41,7 @@ if (isset($_GET['action']) && isset($_GET['uid']) && in_array($_GET['action'], [
             $coupleMailInfo = $stmtCoupleMail->fetch();
 
             if ($coupleMailInfo) {
-                $domain_for_mail = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF'])), '/');
+                $domain_for_mail = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF']))), '/');
                 $invite_slug_for_mail = !empty($coupleMailInfo['slug']) ? $coupleMailInfo['slug'] : ('invite.php?w_id=' . $coupleMailInfo['wedding_id']);
                 $invite_url_for_mail = $domain_for_mail . '/' . $invite_slug_for_mail;
 
@@ -62,8 +69,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'approve_upgrade' && isset($_G
         $stmtOldSlip = $pdo->prepare("SELECT payment_slip FROM users WHERE id = ?");
         $stmtOldSlip->execute([$u_id]);
         $oldSlipFile = $stmtOldSlip->fetchColumn();
-        if (!empty($oldSlipFile) && file_exists('../' . $oldSlipFile)) {
-            unlink('../' . $oldSlipFile);
+        if (!empty($oldSlipFile) && file_exists('../../' . $oldSlipFile)) {
+            unlink('../../' . $oldSlipFile);
         }
 
         $stmtUpdatePkg = $pdo->prepare("UPDATE users SET package = ?, has_guest_gallery = ?, payment_slip = upgrade_slip, upgrade_slip = NULL, pending_upgrade_plan = NULL WHERE id = ?");
@@ -86,8 +93,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'reject_upgrade' && isset($_GE
     $stmtGetUpgrade->execute([$u_id]);
     $upgradeSlipFile = $stmtGetUpgrade->fetchColumn();
 
-    if (!empty($upgradeSlipFile) && file_exists('../' . $upgradeSlipFile)) {
-        unlink('../' . $upgradeSlipFile);
+    if (!empty($upgradeSlipFile) && file_exists('../../' . $upgradeSlipFile)) {
+        unlink('../../' . $upgradeSlipFile);
     }
 
     $stmtReject = $pdo->prepare("UPDATE users SET upgrade_slip = NULL, pending_upgrade_plan = NULL WHERE id = ?");
@@ -132,7 +139,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
     $stmtLiveList->execute();
     $liveUsersList = $stmtLiveList->fetchAll();
 
-    $liveDomain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF'])), '/');
+    $liveDomain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF']))), '/');
 
     $liveTotal   = count($liveUsersList);
     $liveActive  = count(array_filter($liveUsersList, fn($u) => $u['status'] === 'active'));
@@ -169,7 +176,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
             'has_guest_gallery' => !empty($user['has_guest_gallery']),
             'wedding_date' => $user['wedding_date'] ? date('d M Y', strtotime($user['wedding_date'])) : null,
             'wedding_past' => $wedding_past,
-            'payment_slip' => !empty($user['payment_slip']) ? htmlspecialchars('../' . $user['payment_slip']) : null,
+            'payment_slip' => !empty($user['payment_slip']) ? htmlspecialchars('../../' . $user['payment_slip']) : null,
             'slip_is_pdf' => ($slip_ext === 'pdf'),
             'refund_requested' => !empty($user['refund_requested_at']),
             'upgrade_pending' => !empty($user['pending_upgrade_plan']),
@@ -198,7 +205,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
             'package' => ucfirst($upg['package'] ?? 'Basic'),
             'has_guest_gallery' => !empty($upg['has_guest_gallery']),
             'req_text' => htmlspecialchars($req_text),
-            'upgrade_slip' => !empty($upg['upgrade_slip']) ? htmlspecialchars('../' . $upg['upgrade_slip']) : null,
+            'upgrade_slip' => !empty($upg['upgrade_slip']) ? htmlspecialchars('../../' . $upg['upgrade_slip']) : null,
         ];
     }
 
@@ -226,7 +233,7 @@ $stmtUsers = $pdo->prepare("
 $stmtUsers->execute();
 $allUsersList = $stmtUsers->fetchAll();
 
-$domain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF'])), '/');
+$domain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF']))), '/');
 
 // Stats (100% ක්ම නිවැරදි $allUsersList යොදා ඇත)
 $total   = count($allUsersList);
@@ -234,7 +241,7 @@ $active  = count(array_filter($allUsersList, fn($u) => $u['status'] === 'active'
 $pending = $total - $active;
 $refund_requests_count = count(array_filter($allUsersList, fn($u) => !empty($u['refund_requested_at'])));
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -254,8 +261,7 @@ require 'layouts/header.php';
     .flash-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: var(--success); }
     .flash-error   { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: var(--danger); }
 
-    .admin-stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
-    .admin-stat { background: white; border: 1px solid #e8ecf0; border-radius: 14px; padding: 18px 24px; display: flex; align-items: center; gap: 14px; flex: 1; min-width: 160px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
+    .admin-stat { background: white; border: 1px solid #e8ecf0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
     .admin-stat:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -3px rgba(0,0,0,0.06); }
     .admin-stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
     .icon-gold  { background: rgba(201,169,110,0.12); color: #c9a96e; }
@@ -309,41 +315,58 @@ require 'layouts/header.php';
     .lightbox-close:hover { transform: scale(1.1) rotate(90deg); }
 
     .empty-table { text-align: center; padding: 50px; color: #9ea3b0; }
+    
+    @media (max-width: 767.98px) {
+        .table-card-header { flex-direction: column; align-items: flex-start; }
+        .admin-table, .admin-table thead, .admin-table tbody, .admin-table th, .admin-table td, .admin-table tr { display: block; }
+        .admin-table thead tr { position: absolute; top: -9999px; left: -9999px; }
+        .admin-table tr { border: 1px solid var(--border-color); border-radius: 12px; margin: 14px; padding: 6px 0; box-shadow: 0 1px 2px rgba(16,24,40,0.04); }
+        .admin-table td { border-bottom: 1px dashed #f1f5f9; padding: 10px 16px; display: flex; align-items: flex-start; gap: 10px; }
+        .admin-table td:last-child { border-bottom: none; }
+        .admin-table td::before { content: attr(data-label); font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); flex: 0 0 100px; padding-top: 2px; }
+    }
 </style>
 
 <?php if ($msg) echo $msg; ?>
 
-<!-- Stats Strip -->
-<div class="admin-stats">
-    <div class="admin-stat">
-        <div class="admin-stat-icon icon-gold"><i class="fas fa-users"></i></div>
-        <div>
-            <div class="admin-stat-num" id="live-admin-total"><?php echo $total; ?></div>
-            <div class="admin-stat-label">Total Couples</div>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
+            <div class="admin-stat-icon icon-gold flex-shrink-0"><i class="fas fa-users"></i></div>
+            <div>
+                <div class="admin-stat-num" id="live-admin-total"><?php echo $total; ?></div>
+                <div class="admin-stat-label">Total Couples</div>
+            </div>
         </div>
     </div>
-    <div class="admin-stat">
-        <div class="admin-stat-icon icon-green"><i class="fas fa-check-circle"></i></div>
-        <div>
-            <div class="admin-stat-num" id="live-admin-active"><?php echo $active; ?></div>
-            <div class="admin-stat-label">Active</div>
+    <div class="col-6 col-md-3">
+        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
+            <div class="admin-stat-icon icon-green flex-shrink-0"><i class="fas fa-check-circle"></i></div>
+            <div>
+                <div class="admin-stat-num" id="live-admin-active"><?php echo $active; ?></div>
+                <div class="admin-stat-label">Active</div>
+            </div>
         </div>
     </div>
-    <div class="admin-stat">
-        <div class="admin-stat-icon icon-amber"><i class="fas fa-clock"></i></div>
-        <div>
-            <div class="admin-stat-num" id="live-admin-pending"><?php echo $pending; ?></div>
-            <div class="admin-stat-label">Pending Review</div>
+    <div class="col-6 col-md-3">
+        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
+            <div class="admin-stat-icon icon-amber flex-shrink-0"><i class="fas fa-clock"></i></div>
+            <div>
+                <div class="admin-stat-num" id="live-admin-pending"><?php echo $pending; ?></div>
+                <div class="admin-stat-label">Pending Review</div>
+            </div>
         </div>
     </div>
     <!-- Refund Requests Stat Card -->
-    <a href="admin_refunds.php" class="admin-stat text-decoration-none">
-        <div class="admin-stat-icon icon-red"><i class="fas fa-undo-alt"></i></div>
-        <div>
-            <div class="admin-stat-num text-danger" id="live-admin-refunds"><?php echo $refund_requests_count; ?></div>
-            <div class="admin-stat-label text-danger">Refund Requests</div>
-        </div>
-    </a>
+    <div class="col-6 col-md-3">
+        <a href="admin_refunds.php" class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100 text-decoration-none">
+            <div class="admin-stat-icon icon-red flex-shrink-0"><i class="fas fa-undo-alt"></i></div>
+            <div>
+                <div class="admin-stat-num text-danger" id="live-admin-refunds"><?php echo $refund_requests_count; ?></div>
+                <div class="admin-stat-label">Refund Requests</div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <!-- =====================================================================
@@ -376,32 +399,32 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                     $req_text = ucfirst($req_pkg) . ($req_gal ? " + Guest Gallery" : "");
                 ?>
                 <tr>
-                    <td>
+                    <td data-label="Couple Info">
                         <div class="fw-bold text-dark"><?php echo htmlspecialchars($upg['name']); ?></div>
                         <div class="text-muted small"><?php echo htmlspecialchars($upg['email']); ?></div>
                     </td>
-                    <td>
+                    <td data-label="Current Plan">
                         <span class="badge bg-secondary"><?php echo ucfirst($upg['package'] ?? 'Basic'); ?></span>
                         <?php echo !empty($upg['has_guest_gallery']) ? '<br><small class="text-success fw-bold">With Gallery</small>' : ''; ?>
                     </td>
-                    <td>
+                    <td data-label="Requested Plan">
                         <strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> <?php echo $req_text; ?></strong>
                     </td>
-                    <td>
+                    <td data-label="Receipt">
                         <?php if (!empty($upg['upgrade_slip'])): ?>
-                            <img src="../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" 
+                            <img src="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" 
                                  class="slip-thumb border border-primary" 
                                  onclick="openLightbox(this.src)" 
                                  alt="Upgrade Receipt">
                         <?php endif; ?>
                     </td>
-                    <td style="white-space:nowrap;">
-                        <a href="admin_dashboard.php?action=approve_upgrade&uid=<?php echo $upg['id']; ?>" 
+                    <td data-label="Actions" style="white-space:nowrap;">
+                        <a href="index.php?action=approve_upgrade&uid=<?php echo $upg['id']; ?>&csrf_token=<?php echo $csrf_token; ?>" 
                            class="btn-action btn-activate"
                            onclick="return confirm('Approve package upgrade to <?php echo $req_text; ?> for <?php echo addslashes($upg['name']); ?>?');">
                             <i class="fas fa-check"></i> Approve Upgrade
                         </a>
-                        <a href="admin_dashboard.php?action=reject_upgrade&uid=<?php echo $upg['id']; ?>" 
+                        <a href="index.php?action=reject_upgrade&uid=<?php echo $upg['id']; ?>&csrf_token=<?php echo $csrf_token; ?>" 
                            class="btn-action btn-deactivate"
                            style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);"
                            onclick="return confirm('Reject upgrade request for <?php echo addslashes($upg['name']); ?>? This will delete the slip receipt.');">
@@ -456,7 +479,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                         }
                     ?>
                     <tr data-search="<?php echo strtolower($user['name'] . ' ' . $user['email']); ?>">
-                        <td>
+                        <td data-label="Couple">
                             <div class="couple-name">
                                 <?php echo htmlspecialchars($user['name']); ?>
                             </div>
@@ -475,13 +498,13 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                             <?php endif; ?>
                         </td>
                         <!-- Plan/Package Display -->
-                        <td>
+                        <td data-label="Plan / Add-on">
                             <span class="badge bg-secondary"><?php echo ucfirst($user['package'] ?? 'Basic'); ?></span>
                             <?php if ($user['has_guest_gallery'] == 1): ?>
                                 <br><small class="text-success fw-bold"><i class="fas fa-images"></i> Guest Gallery</small>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Wedding Date">
                             <?php if ($user['wedding_date']): ?>
                                 <?php echo date("d M Y", strtotime($user['wedding_date'])); ?>
                                 <?php if ($wedding_past): ?>
@@ -491,10 +514,10 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                 <span style="color:#d1d5db;">—</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Bank Slip">
                             <?php if (!empty($user['payment_slip'])): ?>
                                 <?php
-                                $slip_path = '../' . $user['payment_slip'];
+                                $slip_path = $user['payment_slip'];
                                 $ext_slip = strtolower(pathinfo($user['payment_slip'], PATHINFO_EXTENSION));
                                 ?>
                                 <?php if ($ext_slip === 'pdf'): ?>
@@ -503,7 +526,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                         <i class="fas fa-file-pdf"></i> View PDF
                                     </a>
                                 <?php else: ?>
-                                    <img src="<?php echo htmlspecialchars($slip_path); ?>"
+                                    <img src="../../<?php echo htmlspecialchars($slip_path); ?>"
                                          class="slip-thumb"
                                          onclick="openLightbox(this.src)"
                                          alt="Payment slip">
@@ -512,14 +535,14 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                 <span style="color:#d1d5db; font-size:0.78rem; font-style:italic;">No slip yet</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <?php if ($user['status'] === 'active'): ?>
                                 <span class="badge-active"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Active</span>
                             <?php else: ?>
                                 <span class="badge-pending"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pending</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Invite Link">
                             <?php if ($user['wedding_id'] && !empty($user['slug'])): ?>
                                 <div style="display:flex;align-items:center;gap:6px;">
                                     <span style="font-size:0.78rem;color:#4a5568;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?php echo htmlspecialchars($invite_url); ?>"><?php echo htmlspecialchars($invite_url); ?></span>
@@ -531,22 +554,22 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                 <span style="color:#d1d5db;">—</span>
                             <?php endif; ?>
                         </td>
-                        <td style="white-space:nowrap;">
+                        <td data-label="Actions" style="white-space:nowrap;">
                             <?php if ($user['wedding_id']): ?>
-                            <a href="../view_invitation.php?w_id=<?php echo $user['wedding_id']; ?>&preview=1"
+                            <a href="../../view_invitation.php?w_id=<?php echo $user['wedding_id']; ?>&preview=1"
                                target="_blank" class="btn-preview">
                                 <i class="fas fa-eye"></i> Preview
                             </a>
                             <?php endif; ?>
 
                             <?php if ($user['status'] === 'pending'): ?>
-                            <a href="admin_dashboard.php?action=activate&uid=<?php echo $user['id']; ?>"
+                            <a href="index.php?action=activate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
                                class="btn-action btn-activate"
                                onclick="return confirm('Activate account for <?php echo addslashes($user['name']); ?>?');">
                                 <i class="fas fa-check"></i> Activate
                             </a>
                             <?php else: ?>
-                            <a href="admin_dashboard.php?action=deactivate&uid=<?php echo $user['id']; ?>"
+                            <a href="index.php?action=deactivate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
                                class="btn-action btn-deactivate"
                                onclick="return confirm('Deactivate account for <?php echo addslashes($user['name']); ?>?');">
                                 <i class="fas fa-times"></i> Deactivate
@@ -555,7 +578,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
 
                             <?php if ($wedding_past): ?>
                                 <?php if (!$notice_sent): ?>
-                                <a href="admin_dashboard.php?action=notify_delete&uid=<?php echo $user['id']; ?>"
+                                <a href="index.php?action=notify_delete&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
                                    class="btn-action btn-notify-delete"
                                    onclick="return confirm('Email <?php echo addslashes($user['name']); ?> that their invitation will be deleted in 7 days?');"
                                    title="Send 7-day deletion notice">
@@ -566,7 +589,7 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                     <i class="fas fa-hourglass-half"></i> <?php echo $days_left; ?>d left
                                 </span>
                                 <?php else: ?>
-                                <a href="admin_delete_account.php?uid=<?php echo $user['id']; ?>"
+                                <a href="admin_delete_account.php?uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
                                    class="btn-delete-account"
                                    onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');"
                                    title="Notice period ended — delete this account">
@@ -611,7 +634,7 @@ function closeLightbox() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
 // =====================================================================
-// 🔥 සජීවීව Admin Stat Cards Update කිරීම — 5s Polling (Table එක untouched)
+// 🔥 සජීවීව Admin Stat Cards Update කිරීම
 // =====================================================================
 function updateLiveText(id, newValue) {
     const el = document.getElementById(id);
@@ -673,35 +696,35 @@ function buildCoupleRow(user) {
 
     let actionsHtml = '';
     if (user.wedding_id) {
-        actionsHtml += `<a href="../view_invitation.php?w_id=${user.wedding_id}&preview=1" target="_blank" class="btn-preview"><i class="fas fa-eye"></i> Preview</a>`;
+        actionsHtml += `<a href="../../view_invitation.php?w_id=${user.wedding_id}&preview=1" target="_blank" class="btn-preview"><i class="fas fa-eye"></i> Preview</a>`;
     }
     if (user.status === 'pending') {
-        actionsHtml += `<a href="admin_dashboard.php?action=activate&uid=${user.id}" class="btn-action btn-activate" onclick="return confirm('Activate account for ${esc(user.name)}?');"><i class="fas fa-check"></i> Activate</a>`;
+        actionsHtml += `<a href="index.php?action=activate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-activate" onclick="return confirm('Activate account for ${esc(user.name)}?');"><i class="fas fa-check"></i> Activate</a>`;
     } else {
-        actionsHtml += `<a href="admin_dashboard.php?action=deactivate&uid=${user.id}" class="btn-action btn-deactivate" onclick="return confirm('Deactivate account for ${esc(user.name)}?');"><i class="fas fa-times"></i> Deactivate</a>`;
+        actionsHtml += `<a href="index.php?action=deactivate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-deactivate" onclick="return confirm('Deactivate account for ${esc(user.name)}?');"><i class="fas fa-times"></i> Deactivate</a>`;
     }
     if (user.wedding_past) {
         if (!user.notice_sent) {
-            actionsHtml += `<a href="admin_dashboard.php?action=notify_delete&uid=${user.id}" class="btn-action btn-notify-delete" onclick="return confirm('Email ${esc(user.name)} that their invitation will be deleted in 7 days?');" title="Send 7-day deletion notice"><i class="fas fa-bell"></i> Notify</a>`;
+            actionsHtml += `<a href="index.php?action=notify_delete&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-notify-delete" onclick="return confirm('Email ${esc(user.name)} that their invitation will be deleted in 7 days?');" title="Send 7-day deletion notice"><i class="fas fa-bell"></i> Notify</a>`;
         } else if (!user.can_delete_now) {
             actionsHtml += `<span class="badge-countdown" title="Notice sent on ${user.notice_sent_at}"><i class="fas fa-hourglass-half"></i> ${user.days_left}d left</span>`;
         } else {
-            actionsHtml += `<a href="admin_delete_account.php?uid=${user.id}" class="btn-delete-account" onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');" title="Notice period ended — delete this account"><i class="fas fa-trash-alt"></i></a>`;
+            actionsHtml += `<a href="admin_delete_account.php?uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-delete-account" onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');" title="Notice period ended — delete this account"><i class="fas fa-trash-alt"></i></a>`;
         }
     }
 
     return `<tr data-search="${(user.name + ' ' + user.email).toLowerCase()}">
-        <td>
+        <td data-label="Couple">
             <div class="couple-name">${user.name}</div>
             <div class="couple-email">${user.email}</div>
             ${badges}
         </td>
-        <td>${packageHtml}</td>
-        <td>${dateHtml}</td>
-        <td>${slipHtml}</td>
-        <td>${statusHtml}</td>
-        <td>${linkHtml}</td>
-        <td style="white-space:nowrap;">${actionsHtml}</td>
+        <td data-label="Plan / Add-on">${packageHtml}</td>
+        <td data-label="Wedding Date">${dateHtml}</td>
+        <td data-label="Bank Slip">${slipHtml}</td>
+        <td data-label="Status">${statusHtml}</td>
+        <td data-label="Invite Link">${linkHtml}</td>
+        <td data-label="Actions" style="white-space:nowrap;">${actionsHtml}</td>
     </tr>`;
 }
 
@@ -712,23 +735,27 @@ function buildUpgradeRow(upg) {
         : '';
 
     return `<tr>
-        <td>
+        <td data-label="Couple Info">
             <div class="fw-bold text-dark">${upg.name}</div>
             <div class="text-muted small">${upg.email}</div>
         </td>
-        <td><span class="badge bg-secondary">${upg.package}</span>${galleryNote}</td>
-        <td><strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> ${upg.req_text}</strong></td>
-        <td>${slipHtml}</td>
-        <td style="white-space:nowrap;">
-            <a href="admin_dashboard.php?action=approve_upgrade&uid=${upg.id}" class="btn-action btn-activate" onclick="return confirm('Approve package upgrade to ${esc(upg.req_text)} for ${esc(upg.name)}?');"><i class="fas fa-check"></i> Approve Upgrade</a>
-            <a href="admin_dashboard.php?action=reject_upgrade&uid=${upg.id}" class="btn-action btn-deactivate" style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);" onclick="return confirm('Reject upgrade request for ${esc(upg.name)}? This will delete the slip receipt.');"><i class="fas fa-times"></i> Reject</a>
+        <td data-label="Current Plan"><span class="badge bg-secondary">${upg.package}</span>${galleryNote}</td>
+        <td data-label="Requested Plan"><strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> ${upg.req_text}</strong></td>
+        <td data-label="Receipt">${slipHtml}</td>
+        <td data-label="Actions" style="white-space:nowrap;">
+            <a href="index.php?action=approve_upgrade&uid=${upg.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-activate" onclick="return confirm('Approve package upgrade to ${esc(upg.req_text)} for ${esc(upg.name)}?');"><i class="fas fa-check"></i> Approve Upgrade</a>
+            <a href="index.php?action=reject_upgrade&uid=${upg.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-deactivate" style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);" onclick="return confirm('Reject upgrade request for ${esc(upg.name)}? This will delete the slip receipt.');"><i class="fas fa-times"></i> Reject</a>
         </td>
     </tr>`;
 }
 
+let csrfTokenJS = "<?php echo $csrf_token; ?>";
 let lastUsersSnapshot = null;
 let lastUpgradeSnapshot = null;
 let adminPollPaused = false;
+let pollingInterval = 5000;
+let consecutiveErrors = 0;
+let adminStatsTimer = null;
 
 // Pause live refresh briefly whenever an action link/button inside the tables is pressed,
 // so an in-flight 5s poll can never replace the row out from under a click mid-navigation.
@@ -740,11 +767,12 @@ document.addEventListener('mousedown', function(e) {
 });
 
 function fetchAdminLiveStats() {
-    if (adminPollPaused) return;
+    if (adminPollPaused || document.hidden) return;
 
-    fetch('admin_dashboard.php?action=live_stats')
+    fetch('index.php?action=live_stats')
         .then(r => r.json())
         .then(data => {
+            consecutiveErrors = 0;
             if (data.error) return;
             updateLiveText('live-admin-total', data.total);
             updateLiveText('live-admin-active', data.active);
@@ -792,10 +820,33 @@ function fetchAdminLiveStats() {
                     }
                 }
             }
+
+            if (pollingInterval > 5000) {
+                pollingInterval = 5000;
+                resetAdminStatsTimer();
+            }
         })
-        .catch(err => console.error('Error syncing admin live stats:', err));
+        .catch(err => {
+            console.error('Error syncing admin live stats:', err);
+            consecutiveErrors++;
+            if (consecutiveErrors > 2) {
+                pollingInterval = Math.min(60000, pollingInterval * 2);
+                resetAdminStatsTimer();
+            }
+        });
 }
-setInterval(fetchAdminLiveStats, 5000);
+
+function resetAdminStatsTimer() {
+    if (adminStatsTimer) clearInterval(adminStatsTimer);
+    adminStatsTimer = setInterval(fetchAdminLiveStats, pollingInterval);
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        fetchAdminLiveStats();
+    }
+});
+resetAdminStatsTimer();
 
 // Admin copy invite link
 function adminCopyLink(url, btn) {
@@ -810,4 +861,4 @@ function adminCopyLink(url, btn) {
 }
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'couple') {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -227,9 +227,9 @@ if ($user_data['package'] === 'premium') $current_val = 10000;
 if ($user_data['has_guest_gallery'] == 1 && $user_data['package'] !== 'premium') $current_val += 2000;
 
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-$domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname($_SERVER['PHP_SELF']));
+$domain = $protocol . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF'])));
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -660,7 +660,7 @@ require 'layouts/header.php';
             <div class="slip-submitted">
                 <i class="fas fa-clock"></i>
                 <p>Your bank slip has been submitted. We're reviewing it and will activate your account shortly. Thank you for your patience!</p>
-                <img src="../<?php echo htmlspecialchars($user_data['payment_slip']); ?>"
+                <img src="../../<?php echo htmlspecialchars($user_data['payment_slip']); ?>"
                      class="slip-preview"
                      alt="Your submitted slip"
                      onerror="this.style.display='none'">
@@ -931,4 +931,4 @@ function checkAccountStatusLive() {
 setInterval(checkAccountStatusLive, 8000);
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

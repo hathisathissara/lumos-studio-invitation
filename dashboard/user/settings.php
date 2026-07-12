@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -24,9 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_wedding'])) {
     $bride = trim($_POST['bride_name']);
     $groom = trim($_POST['groom_name']);
     $date  = $_POST['wedding_date'];
+    $venue = trim($_POST['venue']);
     $template = isset($_POST['template_name']) ? $_POST['template_name'] : 'premium_gold';
 
-    if (!empty($bride) && !empty($groom) && !empty($date)) {
+    if (!empty($bride) && !empty($groom) && !empty($date) && !empty($venue)) {
 
         // Get current bride/groom to check if names actually changed
         $stmtOld = $pdo->prepare("SELECT bride_name, groom_name, slug FROM weddings WHERE id = ? AND user_id = ?");
@@ -52,8 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_wedding'])) {
             $link_changed = true;
         }
 
-        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, template_name = ?, slug = ? WHERE id = ? AND user_id = ?")
-            ->execute([$bride, $groom, $date, $template, $slug_to_use, $wedding_id, $user_id]);
+        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, venue = ?, template_name = ?, slug = ? WHERE id = ? AND user_id = ?")
+            ->execute([$bride, $groom, $date, $venue, $template, $slug_to_use, $wedding_id, $user_id]);
 
         $new_name = $bride . " & " . $groom;
         $pdo->prepare("UPDATE users SET name = ? WHERE id = ?")
@@ -99,11 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_password'])) {
 }
 
 // Load current wedding data
-$stmtGetWed = $pdo->prepare("SELECT bride_name, groom_name, wedding_date, hero_image, template_name FROM weddings WHERE id = ? AND user_id = ?");
+$stmtGetWed = $pdo->prepare("SELECT bride_name, groom_name, wedding_date, venue, hero_image, template_name FROM weddings WHERE id = ? AND user_id = ?");
 $stmtGetWed->execute([$wedding_id, $user_id]);
 $wedding_data = $stmtGetWed->fetch();
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -262,6 +263,15 @@ require 'layouts/header.php';
                         </div>
                     </div>
                     <div class="form-field">
+                        <label>Main Venue <span class="required">*</span></label>
+                        <div class="input-wrap">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" name="venue" id="venue"
+                                value="<?php echo htmlspecialchars($wedding_data['venue'] ?? ''); ?>"
+                                placeholder="Hotel or location name" required>
+                        </div>
+                    </div>
+                    <div class="form-field">
                         <label>Design Template</label>
                         <div class="input-wrap">
                             <i class="fas fa-paint-brush"></i>
@@ -329,4 +339,4 @@ require 'layouts/header.php';
     </div>
 </div>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

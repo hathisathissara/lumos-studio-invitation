@@ -1,9 +1,9 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
@@ -48,7 +48,7 @@ if (isset($_GET['delete_img'])) {
     $stmtImg->execute([$img_id, $wedding_id]);
     $img = $stmtImg->fetch();
     if ($img) {
-        $physical = "../" . $img['image_path'];
+        $physical = "../../" . $img['image_path'];
         if (file_exists($physical)) unlink($physical);
         $pdo->prepare("DELETE FROM gallery WHERE id = ?")->execute([$img_id]);
     }
@@ -84,7 +84,7 @@ $stmtGetImgs = $pdo->prepare("SELECT * FROM gallery WHERE wedding_id = ? ORDER B
 $stmtGetImgs->execute([$wedding_id]);
 $imagesList = $stmtGetImgs->fetchAll();
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/compressorjs@1.2.1/dist/compressor.min.js"></script>
@@ -323,7 +323,7 @@ require 'layouts/header.php';
                     <?php if (!empty($wedding_data['hero_image']) && $wedding_data['hero_image'] === $img['image_path']): ?>
                         <div class="cover-badge"><i class="fas fa-star"></i> Cover</div>
                     <?php endif; ?>
-                    <img src="../<?php echo htmlspecialchars($img['image_path']); ?>" alt="Gallery photo" loading="lazy">
+                    <img src="../../<?php echo htmlspecialchars($img['image_path']); ?>" alt="Gallery photo" loading="lazy">
                     <div class="gallery-item-overlay">
                         <?php if (empty($wedding_data['hero_image']) || $wedding_data['hero_image'] !== $img['image_path']): ?>
                         <a href="gallery.php?set_cover=<?php echo $img['id']; ?>" class="gallery-action-btn btn-cover">
@@ -409,4 +409,4 @@ function uploadFiles(files) {
 }
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

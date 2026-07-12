@@ -1,17 +1,21 @@
 <?php
 session_start();
-require '../config/config.php';
-require '../config/mailer.php';
+require '../../config/config.php';
+require '../../config/mailer.php';
 
 // Admin only
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 
 if (!isset($_GET['uid'])) {
-    header("Location: admin_dashboard.php");
+    header("Location: index.php");
     exit();
+}
+
+if (!isset($_GET['csrf_token']) || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
+    die("CSRF token validation failed.");
 }
 
 $u_id = intval($_GET['uid']);
@@ -26,7 +30,7 @@ $stmtInfo->execute([$u_id]);
 $coupleInfo = $stmtInfo->fetch();
 
 if (!$coupleInfo) {
-    header("Location: admin_dashboard.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -51,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
             $stmtGallery->execute([$wedding_id]);
             $galleryImages = $stmtGallery->fetchAll(PDO::FETCH_COLUMN);
             foreach ($galleryImages as $imgPath) {
-                $full = '../' . $imgPath;
+                $full = '../../' . $imgPath;
                 if (file_exists($full)) unlink($full);
             }
             $pdo->prepare("DELETE FROM gallery WHERE wedding_id = ?")->execute([$wedding_id]);
@@ -61,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
             $stmtGuestGallery->execute([$wedding_id]);
             $guestGalleryImages = $stmtGuestGallery->fetchAll(PDO::FETCH_COLUMN);
             foreach ($guestGalleryImages as $gImgPath) {
-                $gFull = '../' . $gImgPath;
+                $gFull = '../../' . $gImgPath;
                 if (file_exists($gFull)) unlink($gFull);
             }
             $pdo->prepare("DELETE FROM guest_gallery WHERE wedding_id = ?")->execute([$wedding_id]);
@@ -76,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
         }
 
         // E. Delete payment slip from disk
-        if (!empty($slipPath) && file_exists('../' . $slipPath)) {
-            unlink('../' . $slipPath);
+        if (!empty($slipPath) && file_exists('../../' . $slipPath)) {
+            unlink('../../' . $slipPath);
         }
 
         // F. Delete user account
@@ -87,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
 
         send_deletion_confirmed_mail($coupleInfo['email'], $coupleInfo['name']);
 
-        header("Location: admin_dashboard.php?deleted=1");
+        header("Location: index.php?deleted=1");
         exit();
 
     } catch (Exception $e) {
@@ -96,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
     }
 }
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -310,4 +314,4 @@ require 'layouts/header.php';
     </form>
 </div>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>

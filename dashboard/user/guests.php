@@ -1,8 +1,8 @@
 <?php
 session_start();
-require '../config/config.php';
+require '../../config/config.php';
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['wedding_id'])) {
-    header("Location: login.php");
+    header("Location: ../login.php");
     exit();
 }
 $msg = "";
@@ -161,7 +161,7 @@ foreach ($guestsList as $g) {
     $total_seats += intval($g['seats_reserved'] ?? 1);
 }
 
-require 'layouts/header.php';
+require '../layouts/header.php';
 ?>
 
 <style>
@@ -648,4 +648,4 @@ function fetchGuestsLiveStatus() {
 setInterval(fetchGuestsLiveStatus, 5000);
 </script>
 
-<?php require 'layouts/footer.php'; ?>
+<?php require '../layouts/footer.php'; ?>
