@@ -26,11 +26,11 @@ if (isset($_GET['action']) && $_GET['action'] === 'mark_sent' && isset($_GET['id
 }
 
 // ============================================
-// 2. AJAX ACTION: සජීවී (Live) Guest Status ලබාගැනීම — Opened/Sent/RSVP
+// 2. AJAX ACTION: සජීවී (Live) Guest Status ලබාගැනීම — Opened/Sent/RSVP & Guest Note (නම සහ Note එක එකතු කර ඇත!)
 // ============================================
 if (isset($_GET['action']) && $_GET['action'] === 'live_status') {
     header('Content-Type: application/json');
-    $stmtLive = $pdo->prepare("SELECT id, is_opened, opened_at, is_sent, sent_at, rsvp_status FROM guests WHERE wedding_id = ?");
+    $stmtLive = $pdo->prepare("SELECT id, name, is_opened, opened_at, is_sent, sent_at, rsvp_status, guest_note FROM guests WHERE wedding_id = ?");
     $stmtLive->execute([$wedding_id]);
     echo json_encode(['guests' => $stmtLive->fetchAll(PDO::FETCH_ASSOC)]);
     exit();
@@ -145,7 +145,7 @@ $stmtGuests = $pdo->prepare("SELECT * FROM guests WHERE wedding_id = ? ORDER BY 
 $stmtGuests->execute([$wedding_id]);
 $guestsList = $stmtGuests->fetchAll();
 
-// Backfill: කලින් Token නැතිව ඇඩ් කරපු අමුත්තන් සිටী නම් පමණක් Token සාදයි (Safety)
+// Backfill: කලින් Token නැතිව ඇඩ් කරපු අමුත්තන් සිටී නම් පමණක් Token සාදයි (Safety)
 foreach ($guestsList as &$g) {
     if (empty($g['invite_token'])) {
         $g['invite_token'] = generate_invite_token($pdo);
@@ -180,7 +180,7 @@ require 'layouts/header.php';
 
     /* Page header / toolbar */
     .page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-    .page-toolbar h1 { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
+    .page-toolbar h1 { font-size: 1.35rem; font-weight: 700; color: #1a1a2e; margin: 0; }
     .page-toolbar p { font-size: 0.85rem; color: #9ea3b0; margin: 0; }
     .btn-open-add-guest {
         display: inline-flex; align-items: center; gap: 8px;
@@ -540,10 +540,10 @@ document.querySelectorAll('.btn-wa-send').forEach(btn => {
             
         const encodedMessage = encodeURIComponent(personalMessage);
         
-        // 💡 1. AJAX එකෙන් පසුබිමෙන් (Background) සර්වර් එකට යවා "Sent" ලෙස DB එකේ සටහන් කිරීම
+        // 1. AJAX එකෙන් පසුබිමෙන් (Background) සර්වර් එකට යවා "Sent" ලෙස DB එකේ සටහන් කිරීම
         fetch(`guests.php?action=mark_sent&id=${guestId}`);
 
-        // 💡 2. සජීවීව (Instantly) Table Row එකේ පෙනුම "Sent" ලෙස වෙනස් කිරීම (Wow factor!)
+        // 2. සජීවීව (Instantly) Table Row එකේ පෙනුම "Sent" ලෙස වෙනස් කිරීම (Wow factor!)
         const statusCell = this.closest('tr').querySelector('.opened-status-cell');
         if (statusCell && !statusCell.querySelector('.badge-opened')) {
             statusCell.innerHTML = `<span class="badge badge-sent"><i class="fas fa-paper-plane"></i> Sent</span><br><small style="color:#9ea3b0; font-size:0.7rem; margin-top:3px; display:block;">Just now</small>`;
@@ -582,6 +582,14 @@ function formatLiveDateTime(mysqlDatetime) {
     return d.toLocaleString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
+// Security HTML Escaper Helper to prevent XSS during live DOM updates
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
 function renderOpenedStatusCell(g) {
     if (g.is_opened == 1) {
         let html = `<span class="badge badge-opened"><i class="fas fa-check-double"></i> Opened</span>`;
@@ -609,6 +617,21 @@ function fetchGuestsLiveStatus() {
             data.guests.forEach(g => {
                 const row = document.querySelector(`#guest-table tr[data-id="${g.id}"]`);
                 if (!row) return;
+
+                // 💡 Real-time Guest Note Render Algorithm (සජීවීව Note එකද සහිතව update කරයි!)
+                const nameCell = row.querySelector('.guest-name-cell');
+                if (nameCell) {
+                    let cellHtml = escapeHtml(g.name);
+                    if (g.guest_note && g.guest_note.trim() !== '') {
+                        cellHtml += `
+                            <div class="guest-note-box">
+                                <i class="fas fa-comment-dots" style="color: #c9a96e;"></i>
+                                <strong>Note:</strong> "${escapeHtml(g.guest_note)}"
+                            </div>
+                        `;
+                    }
+                    nameCell.innerHTML = cellHtml;
+                }
 
                 const openedCell = row.querySelector('.opened-status-cell');
                 if (openedCell) openedCell.innerHTML = renderOpenedStatusCell(g);

@@ -3,9 +3,9 @@ session_start();
 require '../config/config.php';
 if (isset($_SESSION['user_id'])) {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
-        header("Location: admin_dashboard.php");
+        header("Location: admin/index.php");
     } else {
-        header("Location: index.php");
+        header("Location: user/index.php");
     }
     exit();
 }

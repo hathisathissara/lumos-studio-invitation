@@ -333,8 +333,13 @@ $is_logged_in = isset($_SESSION['user_id']);
                 <li class="nav-item"><a class="nav-link" href="pricing.php">Pricing</a></li>
                 <?php if ($is_logged_in): ?>
                     <!-- ලොග් වී ඇත්නම් කෙලින්ම Dashboard මෙනු පෙන්වයි -->
-                    <li class="nav-item"><a class="nav-link" href="dashboard/index.php">Dashboard</a></li>
-                    <li class="nav-item"><a class="btn-nav" href="dashboard/index.php">My Account</a></li>
+                    <?php if ($role === 'admin'): ?>
+                    <li class="nav-item"><a class="nav-link" href="dashboard/admin/index.php">Dashboard</a></li>
+                    <li class="nav-item"><a class="btn-nav" href="dashboard/admin/index.php">My Account</a></li>
+                    <?php else: ?>
+                        <li class="nav-item"><a class="nav-link" href="dashboard/user/index.php">Dashboard</a></li>
+                    <li class="nav-item"><a class="btn-nav" href="dashboard/user/index.php">My Account</a></li>
+                <?php endif; ?>
                 <?php else: ?>
                     <li class="nav-item"><a class="nav-link" href="dashboard/login.php">Sign In</a></li>
                     <li class="nav-item"><a class="btn-nav" href="dashboard/register.php">Get Started Free</a></li>

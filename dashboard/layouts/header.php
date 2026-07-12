@@ -440,41 +440,41 @@ $current = basename($_SERVER['PHP_SELF']);
     <nav class="sidebar-nav">
         <?php if ($role === 'admin'): ?>
             <div class="nav-section-label">Administration</div>
-            <a href="admin_dashboard.php" class="nav-item <?php echo $current === 'admin_dashboard.php' ? 'active' : ''; ?>">
+            <a href="admin/index.php" class="nav-item <?php echo $current === 'admin/index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i> Admin Panel
             </a>
-            <a href="admin_refunds.php" class="nav-item <?php echo $current === 'admin_refunds.php' ? 'active' : ''; ?>">
+            <a href="admin/refunds.php" class="nav-item <?php echo $current === 'admin/refunds.php' ? 'active' : ''; ?>">
                 <i class="fas fa-shield-alt"></i> Refund Requests
             </a>
             
         <?php else: ?>
             <div class="nav-section-label">Overview</div>
-            <a href="index.php" class="nav-item <?php echo $current === 'index.php' ? 'active' : ''; ?>">
+            <a href="user/index.php" class="nav-item <?php echo $current === 'user/index.php' ? 'active' : ''; ?>">
                 <i class="fas fa-home"></i> Dashboard
             </a>
             <div class="nav-section-label">Invitation</div>
-            <a href="guests.php" class="nav-item <?php echo $current === 'guests.php' ? 'active' : ''; ?>">
+            <a href="user/guests.php" class="nav-item <?php echo $current === 'user/guests.php' ? 'active' : ''; ?>">
                 <i class="fas fa-users"></i> Guest List
             </a>
-            <a href="events.php" class="nav-item <?php echo $current === 'events.php' ? 'active' : ''; ?>">
+            <a href="user/events.php" class="nav-item <?php echo $current === 'user/events.php' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-alt"></i> Events
             </a>
-            <a href="gallery.php" class="nav-item <?php echo $current === 'gallery.php' ? 'active' : ''; ?>">
+            <a href="user/gallery.php" class="nav-item <?php echo $current === 'user/gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-images"></i> Gallery & Story
             </a>
-            <a href="guest_gallery.php" class="nav-item <?php echo $current === 'guest_gallery.php' ? 'active' : ''; ?>">
+            <a href="user/guest_gallery.php" class="nav-item <?php echo $current === 'user/guest_gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-camera-retro"></i> Guest Shared Pics
             </a>
             <div class="nav-section-label">Tools</div>
-            <a href="checklist.php" class="nav-item <?php echo $current === 'checklist.php' ? 'active' : ''; ?>">
+            <a href="user/checklist.php" class="nav-item <?php echo $current === 'user/checklist.php' ? 'active' : ''; ?>">
                 <i class="fas fa-tasks"></i> Checklist
             </a>
-            <a href="settings.php" class="nav-item <?php echo $current === 'settings.php' ? 'active' : ''; ?>">
+            <a href="user/settings.php" class="nav-item <?php echo $current === 'user/settings.php' ? 'active' : ''; ?>">
                 <i class="fas fa-cog"></i> Settings
             </a>
 
 
-            <a href="payment.php" class="nav-item nav-item-warn <?php echo $current === 'payment.php' ? 'active' : ''; ?>">
+            <a href="user/payment.php" class="nav-item nav-item-warn <?php echo $current === 'user/payment.php' ? 'active' : ''; ?>">
                 <i class="fas fa-credit-card"></i> Activate Account
             </a>
         <?php endif; ?>
