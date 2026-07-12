@@ -103,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `weddings` (
   `bride_name` varchar(100)  DEFAULT NULL,
   `groom_name` varchar(100)  DEFAULT NULL,
   `wedding_date` date DEFAULT NULL,
+  `venue` VARCHAR(255) DEFAULT NULL,
   `cover_image` varchar(255)  DEFAULT NULL,
   `love_story` text  DEFAULT NULL,
   `hero_image` varchar(255)   DEFAULT NULL,
