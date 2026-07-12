@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 // පරිශීලකයා දැනටමත් ලොග් වී ඇත්දැයි බැලීම (Sign In වෙනුවට Dashboard පෙන්වීමට)
 $is_logged_in = isset($_SESSION['user_id']);
+$role = $_SESSION['role'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
