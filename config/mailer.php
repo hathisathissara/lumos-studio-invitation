@@ -218,3 +218,26 @@ function send_upgrade_success_mail($to_email, $couple_name, $new_plan_name) {
         mail_template_wrapper('Package Upgraded Successfully 💎', $body)
     );
 }
+
+/**
+ * 8) Sent when a user requests a password reset.
+ */
+function send_password_reset_mail($to_email, $user_name, $reset_code) {
+    $subject = "Password Reset Request - Lumos Studio";
+    
+    $body = '
+        <p>Dear <strong>' . htmlspecialchars($user_name) . '</strong>,</p>
+        <p>We received a request to reset your password for your Lumos Studio account.</p>
+        <p>Your 6-digit password reset code is:</p>
+        <div style="background:#f1f5f9; border:1px solid #e2e8f0; padding:15px; text-align:center; margin:20px 0; border-radius:8px;">
+            <strong style="font-size:24px; letter-spacing:4px; color:#1a1a2e;">' . htmlspecialchars($reset_code) . '</strong>
+        </div>
+        <p>This code is valid for 15 minutes. If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>';
+
+    return send_app_mail(
+        $to_email,
+        $user_name,
+        $subject,
+        mail_template_wrapper('Reset Your Password', $body)
+    );
+}

@@ -83,14 +83,15 @@ CREATE TABLE IF NOT EXISTS `users` (
   `refund_status` ENUM('none', 'pending', 'approved', 'details_submitted', 'rejected', 'completed') DEFAULT 'none',
   `refund_bank_details` TEXT NULL,
   `refund_reason` TEXT NULL,
-  `package` ENUM('basic', 'standard', 'premium') DEFAULT 'basic';
-  `has_guest_gallery` TINYINT(1) DEFAULT 0;
-  `upgrade_slip` VARCHAR(255) NULL;
-  `pending_upgrade_plan` VARCHAR(100) NULL;
+  `package` ENUM('basic', 'standard', 'premium') DEFAULT 'basic',
+  `has_guest_gallery` TINYINT(1) DEFAULT 0,
+  `upgrade_slip` VARCHAR(255) NULL,
+  `pending_upgrade_plan` VARCHAR(100) NULL,
+  `reset_code` VARCHAR(10) DEFAULT NULL,
+ `reset_expires` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 );
-
 
 
 -- Table structure for table `weddings`

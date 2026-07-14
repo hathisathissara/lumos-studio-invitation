@@ -253,6 +253,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php if (isset($_GET['registered'])): ?>
         <div class="success-box"><i class="fas fa-check-circle"></i> Account created! You can now sign in.</div>
         <?php endif; ?>
+        <?php if (isset($_GET['reset']) && $_GET['reset'] == 'success'): ?>
+        <div class="success-box"><i class="fas fa-check-circle"></i> Password reset successfully! You can now sign in.</div>
+        <?php endif; ?>
 
         <?php if ($error): ?>
         <div class="error-box"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
@@ -267,7 +270,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
             <div class="form-group">
-                <label>Password</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0;">Password</label>
+                    <a href="forgot_password.php" style="font-size: 0.75rem; color: #c9a96e; text-decoration: none;">Forgot password?</a>
+                </div>
                 <div class="input-wrap">
                     <i class="fas fa-lock"></i>
                     <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
