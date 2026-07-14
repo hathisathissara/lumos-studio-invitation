@@ -51,40 +51,6 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         .reveal { opacity: 0; }
         .reveal-scale { opacity: 0; transform: scale(0.94) translateY(24px); }
 
-        body.loading { overflow: hidden; height: 100vh; }
-
-        /* ======= PREMIUM LOADING SCREEN ======= */
-        #loader-screen {
-            position: fixed; inset: 0; z-index: 3000;
-            background: radial-gradient(ellipse at center, var(--navy-2) 0%, var(--navy) 70%, #10142a 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px;
-            transition: opacity 0.9s ease, visibility 0.9s ease;
-        }
-        #loader-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-        .loader-frame { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
-        .loader-ring { width: 120px; height: 120px; position: absolute; inset: 0; transform: rotate(-90deg); }
-        .loader-ring-track { fill: none; stroke: rgba(198,161,91,0.18); stroke-width: 1.5; }
-        .loader-ring-progress {
-            fill: none; stroke: var(--gold); stroke-width: 2; stroke-linecap: round;
-            stroke-dasharray: 327; stroke-dashoffset: 327;
-            animation: loaderDraw 1.8s cubic-bezier(0.65,0,0.35,1) forwards infinite;
-            filter: drop-shadow(0 0 6px rgba(198,161,91,0.6));
-        }
-        @keyframes loaderDraw {
-            0% { stroke-dashoffset: 327; }
-            50% { stroke-dashoffset: 0; }
-            100% { stroke-dashoffset: -327; }
-        }
-        .loader-monogram {
-            font-family: 'Fraunces', serif; font-weight: 600; font-size: 2rem; letter-spacing: 2px;
-            color: var(--gold); text-shadow: 0 0 18px rgba(198,161,91,0.5);
-            animation: loaderPulse 1.8s ease-in-out infinite;
-        }
-        @keyframes loaderPulse { 0%,100% { opacity: 0.55; transform: scale(0.97); } 50% { opacity: 1; transform: scale(1.04); } }
-        .loader-caption { text-align: center; }
-        .loader-names { display: block; font-family: 'Fraunces', serif; font-style: italic; font-size: 1.15rem; color: var(--parchment); letter-spacing: 0.5px; margin-bottom: 6px; }
-        .loader-sub { display: block; font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(198,161,91,0.6); }
-
         /* Persistent fixed background animation — visible behind every section */
         #page-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         body > * { position: relative; z-index: 1; }
@@ -420,21 +386,6 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     </style>
 </head>
 <body>
-
-<!-- ======= PREMIUM LOADING SCREEN ======= -->
-<div id="loader-screen">
-    <div class="loader-frame">
-        <svg class="loader-ring" viewBox="0 0 120 120">
-            <circle class="loader-ring-track" cx="60" cy="60" r="52"></circle>
-            <circle class="loader-ring-progress" cx="60" cy="60" r="52"></circle>
-        </svg>
-        <div class="loader-monogram"><?php echo htmlspecialchars($monogram); ?></div>
-    </div>
-    <div class="loader-caption">
-        <span class="loader-names"><?php echo htmlspecialchars($wedding['bride_name'] . ' & ' . $wedding['groom_name']); ?></span>
-        <span class="loader-sub">preparing your invitation</span>
-    </div>
-</div>
 
 <canvas id="page-canvas"></canvas>
 <div id="dove-layer"></div>
@@ -1350,22 +1301,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
     scaleEls.forEach(el => ioScale.observe(el));
 })();
 
-// ================= Premium loading screen — hide once page is ready =================
-(function initLoader() {
-    const loader = document.getElementById('loader-screen');
-    if (!loader) return;
-    document.body.classList.add('loading');
-    const minTime = new Promise(res => setTimeout(res, 1200));
-    const pageReady = new Promise(res => {
-        if (document.readyState === 'complete') res();
-        else window.addEventListener('load', res);
-    });
-    Promise.all([minTime, pageReady]).then(() => {
-        loader.classList.add('hidden');
-        document.body.classList.remove('loading');
-        setTimeout(() => loader.remove(), 1000);
-    });
-})();
 </script>
 </body>
 </html>

@@ -1250,11 +1250,11 @@ document.addEventListener('keydown', e => {
     rim.position.set(-5, -2, -4);
     scene.add(rim);
 
-    // ---- Procedural 3D floral arch (half-torus "frame" + flower clusters) ----
+    // ---- Procedural 3D floral wreath (full-torus "frame" + flower clusters) ----
     const archGroup = new THREE.Group();
     const archRadius = 3.5;
     const archMat = new THREE.MeshStandardMaterial({ color: 0x8f6f42, roughness: 0.8, metalness: 0.1 });
-    const archTorus = new THREE.Mesh(new THREE.TorusGeometry(archRadius, 0.075, 10, 72, Math.PI), archMat);
+    const archTorus = new THREE.Mesh(new THREE.TorusGeometry(archRadius, 0.075, 10, 72, Math.PI * 2), archMat);
     archGroup.add(archTorus);
 
     const flowerColors = [0xb8935a, 0xded0b8, 0xf5efe2, 0xc9a96b, 0x8f6f42];
@@ -1277,10 +1277,10 @@ document.addEventListener('keydown', e => {
         const geo = new THREE.ConeGeometry(0.06, 0.28, 5);
         return new THREE.Mesh(geo, leafMat);
     }
-    const flowerCount = 20;
+    const flowerCount = 40;
     for (let i = 0; i <= flowerCount; i++) {
         const t = i / flowerCount;
-        const ang = t * Math.PI; // sweeps the top half, matching the arch geometry
+        const ang = t * Math.PI * 2; // sweeps the full circle
         const fx = Math.cos(ang) * archRadius;
         const fy = Math.sin(ang) * archRadius;
         const flower = makeFlower(flowerColors[i % flowerColors.length]);
@@ -1316,7 +1316,7 @@ document.addEventListener('keydown', e => {
     );
     gem.position.set(0.32, 0.56, 0.18);
     ringGroup.add(gem);
-    ringGroup.position.set(2.5, 0.55, 0.5);
+    ringGroup.position.set(0, -1.65, -2.6);
     ringGroup.scale.setScalar(1.35);
     scene.add(ringGroup);
 

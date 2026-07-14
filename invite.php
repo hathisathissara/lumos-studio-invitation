@@ -79,7 +79,7 @@ $theme_palettes = [
     'floral_garden'    => ['primary' => '#a15873', 'accent' => '#8fac7a',  'accent_light' => '#e7b9cb', 'paper' => '#fffaf7', 'paper2' => '#fbeef1', 'ink' => '#3c2f34'],
     'beach_tropical'   => ['primary' => '#9c7e3f', 'accent' => '#c9a961',  'accent_light' => '#e8d9ac', 'paper' => '#f8f4ea', 'paper2' => '#f1e9d6', 'ink' => '#171a26'],
     'rustic_boho'      => ['primary' => '#9c6b4a', 'accent' => '#c98f6b',  'accent_light' => '#e7c9a0', 'paper' => '#faf9f6', 'paper2' => '#f1eee6', 'ink' => '#111111'],
-    'royal_classic'    => ['primary' => '#4d1219', 'accent' => '#c6a15b',  'accent_light' => '#ddc48b', 'paper' => '#faf7f0', 'paper2' => '#f1e9d8', 'ink' => '#1c2340'],
+    'royal_classic'    => ['primary' => '#1c2340', 'accent' => '#c6a15b',  'accent_light' => '#ddc48b', 'paper' => '#faf7f0', 'paper2' => '#f1e9d8', 'ink' => '#10142a'],
     'indian_royal'     => ['primary' => '#6e1626', 'accent' => '#d4af37',  'accent_light' => '#edc873', 'paper' => '#fff8ec', 'paper2' => '#fbecc9', 'ink' => '#2e0a10'],
 ];
 
