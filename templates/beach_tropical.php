@@ -15,40 +15,46 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <meta name="description" content="You are warmly invited to the wedding of <?php echo htmlspecialchars($wedding['bride_name'] . ' and ' . $wedding['groom_name']); ?>.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --plum: #ef8264;
-            --plum-dark: #c85f42;
-            --plum-light: #f4a688;
-            --sage: #4fa8c9;
-            --sage-dark: #2f7d9c;
-            --parchment: #fffdf9;
-            --parchment-2: #fbf1e2;
-            --parchment-border: #e8dcc4;
-            --ink: #2b3a42;
-            --ink-mid: #5a6c73;
-            --ink-light: #93a3a8;
-            --blush: #f4a688;
+            --navy: #070c1f;
+            --navy-2: #0e1630;
+            --navy-3: #141d3d;
+            --gold: #c9a961;
+            --gold-light: #e8d9ac;
+            --gold-dark: #9c7e3f;
+            --cream: #f8f4ea;
+            --cream-2: #f1e9d6;
+            --ink: #171a26;
+            --ink-mid: #5c6070;
+            --ink-light: #9296a3;
+            --border: #e6dfc9;
             --white: #ffffff;
         }
 
         html { scroll-behavior: smooth; }
 
         body {
-            background: var(--parchment);
+            background: var(--cream);
             font-family: 'Inter', sans-serif;
             color: var(--ink);
             min-height: 100vh;
+            overflow-x: hidden;
         }
+
+        ::selection { background: var(--gold); color: var(--navy); }
+
+        /* Reveal-on-scroll helper */
+        .reveal { opacity: 0; }
 
         /* Preview banner */
         .preview-bar {
-            background: var(--plum-dark);
-            color: var(--parchment);
+            background: var(--navy);
+            color: var(--gold-light);
             text-align: center;
             padding: 10px 20px;
             font-family: 'Inter', sans-serif;
@@ -56,156 +62,194 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             letter-spacing: 0.5px;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
+            border-bottom: 1px solid rgba(201,169,97,0.3);
         }
-        .preview-bar a { color: var(--blush); text-decoration: underline; text-underline-offset: 3px; }
+        .preview-bar a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
 
-        /* ======= HERO : split layout ======= */
+        /* ======= HERO : cinematic 3D scene ======= */
         .hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 560px;
-        }
-        .hero-media {
             position: relative;
-            background: linear-gradient(160deg, var(--plum-dark), var(--sage-dark));
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-start;
-            min-height: 320px;
-        }
-        .wax-seal {
-            margin: 28px;
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: var(--plum);
-            border: 3px solid rgba(248,242,233,0.85);
-            color: var(--parchment);
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 30% 20%, var(--navy-3), var(--navy) 70%);
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            padding: 90px 20px 70px;
+        }
+        #hero-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(7,12,31,0.15) 0%, rgba(7,12,31,0.55) 70%, var(--cream) 100%);
+            pointer-events: none;
+        }
+        .hero-card {
+            position: relative;
+            z-index: 2;
+            max-width: 620px;
+            width: 100%;
+            text-align: center;
+            padding: 56px 40px;
+            background: rgba(14,22,48,0.2);
+            border: 1px solid rgba(201,169,97,0.4);
+            border-radius: 24px;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        }
+        .monogram-ring {
+            width: 92px; height: 92px;
+            margin: 0 auto 22px;
+            border-radius: 50%;
+            border: 1px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
             font-family: 'Fraunces', serif;
             font-size: 1.7rem;
             font-weight: 600;
             letter-spacing: 1px;
-            box-shadow: 0 10px 26px rgba(43,58,66,0.35);
-        }
-        .hero-panel {
-            background: var(--parchment);
-            padding: 60px 44px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            color: var(--gold-light);
+            background: rgba(201,169,97,0.08);
+            box-shadow: 0 0 0 6px rgba(201,169,97,0.08), 0 10px 30px rgba(0,0,0,0.4);
         }
         .eyebrow {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            letter-spacing: 2.5px;
+            letter-spacing: 3px;
             text-transform: uppercase;
-            color: var(--sage-dark);
-            margin-bottom: 14px;
+            color: var(--gold);
+            margin-bottom: 12px;
         }
         .guest-line {
-            font-family: 'Fraunces', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-weight: 400;
-            font-size: clamp(1.2rem, 2.4vw, 1.6rem);
-            color: var(--ink-mid);
-            margin-bottom: 22px;
+            font-weight: 500;
+            font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+            color: var(--cream-2);
+            margin-bottom: 18px;
         }
 
         .reserved-note {
-            margin: 0 0 26px;
-            background: var(--parchment-2);
-            border-left: 3px solid var(--plum);
-            padding: 10px 16px;
-            border-radius: 4px;
+            margin: 0 auto 22px;
+            background: rgba(201,169,97,0.12);
+            border: 1px solid rgba(201,169,97,0.4);
+            padding: 9px 18px;
+            border-radius: 40px;
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            color: var(--plum-dark);
-            font-size: 0.86rem;
+            color: var(--gold-light);
+            font-size: 0.82rem;
             font-weight: 600;
             max-width: 100%;
         }
-        .reserved-note i { color: var(--plum); width: 16px; }
+        .reserved-note i { color: var(--gold); width: 16px; }
 
         .couple-title {
             font-family: 'Fraunces', serif;
             font-weight: 600;
-            font-size: clamp(2.4rem, 5.5vw, 4rem);
-            line-height: 1.1;
-            color: var(--ink);
-            margin-bottom: 24px;
+            font-size: clamp(2.4rem, 6vw, 3.8rem);
+            line-height: 1.08;
+            color: var(--white);
+            margin-bottom: 22px;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.4);
         }
         .couple-title .amp {
             display: block;
+            font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-weight: 400;
-            font-size: 0.5em;
-            color: var(--plum);
-            margin: 2px 0;
+            font-weight: 500;
+            font-size: 0.48em;
+            color: var(--gold);
+            margin: 4px 0;
         }
         .date-chip {
             display: inline-flex;
             flex-direction: column;
-            gap: 2px;
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
-            padding: 12px 18px;
+            gap: 3px;
+            border: 1px solid rgba(201,169,97,0.4);
+            border-radius: 14px;
+            padding: 12px 24px;
             width: fit-content;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.15);
         }
         .date-chip .lbl {
-            font-size: 0.65rem;
-            letter-spacing: 2px;
+            font-size: 0.63rem;
+            letter-spacing: 2.5px;
             text-transform: uppercase;
             color: var(--ink-light);
         }
         .date-chip .val {
             font-family: 'Fraunces', serif;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 500;
-            color: var(--plum-dark);
+            color: var(--gold-light);
         }
+        .hero-venue {
+            margin-top: 18px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: var(--cream-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .hero-venue i { color: var(--gold); }
+
+        .scroll-cue {
+            position: absolute;
+            bottom: 26px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            color: var(--gold-light);
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.8;
+        }
+        .scroll-cue span.line { width: 1px; height: 26px; background: linear-gradient(var(--gold), transparent); animation: scrollLine 1.8s ease-in-out infinite; }
+        @keyframes scrollLine { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 
         @media (max-width: 760px) {
-            .hero { grid-template-columns: 1fr; }
-            .hero-media { min-height: 240px; }
-            .hero-panel { padding: 40px 24px; }
+            .hero-card { padding: 40px 26px; }
         }
 
-        /* ======= COUNTDOWN : ticket strip ======= */
+        /* ======= COUNTDOWN : glass strip ======= */
         .countdown-section {
-            background: var(--plum-dark);
-            padding: 26px 20px;
+            background: var(--navy);
+            padding: 30px 20px;
             text-align: center;
             position: relative;
+            border-top: 1px solid rgba(201,169,97,0.25);
         }
-        .countdown-section::before,
-        .countdown-section::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 22px; height: 22px;
-            background: var(--parchment);
-            border-radius: 50%;
-            transform: translateY(-50%);
-        }
-        .countdown-section::before { left: -11px; }
-        .countdown-section::after { right: -11px; }
         .countdown-label {
             font-size: 0.68rem;
             letter-spacing: 2.5px;
             text-transform: uppercase;
-            color: var(--plum-light);
-            margin-bottom: 14px;
+            color: var(--gold);
+            margin-bottom: 16px;
         }
         .countdown {
             display: flex;
@@ -214,125 +258,139 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             gap: 14px;
             flex-wrap: wrap;
         }
-        .time-unit { text-align: center; min-width: 58px; }
+        .time-unit {
+            text-align: center;
+            min-width: 76px;
+            padding: 14px 6px;
+            border-radius: 14px;
+            background: rgba(201,169,97,0.07);
+            border: 1px solid rgba(201,169,97,0.22);
+        }
         .time-value {
             display: block;
             font-family: 'Fraunces', serif;
-            font-size: clamp(1.8rem, 5vw, 2.4rem);
+            font-size: clamp(1.7rem, 5vw, 2.3rem);
             font-weight: 600;
-            color: var(--parchment);
+            color: var(--gold-light);
             line-height: 1;
         }
         .time-label {
-            font-size: 0.6rem;
+            font-size: 0.58rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: var(--plum-light);
-            margin-top: 4px;
+            color: var(--ink-light);
+            margin-top: 5px;
         }
-        .time-sep { font-size: 1.4rem; color: var(--plum-light); margin-bottom: 14px; }
-        .just-married-msg { font-family: 'Fraunces', serif; font-size: 2rem; font-style: italic; color: var(--parchment); }
+        .time-sep { display: none; }
+        .just-married-msg { font-family: 'Fraunces', serif; font-size: 2rem; font-style: italic; color: var(--gold-light); }
 
         /* ======= BODY ======= */
-        .invitation-body { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+        .invitation-body { max-width: 760px; margin: 0 auto; padding: 0 20px; }
 
-        .section-head { text-align: center; margin: 56px 0 34px; }
+        .section-head { text-align: center; margin: 70px 0 36px; }
         .section-head .tag {
             font-size: 0.7rem;
             letter-spacing: 2.5px;
             text-transform: uppercase;
-            color: var(--sage-dark);
+            color: var(--gold-dark);
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .section-head h2 {
             font-family: 'Fraunces', serif;
             font-weight: 600;
-            font-size: clamp(1.8rem, 5vw, 2.4rem);
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
             color: var(--ink);
         }
-        .section-head h2 em { font-style: italic; color: var(--plum); }
+        .section-head h2 em { font-style: italic; color: var(--gold-dark); }
 
-        /* Love story: folded letter card */
+        /* Love story */
         .letter-card {
             background: var(--white);
-            border: 1px solid var(--parchment-border);
-            border-radius: 4px;
-            padding: 36px 32px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 42px 38px;
             position: relative;
-            font-family: 'Fraunces', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 1.1rem;
-            line-height: 1.9;
+            font-size: 1.25rem;
+            line-height: 1.85;
             color: var(--ink-mid);
-            box-shadow: 0 14px 34px rgba(43,58,66,0.06);
+            box-shadow: 0 20px 50px rgba(23,26,38,0.07);
         }
         .letter-card::before {
-            content: '';
+            content: '\201C';
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 5px;
-            background: linear-gradient(to right, var(--plum), var(--sage));
+            top: 8px; left: 24px;
+            font-family: 'Fraunces', serif;
+            font-size: 4.5rem;
+            color: var(--gold);
+            opacity: 0.35;
+            line-height: 1;
         }
 
-        /* Programme: vertical timeline */
-        .timeline { position: relative; padding-left: 68px; }
+        /* Programme: modern vertical timeline */
+        .timeline { position: relative; padding-left: 74px; }
         .timeline::before {
             content: '';
             position: absolute;
-            left: 27px; top: 6px; bottom: 6px;
+            left: 29px; top: 6px; bottom: 6px;
             width: 2px;
-            background: repeating-linear-gradient(to bottom, var(--parchment-border) 0 6px, transparent 6px 12px);
+            background: linear-gradient(to bottom, var(--gold), var(--border));
         }
-        .tl-item { position: relative; margin-bottom: 26px; }
+        .tl-item { position: relative; margin-bottom: 28px; }
         .tl-marker {
             position: absolute;
-            left: -68px; top: 0;
-            width: 56px; height: 56px;
-            border-radius: 12px;
-            background: var(--plum-dark);
-            color: var(--parchment);
+            left: -74px; top: 0;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(150deg, var(--navy-3), var(--navy));
+            border: 1px solid var(--gold);
+            color: var(--gold-light);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             font-family: 'Fraunces', serif;
             line-height: 1.1;
+            box-shadow: 0 8px 22px rgba(7,12,31,0.25);
         }
-        .tl-marker .d { font-size: 1.3rem; font-weight: 600; }
-        .tl-marker .m { font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; }
+        .tl-marker .d { font-size: 1.25rem; font-weight: 600; }
+        .tl-marker .m { font-size: 0.58rem; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
         .tl-card {
             background: var(--white);
-            border: 1px solid var(--parchment-border);
-            border-radius: 14px;
-            padding: 22px 24px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px 26px;
+            transition: box-shadow 0.25s, transform 0.25s;
         }
-        .tl-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.35rem; color: var(--ink); margin-bottom: 10px; }
+        .tl-card:hover { box-shadow: 0 16px 36px rgba(23,26,38,0.1); transform: translateY(-2px); }
+        .tl-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.4rem; color: var(--ink); margin-bottom: 10px; }
         .tl-meta { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
         .tl-meta-item { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; color: var(--ink-mid); }
-        .tl-meta-item i { color: var(--plum); width: 15px; text-align: center; }
+        .tl-meta-item i { color: var(--gold-dark); width: 15px; text-align: center; }
         .tl-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
         .btn-map {
             display: inline-flex; align-items: center; gap: 6px;
-            background: var(--plum);
-            color: white; text-decoration: none;
-            padding: 8px 16px; border-radius: 8px;
-            font-size: 0.78rem; font-weight: 600;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: var(--navy); text-decoration: none;
+            padding: 9px 18px; border-radius: 40px;
+            font-size: 0.78rem; font-weight: 700;
             transition: all 0.2s;
         }
-        .btn-map:hover { background: var(--plum-dark); color: white; }
+        .btn-map:hover { filter: brightness(1.08); color: var(--navy); transform: translateY(-1px); }
         .btn-cal {
             display: inline-flex; align-items: center; gap: 6px;
             background: transparent;
-            border: 1px solid var(--parchment-border);
+            border: 1px solid var(--border);
             color: var(--ink-mid);
             text-decoration: none;
-            padding: 8px 16px; border-radius: 8px;
+            padding: 9px 18px; border-radius: 40px;
             font-size: 0.78rem; font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
         }
-        .btn-cal:hover { border-color: var(--plum); color: var(--plum); }
+        .btn-cal:hover { border-color: var(--gold-dark); color: var(--gold-dark); }
 
         .cal-dropdown { position: relative; display: inline-block; }
         .cal-menu {
@@ -341,9 +399,9 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             bottom: calc(100% + 8px);
             left: 0;
             background: white;
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(43,58,66,0.12);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 14px 34px rgba(23,26,38,0.14);
             min-width: 180px;
             z-index: 10;
             overflow: hidden;
@@ -357,85 +415,131 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             text-decoration: none;
             transition: background 0.15s;
         }
-        .cal-menu a:hover { background: var(--parchment-2); color: var(--plum); }
+        .cal-menu a:hover { background: var(--cream-2); color: var(--gold-dark); }
         .cal-menu a i { width: 16px; text-align: center; }
 
-        /* Gallery: polaroid scatter */
+        /* Gallery: modern masonry cards */
         .polaroid-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 22px 16px;
-            padding: 10px 6px 30px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 18px;
+            padding: 10px 0 30px;
         }
         .polaroid {
-            background: white;
-            padding: 10px 10px 26px;
-            box-shadow: 0 10px 22px rgba(43,58,66,0.12);
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 12px 26px rgba(23,26,38,0.1);
             cursor: pointer;
-            transition: transform 0.25s;
-            transform: rotate(-2deg);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--border);
         }
-        .polaroid:nth-child(3n+1) { transform: rotate(-2deg); }
-        .polaroid:nth-child(3n+2) { transform: rotate(1.5deg); }
-        .polaroid:nth-child(3n)   { transform: rotate(-1deg); }
-        .polaroid:hover { transform: rotate(0deg) scale(1.04); z-index: 2; }
+        .polaroid:hover { transform: translateY(-6px) scale(1.03); box-shadow: 0 20px 40px rgba(23,26,38,0.18); }
         .polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+        /* each photo gets a different shape for a modern scattered look */
+        .polaroid:nth-child(4n+1) { border-radius: 50%; }
+        .polaroid:nth-child(4n+2) { border-radius: 8px 34px 8px 34px; }
+        .polaroid:nth-child(4n+3) { border-radius: 42% 58% 65% 35% / 45% 40% 60% 55%; }
+        .polaroid:nth-child(4n) { border-radius: 0; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
 
         /* Lightbox */
         .lightbox {
             display: none;
             position: fixed; inset: 0;
-            background: rgba(43,58,66,0.85);
+            background: rgba(7,12,31,0.92);
             z-index: 1000;
             align-items: center; justify-content: center;
         }
         .lightbox.open { display: flex; }
-        .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 6px; object-fit: contain; }
+        .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 10px; object-fit: contain; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
         .lightbox-close {
-            position: absolute; top: 20px; right: 20px;
-            color: white; font-size: 1.8rem; cursor: pointer;
-            opacity: 0.75; transition: opacity 0.2s;
+            position: absolute; top: 20px; right: 24px;
+            color: var(--gold-light); font-size: 1.8rem; cursor: pointer;
+            opacity: 0.8; transition: opacity 0.2s;
         }
         .lightbox-close:hover { opacity: 1; }
 
-        /* ======= RSVP : two column card ======= */
-        .rsvp-section { background: var(--parchment-2); border-top: 1px solid var(--parchment-border); padding: 60px 20px; }
+        /* Guest shared gallery section */
+        .section-divider { display: flex; align-items: center; gap: 16px; max-width: 760px; margin: 70px auto 0; padding: 0 20px; }
+        .section-divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+        .section-divider-line.right { background: linear-gradient(to left, transparent, var(--gold)); }
+        .section-divider-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 1px solid var(--gold);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--gold-dark); background: rgba(201,169,97,0.08);
+            flex-shrink: 0;
+        }
+        .section-heading { text-align: center; font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--ink); margin-top: 20px; }
+        .section-heading em { font-style: italic; color: var(--gold-dark); }
+        .section-sub { text-align: center; color: var(--ink-mid); font-size: 0.92rem; margin: 8px 0 30px; max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 20px; }
+
+        .gallery-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 15px;
+            padding: 10px 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .gallery-grid::-webkit-scrollbar { display: none; }
+        .gallery-item {
+            flex: 0 0 auto;
+            width: 240px;
+            height: 240px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            box-shadow: 0 10px 24px rgba(23,26,38,0.1);
+            transition: transform 0.3s;
+        }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gallery-item:hover { transform: translateY(-4px); }
+
+        /* ======= RSVP : glass two column card ======= */
+        .rsvp-section { background: linear-gradient(180deg, var(--cream), var(--cream-2)); padding: 70px 20px; margin-top: 20px; }
         .rsvp-card {
-            max-width: 780px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
-            border-radius: 18px;
+            border-radius: 26px;
             overflow: hidden;
             display: grid;
             grid-template-columns: 0.85fr 1.15fr;
-            box-shadow: 0 16px 44px rgba(43,58,66,0.08);
+            box-shadow: 0 26px 60px rgba(23,26,38,0.12);
         }
         .rsvp-aside {
-            background: linear-gradient(160deg, var(--plum-dark), var(--sage-dark));
-            color: var(--parchment);
-            padding: 44px 34px;
+            background: radial-gradient(circle at 30% 20%, var(--navy-3), var(--navy));
+            color: var(--cream);
+            padding: 46px 36px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        .rsvp-aside .quote-mark { font-family: 'Fraunces', serif; font-size: 3rem; opacity: 0.5; line-height: 1; margin-bottom: 10px; }
+        .rsvp-aside .quote-mark { font-family: 'Fraunces', serif; font-size: 3.2rem; color: var(--gold); opacity: 0.7; line-height: 1; margin-bottom: 12px; }
         .rsvp-aside p {
-            font-family: 'Fraunces', serif;
+            font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 1.15rem;
-            line-height: 1.7;
+            font-size: 1.25rem;
+            line-height: 1.75;
+            color: var(--cream-2);
         }
-        .rsvp-form-side { padding: 44px 34px; }
-        .rsvp-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; color: var(--ink); margin-bottom: 4px; }
+        .rsvp-form-side { padding: 46px 36px; }
+        .rsvp-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2rem; color: var(--ink); margin-bottom: 4px; }
         .rsvp-subtitle { font-size: 0.78rem; color: var(--ink-light); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
 
         .rsvp-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
         .rsvp-option input[type="radio"] { display: none; }
         .rsvp-option label {
             display: flex; flex-direction: column; align-items: center; gap: 7px;
-            padding: 16px 10px;
-            border: 2px solid var(--parchment-border);
-            border-radius: 12px;
+            padding: 18px 10px;
+            border: 2px solid var(--border);
+            border-radius: 16px;
             cursor: pointer;
             font-size: 0.8rem;
             font-weight: 500;
@@ -444,17 +548,17 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         }
         .rsvp-option label i { font-size: 1.3rem; }
         .rsvp-option:first-child input[type="radio"]:checked + label {
-            border-color: var(--sage-dark); background: rgba(138,154,126,0.1); color: var(--sage-dark);
+            border-color: var(--gold-dark); background: rgba(201,169,97,0.1); color: var(--gold-dark);
         }
         .rsvp-option:last-child input[type="radio"]:checked + label {
-            border-color: var(--blush); background: rgba(201,138,138,0.1); color: #a25c5c;
+            border-color: #a25c5c; background: rgba(162,92,92,0.08); color: #a25c5c;
         }
 
         .rsvp-note {
             width: 100%;
-            background: var(--parchment);
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
+            background: var(--cream);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             padding: 13px 15px;
             font-family: 'Inter', sans-serif;
             font-size: 0.86rem;
@@ -464,15 +568,15 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             transition: border-color 0.2s;
             margin-bottom: 16px;
         }
-        .rsvp-note:focus { border-color: var(--plum); }
+        .rsvp-note:focus { border-color: var(--gold); }
 
         .btn-rsvp-submit {
             width: 100%;
-            background: var(--plum);
-            color: var(--parchment);
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: var(--navy);
             border: none;
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 14px;
+            padding: 16px;
             font-size: 0.86rem;
             font-weight: 700;
             letter-spacing: 1.5px;
@@ -480,72 +584,22 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             cursor: pointer;
             transition: all 0.25s;
         }
-        .btn-rsvp-submit:hover { background: var(--plum-dark); transform: translateY(-2px); }
+        .btn-rsvp-submit:hover { filter: brightness(1.06); transform: translateY(-2px); }
 
         @media (max-width: 640px) {
             .rsvp-card { grid-template-columns: 1fr; }
-            .rsvp-aside { padding: 30px 26px; }
-            .rsvp-form-side { padding: 30px 26px; }
+            .rsvp-aside { padding: 32px 26px; }
+            .rsvp-form-side { padding: 32px 26px; }
         }
 
         /* ======= FOOTER ======= */
-        .inv-footer { text-align: center; padding: 40px 20px; font-size: 0.75rem; color: var(--ink-light); border-top: 1px solid var(--parchment-border); }
-        .inv-footer .brand { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.3rem; color: var(--plum); display: block; margin-bottom: 6px; }
+        .inv-footer { text-align: center; padding: 46px 20px; font-size: 0.75rem; color: var(--ink-light); border-top: 1px solid var(--border); background: var(--cream); }
+        .inv-footer .brand { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.35rem; color: var(--gold-dark); display: block; margin-bottom: 6px; }
     </style>
-
-<style>
-/* Slideshow-like animation for gallery items */
-@keyframes slideShowAnim {
-    0% { opacity: 0; transform: scale(0.95) translateY(20px); }
-    10% { opacity: 1; transform: scale(1) translateY(0); }
-    90% { opacity: 1; transform: scale(1) translateY(0); }
-    100% { opacity: 0; transform: scale(1.05) translateY(-20px); }
-}
-.gallery-grid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 15px;
-    padding: 10px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    animation: scrollGallery 20s linear infinite;
-}
-.gallery-grid:hover {
-    animation-play-state: paused;
-}
-@keyframes scrollGallery {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-.gallery-item {
-    flex: 0 0 auto;
-    width: 280px;
-    height: 280px;
-}
-</style>
-
-
-<style>
-/* beach_tropical unique overrides – Tropical Ticket */
-.hero-media { background: linear-gradient(160deg, #2f7d9c, #1a5570); }
-.wax-seal { background: linear-gradient(135deg, var(--plum), var(--plum-dark)) !important; box-shadow: 0 10px 30px rgba(239,130,100,0.4) !important; }
-.countdown-section { background: linear-gradient(135deg, var(--sage-dark), #1a5570) !important; }
-.countdown-section::before, .countdown-section::after { background: var(--parchment) !important; width: 28px !important; height: 28px !important; }
-.letter-card::before { background: linear-gradient(to right, var(--sage), var(--plum)) !important; height: 4px !important; }
-.tl-marker { border-radius: 50% !important; width: 60px !important; height: 60px !important; background: linear-gradient(135deg, var(--sage-dark), #1a5570) !important; }
-.tl-card { border-radius: 18px !important; border-left: 4px solid var(--plum) !important; }
-.polaroid { border-radius: 4px !important; transform: rotate(0deg) !important; box-shadow: 0 8px 25px rgba(47,125,156,0.15) !important; }
-.polaroid:nth-child(3n+1) { transform: rotate(-3deg) !important; }
-.polaroid:nth-child(3n+2) { transform: rotate(2deg) !important; }
-.polaroid:nth-child(3n) { transform: rotate(-1.5deg) !important; }
-.rsvp-aside { background: linear-gradient(160deg, #1a5570, var(--sage-dark)) !important; }
-.btn-rsvp-submit { background: linear-gradient(135deg, var(--sage-dark), #1a5570) !important; border-radius: 50px !important; }
-.btn-map { background: linear-gradient(135deg, var(--sage-dark), #1a5570) !important; border-radius: 50px !important; }
-.inv-footer .brand { color: var(--sage-dark) !important; }
-</style>
 </head>
 <body>
+
+<canvas id="hero-canvas"></canvas>
 
 <?php if ($guest_id == 0): ?>
 <div class="preview-bar">
@@ -562,15 +616,11 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <?php endif; ?>
 
 <!-- HERO -->
-<div class="hero">
-    <div class="hero-media" <?php echo $hero_style; ?>>
-        <div class="wax-seal"><?php echo htmlspecialchars($monogram); ?></div>
-    </div>
-    <div class="hero-panel">
+<div class="hero" <?php echo $hero_style; ?>>
+    <div class="hero-card reveal">
+        <div class="monogram-ring"><?php echo htmlspecialchars($monogram); ?></div>
         <span class="eyebrow">You're Warmly Invited</span>
         <p class="guest-line">Dear <?php echo htmlspecialchars($guest_name); ?>,</p>
-
-
 
         <h1 class="couple-title">
             <?php echo htmlspecialchars($wedding['bride_name']); ?>
@@ -582,7 +632,12 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             <span class="lbl">We're getting married</span>
             <span class="val"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></span>
         </div>
+
+        <?php if (!empty($wedding['venue'])): ?>
+        <p class="hero-venue"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($wedding['venue']); ?></p>
+        <?php endif; ?>
     </div>
+    <div class="scroll-cue"><span class="line"></span>Scroll</div>
 </div>
 
 <!-- COUNTDOWN -->
@@ -590,11 +645,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <p class="countdown-label">Counting down to the big day</p>
     <div class="countdown" id="countdown">
         <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label">Days</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label">Hours</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-mins">00</span><span class="time-label">Minutes</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-secs">00</span><span class="time-label">Seconds</span></div>
     </div>
 </div>
@@ -603,17 +655,17 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
     <!-- LOVE STORY -->
     <?php if (!empty($wedding['love_story'])): ?>
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">How It All Began</span>
         <h2>Our <em>Love Story</em></h2>
     </div>
-    <div class="letter-card">
+    <div class="letter-card reveal">
         <?php echo nl2br(htmlspecialchars($wedding['love_story'])); ?>
     </div>
     <?php endif; ?>
 
     <!-- PROGRAMME -->
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">Join Us For These Celebrations</span>
         <h2><em>Wedding</em> Programme</h2>
     </div>
@@ -629,7 +681,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                 $ev_ics = "calendar.php?wedding_id={$wedding_id}&event_id={$ev['id']}";
                 $ev_outlook = "https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=" . $ev_title . "&startdt=" . urlencode(date('c', strtotime($ev['event_date_time']))) . "&enddt=" . urlencode(date('c', strtotime($ev['event_date_time']) + 7200)) . "&location=" . $ev_loc;
             ?>
-            <div class="tl-item">
+            <div class="tl-item reveal">
                 <div class="tl-marker">
                     <span class="d"><?php echo date('d', strtotime($ev['event_date_time'])); ?></span>
                     <span class="m"><?php echo date('M', strtotime($ev['event_date_time'])); ?></span>
@@ -667,13 +719,13 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
     <!-- GALLERY -->
     <?php if (count($gallery_images) > 0): ?>
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">Our Engagement Memories</span>
         <h2><em>Sweet</em> Moments</h2>
     </div>
     <div class="polaroid-grid" id="gallery-grid">
         <?php foreach ($gallery_images as $img): ?>
-        <div class="polaroid" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
+        <div class="polaroid reveal" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
             <img src="<?php echo htmlspecialchars($img['image_path']); ?>" alt="Our moment" loading="lazy">
         </div>
         <?php endforeach; ?>
@@ -700,12 +752,12 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
     <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
-    <div style="background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+    <div style="max-width:760px; margin:0 auto 30px; background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center;">
         <?php if ($guest_id == 0): ?>
             <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
         <?php else: ?>
             <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold); margin-bottom: 12px; display: block;"></i>
-            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: #1a1a2e; margin-bottom: 6px;">Share a Photo from Your Phone</h5>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 6px;">Share a Photo from Your Phone</h5>
             <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
             
             <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
@@ -721,10 +773,10 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     </div>
 
     <!-- Guest Shared Grid Display -->
-    <div class="gallery-grid" id="guest-gallery-grid" style="margin-bottom: 30px;">
+    <div class="gallery-grid" id="guest-gallery-grid" style="max-width:760px; margin:0 auto 30px; padding-left:20px; padding-right:20px;">
         <?php if (isset($guest_images) && count($guest_images) > 0): ?>
             <?php foreach ($guest_images as $g_img): ?>
-            <div class="gallery-item" onclick="openLightbox('<?php echo htmlspecialchars($g_img['image_path']); ?>')" style="border-color: #22c55e;">
+            <div class="gallery-item reveal" onclick="openLightbox('<?php echo htmlspecialchars($g_img['image_path']); ?>')" style="border-color: #22c55e;">
                 <img src="<?php echo htmlspecialchars($g_img['image_path']); ?>" alt="Guest moment" loading="lazy">
                 <!-- පින්තූරය එවූ අමුත්තාගේ නම යටින් පෙන්වයි -->
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; padding: 4px; font-family: 'Inter', sans-serif; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2;">
@@ -771,7 +823,32 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                     loader.style.display = 'none';
                     if (data.success) {
                         alert("Thank you! Your wedding photo has been shared successfully. 🎉");
-                        location.reload(); // Reload කර පින්තූරය පෙන්වීම
+                        // Reload වෙනුවට අලුත් පින්තූරය gallery එකට එකතු කිරීම —
+                        // මෙයින් කලින් තිබූ අමුත්තන්ගේ පින්තූර අස් නොවී රැඳී පවතී.
+                        const grid = document.getElementById('guest-gallery-grid');
+                        const emptyMsg = document.getElementById('no-guest-pics');
+                        if (emptyMsg) emptyMsg.remove();
+                        if (grid && data.image_path) {
+                            const item = document.createElement('div');
+                            item.className = 'gallery-item';
+                            item.style.borderColor = '#22c55e';
+                            item.style.opacity = '0';
+                            item.onclick = function() { openLightbox(data.image_path); };
+                            item.innerHTML = `
+                                <img src="${data.image_path}" alt="Guest moment" loading="lazy">
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; padding: 4px; font-family: 'Inter', sans-serif; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2;">
+                                    By ${data.guest_name ? data.guest_name : 'You'}
+                                </div>`;
+                            grid.appendChild(item);
+                            if (typeof anime !== 'undefined') {
+                                anime({ targets: item, opacity: [0, 1], scale: [0.8, 1], easing: 'easeOutBack', duration: 700 });
+                            } else {
+                                item.style.opacity = '1';
+                            }
+                            grid.scrollTo({ left: grid.scrollWidth, behavior: 'smooth' });
+                        } else {
+                            location.reload();
+                        }
                     } else {
                         alert("Upload failed: " + data.message);
                     }
@@ -818,7 +895,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                         <input type="radio" name="rsvp_status" id="rsvp-yes" value="accepted"
                             <?php if ($current_guest['rsvp_status'] == 'accepted') echo 'checked'; ?> required>
                         <label for="rsvp-yes">
-                            <i class="fas fa-heart" style="color:#5f6e54;"></i>
+                            <i class="fas fa-heart" style="color:#c9a961;"></i>
                             Joyfully Accept
                         </label>
                     </div>
@@ -850,6 +927,10 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <span class="brand">Lumus Studio</span>
     Digital Wedding Invitations · Designed by Hathisa Thissara
 </div>
+
+<!-- Three.js (hero 3D scene) + anime.js (scroll reveals) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
 <script>
 // Countdown
@@ -896,6 +977,195 @@ function closeLightbox() {
     document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ================= Guest gallery auto-scroll (replaces scrollbar) =================
+(function autoplayGuestGallery() {
+    const track = document.getElementById('guest-gallery-grid');
+    if (!track) return;
+    let timer = null;
+    function step() {
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 5;
+        if (atEnd) {
+            track.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            track.scrollBy({ left: 260, behavior: 'smooth' });
+        }
+    }
+    function start() { if (track.scrollWidth > track.clientWidth + 10) timer = setInterval(step, 2800); }
+    function stop() { clearInterval(timer); }
+    track.addEventListener('mouseenter', stop);
+    track.addEventListener('mouseleave', start);
+    track.addEventListener('touchstart', stop, { passive: true });
+    track.addEventListener('touchend', start);
+    start();
+})();
+
+// ================= THREE.JS — 3D golden ring hero scene =================
+(function initHeroScene() {
+    const canvas = document.getElementById('hero-canvas');
+    if (!canvas || typeof THREE === 'undefined') return;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 9);
+
+    function resize() {
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Gold torus rings
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xc9a961, metalness: 0.85, roughness: 0.28, emissive: 0x2a2109, emissiveIntensity: 0.4 });
+    const ringGroup = new THREE.Group();
+    const ringGeo1 = new THREE.TorusGeometry(3.1, 0.045, 24, 120);
+    const ring1 = new THREE.Mesh(ringGeo1, goldMat);
+    ring1.rotation.x = Math.PI / 2.3;
+    ringGroup.add(ring1);
+
+    const ringGeo2 = new THREE.TorusGeometry(2.3, 0.03, 24, 120);
+    const ring2 = new THREE.Mesh(ringGeo2, goldMat.clone());
+    ring2.rotation.x = Math.PI / 3.1;
+    ring2.rotation.y = Math.PI / 6;
+    ringGroup.add(ring2);
+    scene.add(ringGroup);
+
+    // Big rings should only appear in the hero section, not elsewhere on the page
+    const heroSectionEl = document.querySelector('.hero');
+    if (heroSectionEl && 'IntersectionObserver' in window) {
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { ringGroup.visible = entry.isIntersecting; });
+        }, { threshold: 0 });
+        heroObserver.observe(heroSectionEl);
+    }
+
+    // Particle field (stardust)
+    const starCount = 260;
+    const starGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 16;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xe8d9ac, size: 0.035, transparent: true, opacity: 0.75 });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // Small falling gold rings (drift down the whole page)
+    const smallRingGeo = new THREE.TorusGeometry(0.16, 0.02, 12, 32);
+    const smallRingMat = new THREE.MeshStandardMaterial({
+        color: 0xe8d9ac,
+        metalness: 0.8,
+        roughness: 0.3,
+        emissive: 0x3a2f12,
+        emissiveIntensity: 0.5,
+        transparent: true,
+        opacity: 0.85
+    });
+    const fallingRings = [];
+    const fallingRingCount = 32;
+    for (let i = 0; i < fallingRingCount; i++) {
+        const mesh = new THREE.Mesh(smallRingGeo, smallRingMat.clone());
+        mesh.position.set((Math.random() - 0.5) * 14, Math.random() * 12 - 4, (Math.random() - 0.5) * 6 - 2);
+        mesh.rotation.x = Math.random() * Math.PI;
+        mesh.rotation.y = Math.random() * Math.PI;
+        mesh.scale.setScalar(0.6 + Math.random() * 0.8);
+        mesh.userData = {
+            fallSpeed: 0.3 + Math.random() * 0.45,
+            swaySpeed: 0.4 + Math.random() * 0.7,
+            swayAmp: 0.5 + Math.random() * 0.7,
+            rotSpeed: (Math.random() - 0.5) * 0.5,
+            baseX: mesh.position.x
+        };
+        fallingRings.push(mesh);
+        scene.add(mesh);
+    }
+
+    const ambient = new THREE.AmbientLight(0x8899cc, 0.55);
+    scene.add(ambient);
+    const key = new THREE.PointLight(0xc9a961, 2.4, 30);
+    key.position.set(5, 4, 6);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x3a4a8f, 1.6, 30);
+    rim.position.set(-6, -3, -4);
+    scene.add(rim);
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5);
+        mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        ringGroup.rotation.z = t * 0.15;
+        ringGroup.rotation.y = t * 0.08 + mouseX * 0.4;
+        ringGroup.rotation.x = Math.PI / 2.3 + mouseY * 0.2;
+        stars.rotation.y = t * 0.02;
+        fallingRings.forEach(r => {
+            r.position.y -= r.userData.fallSpeed * 0.016;
+            r.position.x = r.userData.baseX + Math.sin(t * r.userData.swaySpeed) * r.userData.swayAmp;
+            r.rotation.z += r.userData.rotSpeed * 0.016;
+            r.rotation.x += r.userData.rotSpeed * 0.008;
+            if (r.position.y < -6) { r.position.y = 6; }
+        });
+        camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.02;
+        camera.position.y += (-mouseY * 1.2 - camera.position.y) * 0.02;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+    }
+    animate();
+})();
+
+// ================= ANIME.JS — scroll reveal =================
+(function initReveals() {
+    if (typeof anime === 'undefined') return;
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                anime({
+                    targets: entry.target,
+                    opacity: [0, 1],
+                    translateY: [28, 0],
+                    easing: 'easeOutCubic',
+                    duration: 800,
+                    delay: 60
+                });
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    els.forEach(el => io.observe(el));
+
+    // Hero card entrance + count-up feel on load
+    anime({
+        targets: '.hero-card',
+        opacity: [0, 1],
+        translateY: [24, 0],
+        easing: 'easeOutCubic',
+        duration: 1000,
+        delay: 200
+    });
+    anime({
+        targets: '.monogram-ring',
+        scale: [0.7, 1],
+        opacity: [0, 1],
+        easing: 'easeOutBack',
+        duration: 900,
+        delay: 400
+    });
+})();
 </script>
 </body>
 </html>

@@ -15,40 +15,44 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <meta name="description" content="You are warmly invited to the wedding of <?php echo htmlspecialchars($wedding['bride_name'] . ' and ' . $wedding['groom_name']); ?>.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --plum: #a8283f;
-            --plum-dark: #6e1626;
-            --plum-light: #d1596d;
-            --sage: #e0a527;
-            --sage-dark: #b5811a;
-            --parchment: #fff8ec;
-            --parchment-2: #fbecc9;
-            --parchment-border: #edc873;
-            --ink: #3a1015;
+            --maroon: #4a0e18;
+            --maroon-2: #6e1626;
+            --maroon-3: #2e0a10;
+            --gold: #d4af37;
+            --gold-light: #f0d78c;
+            --gold-dark: #a8842a;
+            --cream: #fff8ec;
+            --cream-2: #fbecc9;
+            --ink: #2e0a10;
             --ink-mid: #6b3540;
             --ink-light: #a3777e;
-            --blush: #e0a527;
+            --border: #edc873;
             --white: #fffdf6;
         }
 
         html { scroll-behavior: smooth; }
 
         body {
-            background: var(--parchment);
+            background: var(--cream);
             font-family: 'Inter', sans-serif;
             color: var(--ink);
             min-height: 100vh;
+            overflow-x: hidden;
         }
+
+        ::selection { background: var(--gold); color: var(--maroon); }
+        .reveal { opacity: 0; }
 
         /* Preview banner */
         .preview-bar {
-            background: var(--plum-dark);
-            color: var(--parchment);
+            background: var(--maroon-3);
+            color: var(--gold-light);
             text-align: center;
             padding: 10px 20px;
             font-family: 'Inter', sans-serif;
@@ -56,510 +60,287 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             letter-spacing: 0.5px;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
+            border-bottom: 1px solid rgba(212,175,55,0.35);
         }
-        .preview-bar a { color: var(--blush); text-decoration: underline; text-underline-offset: 3px; }
+        .preview-bar a { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
 
-        /* ======= HERO : split layout ======= */
+        /* ======= HERO : jewel-court 3D scene ======= */
         .hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 560px;
-        }
-        .hero-media {
             position: relative;
-            background: linear-gradient(160deg, var(--plum-dark), var(--sage-dark));
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-start;
-            min-height: 320px;
-        }
-        .wax-seal {
-            margin: 28px;
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: var(--plum);
-            border: 3px double rgba(224,165,39,0.9);
-            outline: 1px solid rgba(224,165,39,0.5);
-            outline-offset: 4px;
-            color: var(--parchment);
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 50% 15%, var(--maroon-2), var(--maroon-3) 75%);
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            padding: 90px 20px 70px;
+        }
+        #hero-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .hero::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(46,10,16,0.1) 0%, rgba(46,10,16,0.55) 72%, var(--cream) 100%);
+            pointer-events: none;
+        }
+        .hero-card {
+            position: relative;
+            z-index: 2;
+            max-width: 620px;
+            width: 100%;
+            text-align: center;
+            padding: 58px 42px;
+            background: rgba(74,14,24,0.2);
+            border: 1.5px double rgba(212,175,55,0.6);
+            outline: 1px solid rgba(212,175,55,0.25);
+            outline-offset: 8px;
+            border-radius: 8px;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        }
+        .monogram-ring {
+            width: 94px; height: 94px;
+            margin: 0 auto 22px;
+            border-radius: 50%;
+            border: 3px double var(--gold);
+            outline: 1px solid rgba(212,175,55,0.4);
+            outline-offset: 4px;
+            display: flex; align-items: center; justify-content: center;
             font-family: 'Cormorant Garamond', serif;
             font-size: 1.9rem;
             font-weight: 700;
             letter-spacing: 1px;
-            box-shadow: 0 10px 26px rgba(58,16,21,0.35);
+            color: var(--gold-light);
+            background: rgba(212,175,55,0.08);
         }
-        .hero-panel {
-            background: var(--parchment);
-            padding: 60px 44px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .eyebrow {
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--sage-dark);
-            margin-bottom: 14px;
-        }
-        .guest-line {
-            font-family: 'Cormorant Garamond', serif;
-            font-style: italic;
-            font-weight: 400;
-            font-size: clamp(1.2rem, 2.4vw, 1.6rem);
-            color: var(--ink-mid);
-            margin-bottom: 22px;
-        }
+        .eyebrow { font-size: 0.7rem; font-weight: 600; letter-spacing: 3.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+        .guest-line { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500; font-size: clamp(1.1rem, 2.2vw, 1.4rem); color: var(--cream-2); margin-bottom: 18px; }
 
         .reserved-note {
-            margin: 0 0 26px;
-            background: var(--parchment-2);
-            border-left: 3px solid var(--plum);
-            padding: 10px 16px;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--plum-dark);
-            font-size: 0.86rem;
-            font-weight: 600;
-            max-width: 100%;
+            margin: 0 auto 22px;
+            background: rgba(212,175,55,0.12);
+            border: 1px solid rgba(212,175,55,0.4);
+            padding: 9px 18px; border-radius: 4px;
+            display: inline-flex; align-items: center; gap: 10px;
+            color: var(--gold-light); font-size: 0.82rem; font-weight: 600;
         }
-        .reserved-note i { color: var(--plum); width: 16px; }
+        .reserved-note i { color: var(--gold); width: 16px; }
 
         .couple-title {
             font-family: 'Cormorant Garamond', serif;
-            font-weight: 600;
-            font-size: clamp(2.4rem, 5.5vw, 4rem);
-            line-height: 1.1;
-            color: var(--ink);
-            margin-bottom: 24px;
+            font-weight: 700;
+            font-size: clamp(2.4rem, 6vw, 3.9rem);
+            line-height: 1.08;
+            color: var(--white);
+            margin-bottom: 22px;
+            text-shadow: 0 4px 30px rgba(0,0,0,0.4);
         }
-        .couple-title .amp {
-            display: block;
-            font-style: italic;
-            font-weight: 400;
-            font-size: 0.5em;
-            color: var(--plum);
-            margin: 2px 0;
-        }
+        .couple-title .amp { display: block; font-style: italic; font-weight: 500; font-size: 0.48em; color: var(--gold); margin: 4px 0; }
         .date-chip {
-            display: inline-flex;
-            flex-direction: column;
-            gap: 2px;
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
-            padding: 12px 18px;
-            width: fit-content;
+            display: inline-flex; flex-direction: column; gap: 3px;
+            border: 1px solid rgba(212,175,55,0.45);
+            border-radius: 4px; padding: 12px 24px;
+            width: fit-content; margin: 0 auto;
+            background: rgba(0,0,0,0.15);
         }
-        .date-chip .lbl {
-            font-size: 0.65rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--ink-light);
-        }
-        .date-chip .val {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.2rem;
+        .date-chip .lbl { font-size: 0.63rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ink-light); }
+        .date-chip .val { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: var(--gold-light); }
+
+        .hero-venue {
+            margin-top: 18px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
             font-weight: 500;
-            color: var(--plum-dark);
+            color: var(--cream-2);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        .hero-venue i { color: var(--gold); }
 
-        @media (max-width: 760px) {
-            .hero { grid-template-columns: 1fr; }
-            .hero-media { min-height: 240px; }
-            .hero-panel { padding: 40px 24px; }
+        .scroll-cue {
+            position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+            z-index: 2; color: var(--gold-light); font-size: 0.65rem;
+            letter-spacing: 2px; text-transform: uppercase;
+            display: flex; flex-direction: column; align-items: center; gap: 8px; opacity: 0.8;
         }
+        .scroll-cue span.line { width: 1px; height: 26px; background: linear-gradient(var(--gold), transparent); animation: scrollLine 1.8s ease-in-out infinite; }
+        @keyframes scrollLine { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-        /* ======= COUNTDOWN : ticket strip ======= */
+        @media (max-width: 760px) { .hero-card { padding: 40px 26px; } }
+
+        /* ======= COUNTDOWN ======= */
         .countdown-section {
-            background: var(--plum-dark);
-            padding: 26px 20px;
+            background: linear-gradient(135deg, var(--maroon-3), var(--maroon-2));
+            border-top: 3px solid var(--gold);
+            border-bottom: 3px solid var(--gold);
+            padding: 30px 20px;
             text-align: center;
-            position: relative;
         }
-        .countdown-section::before,
-        .countdown-section::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 22px; height: 22px;
-            background: var(--parchment);
-            border-radius: 50%;
-            transform: translateY(-50%);
-        }
-        .countdown-section::before { left: -11px; }
-        .countdown-section::after { right: -11px; }
-        .countdown-label {
-            font-size: 0.68rem;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--plum-light);
-            margin-bottom: 14px;
-        }
-        .countdown {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-        .time-unit { text-align: center; min-width: 58px; }
-        .time-value {
-            display: block;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: clamp(1.8rem, 5vw, 2.4rem);
-            font-weight: 600;
-            color: var(--parchment);
-            line-height: 1;
-        }
-        .time-label {
-            font-size: 0.6rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--plum-light);
-            margin-top: 4px;
-        }
-        .time-sep { font-size: 1.4rem; color: var(--plum-light); margin-bottom: 14px; }
-        .just-married-msg { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-style: italic; color: var(--parchment); }
+        .countdown-label { font-size: 0.68rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; }
+        .countdown { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .time-unit { text-align: center; min-width: 76px; padding: 14px 6px; border-radius: 4px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.3); }
+        .time-value { display: block; font-family: 'Cormorant Garamond', serif; font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 700; color: var(--gold-light); line-height: 1; text-shadow: 0 2px 10px rgba(212,175,55,0.3); }
+        .time-label { font-size: 0.58rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-light); margin-top: 5px; }
+        .time-sep { display: none; }
+        .just-married-msg { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-style: italic; color: var(--gold-light); }
 
         /* ======= BODY ======= */
-        .invitation-body { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+        .invitation-body { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+        .section-head { text-align: center; margin: 70px 0 36px; }
+        .section-head .tag { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-dark); display: block; margin-bottom: 10px; }
+        .section-head h2 { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--ink); }
+        .section-head h2 em { font-style: italic; color: var(--maroon-2); }
 
-        .section-head { text-align: center; margin: 56px 0 34px; }
-        .section-head .tag {
-            font-size: 0.7rem;
-            letter-spacing: 2.5px;
-            text-transform: uppercase;
-            color: var(--sage-dark);
-            display: block;
-            margin-bottom: 8px;
-        }
-        .section-head h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-weight: 600;
-            font-size: clamp(1.8rem, 5vw, 2.4rem);
-            color: var(--ink);
-        }
-        .section-head h2 em { font-style: italic; color: var(--plum); }
-
-        /* Love story: folded letter card */
+        /* Love story */
         .letter-card {
             background: var(--white);
-            border: 1px solid var(--parchment-border);
-            border-radius: 4px;
-            padding: 36px 32px;
+            border: 2px double var(--gold);
+            padding: 42px 38px;
             position: relative;
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 1.1rem;
-            line-height: 1.9;
+            font-size: 1.3rem;
+            line-height: 1.85;
             color: var(--ink-mid);
-            box-shadow: 0 14px 34px rgba(58,16,21,0.06);
+            box-shadow: 0 20px 50px rgba(46,10,16,0.08);
         }
-        .letter-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 5px;
-            background: linear-gradient(to right, var(--plum), var(--sage));
-        }
+        .letter-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--gold); }
 
-        /* Programme: vertical timeline */
-        .timeline { position: relative; padding-left: 68px; }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 27px; top: 6px; bottom: 6px;
-            width: 2px;
-            background: repeating-linear-gradient(to bottom, var(--parchment-border) 0 6px, transparent 6px 12px);
-        }
-        .tl-item { position: relative; margin-bottom: 26px; }
+        /* Programme timeline */
+        .timeline { position: relative; padding-left: 74px; }
+        .timeline::before { content: ''; position: absolute; left: 29px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(to bottom, var(--gold), var(--border)); }
+        .tl-item { position: relative; margin-bottom: 28px; }
         .tl-marker {
-            position: absolute;
-            left: -68px; top: 0;
-            width: 56px; height: 56px;
-            border-radius: 12px;
-            background: var(--plum-dark);
-            color: var(--parchment);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Cormorant Garamond', serif;
-            line-height: 1.1;
+            position: absolute; left: -74px; top: 0; width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--maroon-2), var(--maroon-3));
+            border: 3px solid var(--gold);
+            color: var(--gold-light);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-family: 'Cormorant Garamond', serif; line-height: 1.1;
+            box-shadow: 0 8px 22px rgba(46,10,16,0.3);
         }
-        .tl-marker .d { font-size: 1.3rem; font-weight: 600; }
-        .tl-marker .m { font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; }
-        .tl-card {
-            background: var(--white);
-            border: 1px solid var(--parchment-border);
-            border-radius: 14px;
-            padding: 22px 24px;
-        }
-        .tl-name { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.35rem; color: var(--ink); margin-bottom: 10px; }
+        .tl-marker .d { font-size: 1.3rem; font-weight: 700; }
+        .tl-marker .m { font-size: 0.58rem; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+        .tl-card { background: var(--white); border: 1px solid rgba(212,175,55,0.3); border-top: 3px solid var(--gold); padding: 24px 26px; transition: box-shadow 0.25s, transform 0.25s; }
+        .tl-card:hover { box-shadow: 0 16px 36px rgba(110,22,38,0.14); transform: translateY(-2px); }
+        .tl-name { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1.45rem; color: var(--ink); margin-bottom: 10px; }
         .tl-meta { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
         .tl-meta-item { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; color: var(--ink-mid); }
-        .tl-meta-item i { color: var(--plum); width: 15px; text-align: center; }
+        .tl-meta-item i { color: var(--gold-dark); width: 15px; text-align: center; }
         .tl-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 14px; }
         .btn-map {
             display: inline-flex; align-items: center; gap: 6px;
-            background: var(--plum);
-            color: white; text-decoration: none;
-            padding: 8px 16px; border-radius: 8px;
-            font-size: 0.78rem; font-weight: 600;
+            background: var(--maroon-2); border: 1px solid var(--gold);
+            color: var(--gold-light); text-decoration: none;
+            padding: 9px 18px; font-size: 0.78rem; font-weight: 700;
             transition: all 0.2s;
         }
-        .btn-map:hover { background: var(--plum-dark); color: white; }
+        .btn-map:hover { background: var(--maroon-3); color: var(--gold-light); transform: translateY(-1px); }
         .btn-cal {
             display: inline-flex; align-items: center; gap: 6px;
-            background: transparent;
-            border: 1px solid var(--parchment-border);
-            color: var(--ink-mid);
-            text-decoration: none;
-            padding: 8px 16px; border-radius: 8px;
-            font-size: 0.78rem; font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: transparent; border: 1px solid var(--border);
+            color: var(--ink-mid); text-decoration: none;
+            padding: 9px 18px; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
         }
-        .btn-cal:hover { border-color: var(--plum); color: var(--plum); }
-
+        .btn-cal:hover { border-color: var(--gold-dark); color: var(--gold-dark); }
         .cal-dropdown { position: relative; display: inline-block; }
-        .cal-menu {
-            display: none;
-            position: absolute;
-            bottom: calc(100% + 8px);
-            left: 0;
-            background: white;
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(58,16,21,0.12);
-            min-width: 180px;
-            z-index: 10;
-            overflow: hidden;
-        }
+        .cal-menu { display: none; position: absolute; bottom: calc(100% + 8px); left: 0; background: white; border: 1px solid var(--border); box-shadow: 0 14px 34px rgba(46,10,16,0.14); min-width: 180px; z-index: 10; overflow: hidden; }
         .cal-menu.open { display: block; }
-        .cal-menu a {
-            display: flex; align-items: center; gap: 10px;
-            padding: 11px 15px;
-            font-size: 0.82rem;
-            color: var(--ink-mid);
-            text-decoration: none;
-            transition: background 0.15s;
-        }
-        .cal-menu a:hover { background: var(--parchment-2); color: var(--plum); }
+        .cal-menu a { display: flex; align-items: center; gap: 10px; padding: 11px 15px; font-size: 0.82rem; color: var(--ink-mid); text-decoration: none; transition: background 0.15s; }
+        .cal-menu a:hover { background: var(--cream-2); color: var(--gold-dark); }
         .cal-menu a i { width: 16px; text-align: center; }
 
-        /* Gallery: polaroid scatter */
-        .polaroid-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 22px 16px;
-            padding: 10px 6px 30px;
-        }
+        /* ======= GALLERY : gold-framed mosaic ======= */
+        .polaroid-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; padding: 10px 0 30px; }
         .polaroid {
-            background: white;
-            padding: 10px 10px 26px;
-            box-shadow: 0 10px 22px rgba(58,16,21,0.12);
+            background: var(--white);
+            padding: 8px;
+            border: 1px solid rgba(212,175,55,0.4);
+            position: relative;
             cursor: pointer;
-            transition: transform 0.25s;
-            transform: rotate(-2deg);
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 12px 26px rgba(46,10,16,0.12);
+            overflow: hidden;
         }
-        .polaroid:nth-child(3n+1) { transform: rotate(-2deg); }
-        .polaroid:nth-child(3n+2) { transform: rotate(1.5deg); }
-        .polaroid:nth-child(3n)   { transform: rotate(-1deg); }
-        .polaroid:hover { transform: rotate(0deg) scale(1.04); z-index: 2; }
+        .polaroid::before {
+            content: '';
+            position: absolute; inset: 4px;
+            border: 1px solid var(--gold);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .polaroid:hover { transform: translateY(-6px) scale(1.03); box-shadow: 0 20px 42px rgba(110,22,38,0.2); }
         .polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+        /* each photo gets a different jewel-court shape */
+        .polaroid:nth-child(4n+1) { border-radius: 50%; }
+        .polaroid:nth-child(4n+1)::before { border-radius: 50%; }
+        .polaroid:nth-child(4n+2) { border-radius: 4px; }
+        .polaroid:nth-child(4n+3) { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+        .polaroid:nth-child(4n) { border-radius: 30% 4px 30% 4px; }
 
         /* Lightbox */
-        .lightbox {
-            display: none;
-            position: fixed; inset: 0;
-            background: rgba(58,16,21,0.9);
-            z-index: 1000;
-            align-items: center; justify-content: center;
-        }
+        .lightbox { display: none; position: fixed; inset: 0; background: rgba(46,10,16,0.92); z-index: 1000; align-items: center; justify-content: center; }
         .lightbox.open { display: flex; }
-        .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 6px; object-fit: contain; }
-        .lightbox-close {
-            position: absolute; top: 20px; right: 20px;
-            color: white; font-size: 1.8rem; cursor: pointer;
-            opacity: 0.75; transition: opacity 0.2s;
-        }
+        .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 6px; object-fit: contain; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }
+        .lightbox-close { position: absolute; top: 20px; right: 24px; color: var(--gold-light); font-size: 1.8rem; cursor: pointer; opacity: 0.8; transition: opacity 0.2s; }
         .lightbox-close:hover { opacity: 1; }
 
-        /* ======= RSVP : two column card ======= */
-        .rsvp-section { background: var(--parchment-2); border-top: 1px solid var(--parchment-border); padding: 60px 20px; }
-        .rsvp-card {
-            max-width: 780px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 18px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 0.85fr 1.15fr;
-            box-shadow: 0 16px 44px rgba(58,16,21,0.08);
-        }
-        .rsvp-aside {
-            background: linear-gradient(160deg, var(--plum-dark), var(--sage-dark));
-            color: var(--parchment);
-            padding: 44px 34px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .rsvp-aside .quote-mark { font-family: 'Cormorant Garamond', serif; font-size: 3rem; opacity: 0.5; line-height: 1; margin-bottom: 10px; }
-        .rsvp-aside p {
-            font-family: 'Cormorant Garamond', serif;
-            font-style: italic;
-            font-size: 1.15rem;
-            line-height: 1.7;
-        }
-        .rsvp-form-side { padding: 44px 34px; }
-        .rsvp-title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.9rem; color: var(--ink); margin-bottom: 4px; }
-        .rsvp-subtitle { font-size: 0.78rem; color: var(--ink-light); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
+        /* Guest shared gallery */
+        .section-divider { display: flex; align-items: center; gap: 16px; max-width: 760px; margin: 70px auto 0; padding: 0 20px; }
+        .section-divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+        .section-divider-line.right { background: linear-gradient(to left, transparent, var(--gold)); }
+        .section-divider-icon { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold-dark); background: rgba(212,175,55,0.08); flex-shrink: 0; }
+        .section-heading { text-align: center; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--ink); margin-top: 20px; }
+        .section-heading em { font-style: italic; color: var(--maroon-2); }
+        .section-sub { text-align: center; color: var(--ink-mid); font-size: 0.92rem; margin: 8px 0 30px; max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 20px; }
 
+        .gallery-grid { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 15px; padding: 10px 0; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+        .gallery-grid::-webkit-scrollbar { display: none; }
+        .gallery-item { flex: 0 0 auto; width: 220px; height: 220px; overflow: hidden; position: relative; cursor: pointer; border: 2px solid var(--border); box-shadow: 0 10px 24px rgba(46,10,16,0.12); transition: transform 0.3s; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gallery-item:hover { transform: translateY(-4px); }
+
+        /* ======= RSVP ======= */
+        .rsvp-section { background: linear-gradient(180deg, var(--cream), var(--cream-2)); padding: 70px 20px; margin-top: 20px; }
+        .rsvp-card { max-width: 800px; margin: 0 auto; background: white; overflow: hidden; display: grid; grid-template-columns: 0.85fr 1.15fr; box-shadow: 0 26px 60px rgba(46,10,16,0.14); border: 2px double var(--gold); }
+        .rsvp-aside { background: linear-gradient(160deg, var(--maroon-3), var(--maroon-2)); color: var(--cream); padding: 46px 36px; display: flex; flex-direction: column; justify-content: center; border-right: 3px solid var(--gold); }
+        .rsvp-aside .quote-mark { font-family: 'Cormorant Garamond', serif; font-size: 3.2rem; color: var(--gold); opacity: 0.7; line-height: 1; margin-bottom: 12px; }
+        .rsvp-aside p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.3rem; line-height: 1.75; color: var(--cream-2); }
+        .rsvp-form-side { padding: 46px 36px; }
+        .rsvp-title { font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 2.1rem; color: var(--ink); margin-bottom: 4px; }
+        .rsvp-subtitle { font-size: 0.78rem; color: var(--ink-light); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
         .rsvp-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
         .rsvp-option input[type="radio"] { display: none; }
-        .rsvp-option label {
-            display: flex; flex-direction: column; align-items: center; gap: 7px;
-            padding: 16px 10px;
-            border: 2px solid var(--parchment-border);
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--ink-mid);
-            transition: all 0.2s;
-        }
+        .rsvp-option label { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 18px 10px; border: 2px solid var(--border); cursor: pointer; font-size: 0.8rem; font-weight: 500; color: var(--ink-mid); transition: all 0.2s; }
         .rsvp-option label i { font-size: 1.3rem; }
-        .rsvp-option:first-child input[type="radio"]:checked + label {
-            border-color: var(--sage-dark); background: rgba(138,154,126,0.1); color: var(--sage-dark);
-        }
-        .rsvp-option:last-child input[type="radio"]:checked + label {
-            border-color: var(--blush); background: rgba(201,138,138,0.1); color: #a25c5c;
-        }
-
-        .rsvp-note {
-            width: 100%;
-            background: var(--parchment);
-            border: 1px solid var(--parchment-border);
-            border-radius: 12px;
-            padding: 13px 15px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.86rem;
-            color: var(--ink-mid);
-            resize: none;
-            outline: none;
-            transition: border-color 0.2s;
-            margin-bottom: 16px;
-        }
-        .rsvp-note:focus { border-color: var(--plum); }
-
-        .btn-rsvp-submit {
-            width: 100%;
-            background: var(--plum);
-            color: var(--parchment);
-            border: none;
-            border-radius: 12px;
-            padding: 15px;
-            font-size: 0.86rem;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.25s;
-        }
-        .btn-rsvp-submit:hover { background: var(--plum-dark); transform: translateY(-2px); }
-
-        @media (max-width: 640px) {
-            .rsvp-card { grid-template-columns: 1fr; }
-            .rsvp-aside { padding: 30px 26px; }
-            .rsvp-form-side { padding: 30px 26px; }
-        }
+        .rsvp-option:first-child input[type="radio"]:checked + label { border-color: var(--gold-dark); background: rgba(212,175,55,0.12); color: var(--gold-dark); }
+        .rsvp-option:last-child input[type="radio"]:checked + label { border-color: #a25c5c; background: rgba(162,92,92,0.08); color: #a25c5c; }
+        .rsvp-note { width: 100%; background: var(--cream); border: 1px solid var(--border); padding: 13px 15px; font-family: 'Inter', sans-serif; font-size: 0.86rem; color: var(--ink-mid); resize: none; outline: none; transition: border-color 0.2s; margin-bottom: 16px; }
+        .rsvp-note:focus { border-color: var(--gold); }
+        .btn-rsvp-submit { width: 100%; background: linear-gradient(135deg, var(--maroon-2), var(--maroon-3)); border: 1px solid var(--gold); color: var(--gold-light); padding: 16px; font-size: 0.86rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.25s; }
+        .btn-rsvp-submit:hover { filter: brightness(1.15); transform: translateY(-2px); }
+        @media (max-width: 640px) { .rsvp-card { grid-template-columns: 1fr; } .rsvp-aside { padding: 32px 26px; border-right: none; border-bottom: 3px solid var(--gold); } .rsvp-form-side { padding: 32px 26px; } }
 
         /* ======= FOOTER ======= */
-        .inv-footer { text-align: center; padding: 40px 20px; font-size: 0.75rem; color: var(--ink-light); border-top: 1px solid var(--parchment-border); }
-        .inv-footer .brand { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.3rem; color: var(--plum); display: block; margin-bottom: 6px; }
+        .inv-footer { text-align: center; padding: 46px 20px; font-size: 0.75rem; color: rgba(237,200,115,0.6); border-top: 1px solid var(--border); background: var(--maroon-3); }
+        .inv-footer .brand { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.4rem; color: var(--gold); display: block; margin-bottom: 6px; }
     </style>
-
-<style>
-/* Slideshow-like animation for gallery items */
-@keyframes slideShowAnim {
-    0% { opacity: 0; transform: scale(0.95) translateY(20px); }
-    10% { opacity: 1; transform: scale(1) translateY(0); }
-    90% { opacity: 1; transform: scale(1) translateY(0); }
-    100% { opacity: 0; transform: scale(1.05) translateY(-20px); }
-}
-.gallery-grid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 15px;
-    padding: 10px 0;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    animation: scrollGallery 20s linear infinite;
-}
-.gallery-grid:hover {
-    animation-play-state: paused;
-}
-@keyframes scrollGallery {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-.gallery-item {
-    flex: 0 0 auto;
-    width: 280px;
-    height: 280px;
-}
-</style>
-
-<style>
-/* indian_royal unique overrides – Ornate Mandala */
-.hero { box-shadow: none; }
-.hero-media { background: linear-gradient(160deg, #6e1626, #3a1015); border-right: 5px solid #e0a527; }
-.wax-seal { background: #e0a527 !important; color: #3a1015 !important; border: 4px double rgba(58,16,21,0.3) !important; box-shadow: 0 0 0 6px rgba(224,165,39,0.3), 0 10px 30px rgba(58,16,21,0.4) !important; font-family: 'Great Vibes', cursive !important; }
-.hero-panel { border-left: none; }
-.eyebrow { color: #e0a527 !important; letter-spacing: 4px !important; }
-.couple-title { color: #3a1015 !important; }
-.couple-title .amp { color: #e0a527 !important; }
-.date-chip { background: rgba(224,165,39,0.08); border: 2px solid rgba(224,165,39,0.3) !important; border-radius: 0 !important; }
-.date-chip .val { color: #6e1626 !important; }
-.countdown-section { background: linear-gradient(135deg, #3a1015, #6e1626) !important; border-top: 3px solid #e0a527 !important; border-bottom: 3px solid #e0a527 !important; }
-.countdown-section::before, .countdown-section::after { background: #e0a527 !important; border: 2px solid #3a1015 !important; }
-.time-value { color: #edc873 !important; text-shadow: 0 2px 10px rgba(224,165,39,0.3); }
-.section-head .tag { color: #e0a527 !important; letter-spacing: 3px !important; }
-.section-head h2 em { color: #6e1626 !important; }
-.letter-card { border: 2px double #e0a527 !important; border-radius: 0 !important; }
-.letter-card::before { background: #e0a527 !important; height: 6px !important; }
-.tl-marker { background: linear-gradient(135deg, #6e1626, #3a1015) !important; border: 3px solid #e0a527 !important; border-radius: 4px !important; }
-.tl-card { border: 1px solid rgba(224,165,39,0.25) !important; border-radius: 4px !important; border-top: 3px solid #e0a527 !important; }
-.btn-map { background: #6e1626 !important; border: 1px solid #e0a527 !important; border-radius: 4px !important; }
-.btn-cal { border-radius: 4px !important; }
-.polaroid { background: linear-gradient(135deg, #fff, #fff8ec) !important; border: 2px solid rgba(224,165,39,0.2); padding: 8px 8px 30px !important; }
-.polaroid:hover { box-shadow: 0 10px 30px rgba(110,22,38,0.15) !important; }
-.rsvp-card { border-radius: 4px !important; border: 2px double #e0a527 !important; }
-.rsvp-aside { background: linear-gradient(160deg, #3a1015, #6e1626) !important; border-right: 3px solid #e0a527; }
-.rsvp-option label { border-radius: 4px !important; }
-.btn-rsvp-submit { background: linear-gradient(135deg, #6e1626, #3a1015) !important; border: 1px solid #e0a527; border-radius: 4px !important; letter-spacing: 3px; }
-.inv-footer { background: #3a1015; color: rgba(237,200,115,0.5); }
-.inv-footer .brand { color: #e0a527 !important; }
-</style>
 </head>
 <body>
+
+<canvas id="hero-canvas"></canvas>
 
 <?php if ($guest_id == 0): ?>
 <div class="preview-bar">
@@ -576,15 +357,11 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <?php endif; ?>
 
 <!-- HERO -->
-<div class="hero">
-    <div class="hero-media" <?php echo $hero_style; ?>>
-        <div class="wax-seal"><?php echo htmlspecialchars($monogram); ?></div>
-    </div>
-    <div class="hero-panel">
+<div class="hero" <?php echo $hero_style; ?>>
+    <div class="hero-card reveal">
+        <div class="monogram-ring"><?php echo htmlspecialchars($monogram); ?></div>
         <span class="eyebrow">You're Warmly Invited</span>
         <p class="guest-line">Dear <?php echo htmlspecialchars($guest_name); ?>,</p>
-
-
 
         <h1 class="couple-title">
             <?php echo htmlspecialchars($wedding['bride_name']); ?>
@@ -596,7 +373,12 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             <span class="lbl">We're getting married</span>
             <span class="val"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></span>
         </div>
+
+        <?php if (!empty($wedding['venue'])): ?>
+        <p class="hero-venue"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($wedding['venue']); ?></p>
+        <?php endif; ?>
     </div>
+    <div class="scroll-cue"><span class="line"></span>Scroll</div>
 </div>
 
 <!-- COUNTDOWN -->
@@ -604,11 +386,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <p class="countdown-label">Counting down to the big day</p>
     <div class="countdown" id="countdown">
         <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label">Days</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label">Hours</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-mins">00</span><span class="time-label">Minutes</span></div>
-        <span class="time-sep">:</span>
         <div class="time-unit"><span class="time-value" id="cd-secs">00</span><span class="time-label">Seconds</span></div>
     </div>
 </div>
@@ -617,17 +396,17 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
     <!-- LOVE STORY -->
     <?php if (!empty($wedding['love_story'])): ?>
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">How It All Began</span>
         <h2>Our <em>Love Story</em></h2>
     </div>
-    <div class="letter-card">
+    <div class="letter-card reveal">
         <?php echo nl2br(htmlspecialchars($wedding['love_story'])); ?>
     </div>
     <?php endif; ?>
 
     <!-- PROGRAMME -->
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">Join Us For These Celebrations</span>
         <h2><em>Wedding</em> Programme</h2>
     </div>
@@ -643,7 +422,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                 $ev_ics = "calendar.php?wedding_id={$wedding_id}&event_id={$ev['id']}";
                 $ev_outlook = "https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=" . $ev_title . "&startdt=" . urlencode(date('c', strtotime($ev['event_date_time']))) . "&enddt=" . urlencode(date('c', strtotime($ev['event_date_time']) + 7200)) . "&location=" . $ev_loc;
             ?>
-            <div class="tl-item">
+            <div class="tl-item reveal">
                 <div class="tl-marker">
                     <span class="d"><?php echo date('d', strtotime($ev['event_date_time'])); ?></span>
                     <span class="m"><?php echo date('M', strtotime($ev['event_date_time'])); ?></span>
@@ -681,13 +460,13 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
     <!-- GALLERY -->
     <?php if (count($gallery_images) > 0): ?>
-    <div class="section-head">
+    <div class="section-head reveal">
         <span class="tag">Our Engagement Memories</span>
         <h2><em>Sweet</em> Moments</h2>
     </div>
     <div class="polaroid-grid" id="gallery-grid">
         <?php foreach ($gallery_images as $img): ?>
-        <div class="polaroid" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
+        <div class="polaroid reveal" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
             <img src="<?php echo htmlspecialchars($img['image_path']); ?>" alt="Our moment" loading="lazy">
         </div>
         <?php endforeach; ?>
@@ -714,12 +493,12 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
     <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
-    <div style="background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+    <div style="max-width:760px; margin:0 auto 30px; background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 4px; padding: 30px 20px; text-align: center;">
         <?php if ($guest_id == 0): ?>
             <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
         <?php else: ?>
-            <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold); margin-bottom: 12px; display: block;"></i>
-            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: #1a1a2e; margin-bottom: 6px;">Share a Photo from Your Phone</h5>
+            <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold-dark); margin-bottom: 12px; display: block;"></i>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 6px;">Share a Photo from Your Phone</h5>
             <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
             
             <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
@@ -735,10 +514,10 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     </div>
 
     <!-- Guest Shared Grid Display -->
-    <div class="gallery-grid" id="guest-gallery-grid" style="margin-bottom: 30px;">
+    <div class="gallery-grid" id="guest-gallery-grid" style="max-width:760px; margin:0 auto 30px; padding-left:20px; padding-right:20px;">
         <?php if (isset($guest_images) && count($guest_images) > 0): ?>
             <?php foreach ($guest_images as $g_img): ?>
-            <div class="gallery-item" onclick="openLightbox('<?php echo htmlspecialchars($g_img['image_path']); ?>')" style="border-color: #22c55e;">
+            <div class="gallery-item reveal" onclick="openLightbox('<?php echo htmlspecialchars($g_img['image_path']); ?>')" style="border-color: #22c55e;">
                 <img src="<?php echo htmlspecialchars($g_img['image_path']); ?>" alt="Guest moment" loading="lazy">
                 <!-- පින්තූරය එවූ අමුත්තාගේ නම යටින් පෙන්වයි -->
                 <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; padding: 4px; font-family: 'Inter', sans-serif; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2;">
@@ -785,7 +564,32 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                     loader.style.display = 'none';
                     if (data.success) {
                         alert("Thank you! Your wedding photo has been shared successfully. 🎉");
-                        location.reload(); // Reload කර පින්තූරය පෙන්වීම
+                        // Reload වෙනුවට අලුත් පින්තූරය gallery එකට එකතු කිරීම —
+                        // මෙයින් කලින් තිබූ අමුත්තන්ගේ පින්තූර අස් නොවී රැඳී පවතී.
+                        const grid = document.getElementById('guest-gallery-grid');
+                        const emptyMsg = document.getElementById('no-guest-pics');
+                        if (emptyMsg) emptyMsg.remove();
+                        if (grid && data.image_path) {
+                            const item = document.createElement('div');
+                            item.className = 'gallery-item';
+                            item.style.borderColor = '#22c55e';
+                            item.style.opacity = '0';
+                            item.onclick = function() { openLightbox(data.image_path); };
+                            item.innerHTML = `
+                                <img src="${data.image_path}" alt="Guest moment" loading="lazy">
+                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 0.65rem; padding: 4px; font-family: 'Inter', sans-serif; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2;">
+                                    By ${data.guest_name ? data.guest_name : 'You'}
+                                </div>`;
+                            grid.appendChild(item);
+                            if (typeof anime !== 'undefined') {
+                                anime({ targets: item, opacity: [0, 1], scale: [0.8, 1], easing: 'easeOutBack', duration: 700 });
+                            } else {
+                                item.style.opacity = '1';
+                            }
+                            grid.scrollTo({ left: grid.scrollWidth, behavior: 'smooth' });
+                        } else {
+                            location.reload();
+                        }
                     } else {
                         alert("Upload failed: " + data.message);
                     }
@@ -807,7 +611,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <?php endif; ?>
 <!-- RSVP -->
 <div class="rsvp-section">
-    <div class="rsvp-card text-center shadow-lg rounded-4 p-5">
+    <div class="rsvp-card text-center shadow-lg p-4">
         <div class="rsvp-aside">
             <span class="quote-mark">&ldquo;</span>
             <p>Every love story is beautiful, but ours is our favorite. Come celebrate this new chapter with us.</p>
@@ -832,7 +636,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                         <input type="radio" name="rsvp_status" id="rsvp-yes" value="accepted"
                             <?php if ($current_guest['rsvp_status'] == 'accepted') echo 'checked'; ?> required>
                         <label for="rsvp-yes">
-                            <i class="fas fa-heart" style="color:#5f6e54;"></i>
+                            <i class="fas fa-heart" style="color:#a8842a;"></i>
                             Joyfully Accept
                         </label>
                     </div>
@@ -864,6 +668,10 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <span class="brand">Lumus Studio</span>
     Digital Wedding Invitations · Designed by Hathisa Thissara
 </div>
+
+<!-- Three.js (hero 3D mandala scene) + anime.js (scroll reveals) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 
 <script>
 // Countdown
@@ -910,6 +718,221 @@ function closeLightbox() {
     document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+// ================= Guest gallery auto-scroll (replaces scrollbar) =================
+(function autoplayGuestGallery() {
+    const track = document.getElementById('guest-gallery-grid');
+    if (!track) return;
+    let timer = null;
+    function step() {
+        const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 5;
+        if (atEnd) {
+            track.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+            track.scrollBy({ left: 240, behavior: 'smooth' });
+        }
+    }
+    function start() { if (track.scrollWidth > track.clientWidth + 10) timer = setInterval(step, 2800); }
+    function stop() { clearInterval(timer); }
+    track.addEventListener('mouseenter', stop);
+    track.addEventListener('mouseleave', start);
+    track.addEventListener('touchstart', stop, { passive: true });
+    track.addEventListener('touchend', start);
+    start();
+})();
+
+// ================= THREE.JS — rotating gold mandala rings =================
+(function initHeroScene() {
+    const canvas = document.getElementById('hero-canvas');
+    if (!canvas || typeof THREE === 'undefined') return;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 9.5);
+
+    function resize() {
+        const w = window.innerWidth, h = window.innerHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.25, emissive: 0x3a2a08, emissiveIntensity: 0.4 });
+    const mandala = new THREE.Group();
+
+    // Nested rings (mandala-like)
+    const ringDefs = [
+        { r: 3.4, t: 0.05, seg: 128 },
+        { r: 2.7, t: 0.035, seg: 96 },
+        { r: 2.0, t: 0.03, seg: 72 }
+    ];
+    ringDefs.forEach((def, i) => {
+        const geo = new THREE.TorusGeometry(def.r, def.t, 16, def.seg);
+        const ring = new THREE.Mesh(geo, goldMat.clone());
+        ring.rotation.x = Math.PI / 2.4 + i * 0.15;
+        ring.userData.spinDir = i % 2 === 0 ? 1 : -1;
+        ring.userData.speed = 0.05 + i * 0.03;
+        mandala.add(ring);
+    });
+
+    // Small jewel spokes
+    const jewelMat = new THREE.MeshStandardMaterial({ color: 0x8e1c30, metalness: 0.6, roughness: 0.2, emissive: 0x3a0510, emissiveIntensity: 0.5 });
+    const spokeCount = 12;
+    for (let i = 0; i < spokeCount; i++) {
+        const angle = (i / spokeCount) * Math.PI * 2;
+        const jewelGeo = new THREE.OctahedronGeometry(0.14, 0);
+        const jewel = new THREE.Mesh(jewelGeo, jewelMat);
+        jewel.position.set(Math.cos(angle) * 3.4, Math.sin(angle) * 3.4, 0);
+        mandala.add(jewel);
+    }
+    mandala.rotation.x = Math.PI / 2.4;
+    scene.add(mandala);
+
+    // Red rose petals — fall continuously through the OTHER sections (not the hero)
+    function makeRosePetalShape() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0);
+        shape.bezierCurveTo(0.26, 0.11, 0.3, 0.42, 0, 0.6);
+        shape.bezierCurveTo(-0.3, 0.42, -0.26, 0.11, 0, 0);
+        return new THREE.ShapeGeometry(shape);
+    }
+    const rosePetalGeo = makeRosePetalShape();
+    const roseColors = [0x8e1226, 0xb3122a, 0xd41f3c, 0x6e0e1e];
+
+    function createRose(color) {
+        const rose = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({
+            color,
+            roughness: 0.45,
+            metalness: 0.05,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.92
+        });
+        const petalCount = 5;
+        for (let j = 0; j < petalCount; j++) {
+            const petal = new THREE.Mesh(rosePetalGeo, mat);
+            petal.rotation.z = (j / petalCount) * Math.PI * 2;
+            rose.add(petal);
+        }
+        return rose;
+    }
+
+    const rosesGroup = new THREE.Group();
+    const roses = [];
+    const roseCount = 26;
+    for (let i = 0; i < roseCount; i++) {
+        const rose = createRose(roseColors[i % roseColors.length]);
+        rose.position.set((Math.random() - 0.5) * 14, Math.random() * 12 - 4, (Math.random() - 0.5) * 6 - 2);
+        rose.rotation.z = Math.random() * Math.PI * 2;
+        rose.scale.setScalar(0.45 + Math.random() * 0.55);
+        rose.userData = {
+            fallSpeed: 0.28 + Math.random() * 0.4,
+            swaySpeed: 0.4 + Math.random() * 0.7,
+            swayAmp: 0.5 + Math.random() * 0.7,
+            rotSpeed: (Math.random() - 0.5) * 0.5,
+            baseX: rose.position.x
+        };
+        roses.push(rose);
+        rosesGroup.add(rose);
+    }
+    rosesGroup.visible = false; // hidden while the hero is in view
+    scene.add(rosesGroup);
+
+    // The gold mandala only belongs in the hero; the roses take over everywhere else
+    const heroSectionEl = document.querySelector('.hero');
+    if (heroSectionEl && 'IntersectionObserver' in window) {
+        const heroObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                mandala.visible = entry.isIntersecting;
+                rosesGroup.visible = !entry.isIntersecting;
+            });
+        }, { threshold: 0 });
+        heroObserver.observe(heroSectionEl);
+    }
+
+    // Sparkle particles
+    const starCount = 220;
+    const starGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 16;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 10 - 2;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xf0d78c, size: 0.035, transparent: true, opacity: 0.75 });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    const ambient = new THREE.AmbientLight(0xcc8899, 0.5);
+    scene.add(ambient);
+    const key = new THREE.PointLight(0xd4af37, 2.6, 30);
+    key.position.set(5, 4, 6);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x8e1c30, 1.8, 30);
+    rim.position.set(-6, -3, -4);
+    scene.add(rim);
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5);
+        mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    const clock = new THREE.Clock();
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = clock.getElapsedTime();
+        mandala.children.forEach(child => {
+            if (child.userData.speed) child.rotation.z += child.userData.speed * 0.016 * child.userData.spinDir;
+        });
+        mandala.rotation.y = t * 0.08 + mouseX * 0.4;
+        mandala.rotation.x = Math.PI / 2.4 + mouseY * 0.2;
+        stars.rotation.y = t * 0.015;
+        roses.forEach(r => {
+            r.position.y -= r.userData.fallSpeed * 0.016;
+            r.position.x = r.userData.baseX + Math.sin(t * r.userData.swaySpeed) * r.userData.swayAmp;
+            r.rotation.z += r.userData.rotSpeed * 0.016;
+            if (r.position.y < -6) { r.position.y = 6; }
+        });
+        camera.position.x += (mouseX * 1.2 - camera.position.x) * 0.02;
+        camera.position.y += (-mouseY * 1.2 - camera.position.y) * 0.02;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+    }
+    animate();
+})();
+
+// ================= ANIME.JS — scroll reveal =================
+(function initReveals() {
+    if (typeof anime === 'undefined') return;
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                anime({
+                    targets: entry.target,
+                    opacity: [0, 1],
+                    translateY: [28, 0],
+                    easing: 'easeOutCubic',
+                    duration: 800,
+                    delay: 60
+                });
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    els.forEach(el => io.observe(el));
+
+    anime({ targets: '.hero-card', opacity: [0, 1], translateY: [24, 0], easing: 'easeOutCubic', duration: 1000, delay: 200 });
+    anime({ targets: '.monogram-ring', scale: [0.7, 1], opacity: [0, 1], easing: 'easeOutBack', duration: 900, delay: 400 });
+})();
 </script>
 </body>
 </html>

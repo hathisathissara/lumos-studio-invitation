@@ -4,6 +4,9 @@ if (!empty($wedding['hero_image'])) {
     $img_path = htmlspecialchars($wedding['hero_image']);
     $hero_style = "style=\"background: linear-gradient(180deg, rgba(250,245,236,0.55) 0%, rgba(250,245,236,0.92) 55%, var(--cream) 100%), url('{$img_path}') center/cover no-repeat;\"";
 }
+// Detect a successful RSVP submission so we can trigger the confetti/petal celebration.
+$rsvp_just_submitted = ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_rsvp']));
+$rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') === false && stripos($msg, 'error') === false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +20,9 @@ if (!empty($wedding['hero_image'])) {
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -97,10 +103,12 @@ if (!empty($wedding['hero_image'])) {
                 radial-gradient(circle at 15% 20%, rgba(111,125,85,0.06) 0, transparent 40%),
                 radial-gradient(circle at 85% 75%, rgba(193,99,61,0.06) 0, transparent 40%),
                 var(--cream);
-            padding: 70px 20px 76px;
+            padding: 70px 20px 140px;
             text-align: center;
             position: relative;
             overflow: hidden;
+            border-bottom-left-radius: 50% 90px;
+            border-bottom-right-radius: 50% 90px;
         }
         .hero-ornament-top {
             font-family: 'Cormorant Garamond', serif;
@@ -625,23 +633,20 @@ if (!empty($wedding['hero_image'])) {
             .rsvp-card { padding: 30px 20px; }
             .rsvp-options { grid-template-columns: 1fr 1fr; }
         }
-    </style>
-
-<style>
-/* ======= SWEET MOMENTS SLIDESHOW (couple's gallery only) ======= */
-.sweet-slideshow {
-    position: relative;
-    max-width: 640px;
-    margin: 0 auto;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.14);
-    background: #000;
-}
-.sweet-slideshow-track {
-    display: flex;
-    transition: transform 0.5s ease;
-}
+        /* ======= SWEET MOMENTS SLIDESHOW (couple's gallery only) ======= */
+        .sweet-slideshow {
+            position: relative;
+            max-width: 640px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.14);
+            background: #000;
+        }
+        .sweet-slideshow-track {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
 .sweet-slide {
     flex: 0 0 100%;
     aspect-ratio: 4/3;
@@ -696,9 +701,7 @@ if (!empty($wedding['hero_image'])) {
 @media (max-width: 560px) {
     .sweet-slide-nav { width: 34px; height: 34px; font-size: 0.8rem; }
 }
-</style>
 
-<style>
 /* terracotta_bloom unique overrides – Warm Organic */
 .hero-header { background: linear-gradient(180deg, #3d1e14 0%, #5a2e1e 40%, var(--cream) 100%); }
 .hero-header::before { background: radial-gradient(ellipse 120% 80% at 50% 30%, rgba(193,99,61,0.15), transparent); }
@@ -720,9 +723,152 @@ if (!empty($wedding['hero_image'])) {
 .btn-rsvp-submit { background: linear-gradient(135deg, #8f4526, #5a2e1e) !important; color: #e3a880 !important; border-radius: 50px !important; }
 .inv-footer { background: linear-gradient(135deg, #3d1e14, #5a2e1e); color: rgba(227,168,128,0.5); }
 .inv-footer .brand { color: #e3a880; }
+
+/* ======================================================================
+   PREMIUM 3D EXPERIENCE LAYER
+   ====================================================================== */
+
+/* --- Hero 3D canvas (arch, rings, warm particles) --- */
+.hero-header { isolation: isolate; }
+#hero3d-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1.4s ease;
+}
+#hero3d-canvas.ready { opacity: 1; }
+.hero-content { z-index: 2; }
+
+/* --- Global ambient floating layer (petals / leaves / butterflies / dust) --- */
+#ambient-fx-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* --- RSVP celebration burst --- */
+#celebration-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    pointer-events: none;
+    display: none;
+}
+#celebration-canvas.active { display: block; }
+
+/* --- Floating control buttons (day/night + music) --- */
+.fx-controls {
+    position: fixed;
+    right: 16px;
+    bottom: 20px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.fx-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--cream-border);
+    background: rgba(255,255,255,0.9);
+    color: var(--gold-dark);
+    box-shadow: 0 6px 20px rgba(54,43,33,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: transform 0.25s, background 0.25s, color 0.25s;
+}
+.fx-btn:hover { transform: translateY(-2px) scale(1.06); }
+.fx-btn.playing { color: var(--olive-dark); }
+
+/* --- Day / Night ambient body states --- */
+body.night-mode {
+    background: #1c130d;
+    color: #ecdcc9;
+}
+body.night-mode .hero-header {
+    background: linear-gradient(180deg, #140b06 0%, #2c1710 45%, #1c130d 100%) !important;
+}
+body.night-mode .countdown-section { background: linear-gradient(135deg, #2c1710, #140b06) !important; }
+body.night-mode .invitation-body,
+body.night-mode .rsvp-section,
+body.night-mode .countdown-section,
+body.night-mode .inv-footer { color: #ecdcc9; }
+body.night-mode .event-card,
+body.night-mode .love-story-text,
+body.night-mode .rsvp-card {
+    background: linear-gradient(160deg, #2a1c13, #1c130d) !important;
+    color: #ecdcc9;
+    border-color: rgba(227,168,128,0.15) !important;
+}
+body.night-mode .section-heading,
+body.night-mode .event-name,
+body.night-mode .rsvp-title { color: #f3e2cc; }
+body.night-mode .fx-btn { background: rgba(30,20,14,0.85); color: #e3a880; border-color: rgba(227,168,128,0.25); }
+body.night-mode::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.6), transparent 60%),
+        radial-gradient(1.5px 1.5px at 30% 55%, rgba(255,255,255,0.45), transparent 60%),
+        radial-gradient(1.5px 1.5px at 70% 15%, rgba(255,255,255,0.5), transparent 60%),
+        radial-gradient(2px 2px at 85% 40%, rgba(255,255,255,0.4), transparent 60%),
+        radial-gradient(1.5px 1.5px at 55% 80%, rgba(255,255,255,0.35), transparent 60%),
+        radial-gradient(1.5px 1.5px at 15% 90%, rgba(255,255,255,0.35), transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.9;
+}
+
+/* --- Scroll reveal for sections --- */
+.reveal-fx {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.9s cubic-bezier(.2,.7,.3,1), transform 0.9s cubic-bezier(.2,.7,.3,1);
+}
+.reveal-fx.in-view { opacity: 1; transform: translateY(0); }
+.event-timeline .event-card.reveal-fx:nth-child(even) { transform: translateY(28px) translateX(0); }
+
+/* --- Cinematic lightbox transition --- */
+.lightbox img { transform: scale(0.92); opacity: 0; transition: transform 0.4s ease, opacity 0.4s ease; }
+.lightbox.open img { transform: scale(1); opacity: 1; }
+
+@media (max-width: 500px) {
+    .fx-controls { right: 10px; bottom: 16px; }
+    .fx-btn { width: 40px; height: 40px; font-size: 0.95rem; }
+}
 </style>
 </head>
 <body>
+
+<canvas id="ambient-fx-canvas" aria-hidden="true"></canvas>
+<canvas id="celebration-canvas" aria-hidden="true"></canvas>
+
+<div class="fx-controls">
+    <button type="button" class="fx-btn" id="daynight-toggle" title="Toggle day / night ambience" aria-label="Toggle day and night ambience">
+        <i class="fas fa-moon"></i>
+    </button>
+    <?php if (!empty($wedding['music_url'])): ?>
+    <button type="button" class="fx-btn" id="music-toggle" title="Play background music" aria-label="Play background music">
+        <i class="fas fa-music"></i>
+    </button>
+    <audio id="bg-music" loop preload="none" src="<?php echo htmlspecialchars($wedding['music_url']); ?>"></audio>
+    <?php endif; ?>
+</div>
 
 <?php if ($guest_id == 0): ?>
 <div class="preview-bar">
@@ -746,7 +892,8 @@ if (!empty($wedding['hero_image'])) {
     $hero_style = "style=\"background: linear-gradient(180deg, rgba(250,245,236,0.55) 0%, rgba(250,245,236,0.92) 55%, var(--cream) 100%), url('{$img_path}') center/cover no-repeat;\"";
 }
 ?>
-<div class="hero-header position-relative overflow-hidden text-end pe-5 shadow-md rounded-bottom-circle border-bottom border-danger border-3" <?php echo $hero_style; ?>>
+<div class="hero-header position-relative overflow-hidden text-center shadow-lg border-bottom border-danger border-3" <?php echo $hero_style; ?>>
+    <canvas id="hero3d-canvas" aria-hidden="true"></canvas>
     <div class="hero-ornament-top">❧</div>
     <div class="hero-content">
         <span class="guest-greeting-tag">You're Warmly Invited</span>
@@ -816,7 +963,7 @@ if (!empty($wedding['hero_image'])) {
     </div>
     <h2 class="section-heading">Our <em>Love Story</em></h2>
     <p class="section-sub">How it all began</p>
-    <div class="love-story-text">
+    <div class="love-story-text reveal-fx">
         <?php echo nl2br(htmlspecialchars($wedding['love_story'])); ?>
     </div>
     <?php endif; ?>
@@ -841,7 +988,7 @@ if (!empty($wedding['hero_image'])) {
                 $ev_ics = "calendar.php?wedding_id={$wedding_id}&event_id={$ev['id']}";
                 $ev_outlook = "https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=" . $ev_title . "&startdt=" . urlencode(date('c', strtotime($ev['event_date_time']))) . "&enddt=" . urlencode(date('c', strtotime($ev['event_date_time']) + 7200)) . "&location=" . $ev_loc;
             ?>
-            <div class="event-card col text-end shadow-sm rounded-4">
+            <div class="event-card col text-end shadow-sm rounded-4 reveal-fx">
                 <div class="event-name"><?php echo htmlspecialchars($ev['event_name']); ?></div>
                 <div class="event-meta">
                     <div class="event-meta-item">
@@ -898,7 +1045,7 @@ if (!empty($wedding['hero_image'])) {
     <h2 class="section-heading"><em>Sweet</em> Moments</h2>
     <p class="section-sub">Our engagement memories</p>
 
-    <div class="sweet-slideshow" id="sweet-slideshow">
+    <div class="sweet-slideshow reveal-fx" id="sweet-slideshow">
         <div class="sweet-slideshow-track" id="sweet-slideshow-track">
             <?php foreach ($gallery_images as $img): ?>
             <div class="sweet-slide" onclick="openLightbox('<?php echo htmlspecialchars($img['image_path']); ?>')">
@@ -1033,7 +1180,7 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-line right"></div>
     </div>
 
-    <div class="rsvp-card text-center shadow rounded-5 p-4">
+    <div class="rsvp-card text-center shadow rounded-5 p-4 reveal-fx">
         <h2 class="rsvp-title">RSVP</h2>
         <p class="rsvp-subtitle">Will you be joining us?</p>
             <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
@@ -1179,6 +1326,443 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 
     startAuto();
 })();
+
+// Cinematic lightbox open/close using GSAP if available
+(function() {
+    const lb = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lightbox-img');
+    if (!lb || !window.gsap) return;
+    const origOpen = window.openLightbox;
+    window.openLightbox = function(src) {
+        origOpen(src);
+        gsap.fromTo(lbImg, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: 'power2.out' });
+    };
+})();
+</script>
+
+<script>
+/* ======================================================================
+   PREMIUM 3D EXPERIENCE — hero scene, ambient particles, reveal,
+   day/night ambience, music toggle, RSVP celebration.
+   Everything below is procedurally generated (no external model files).
+   ====================================================================== */
+document.addEventListener('DOMContentLoaded', function () {
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isSmallScreen = window.innerWidth < 700;
+
+    /* ---------------------------------------------------------------
+       1) HERO 3D SCENE — procedural floral arch + wedding rings +
+          warm golden dust, built entirely from primitive geometry.
+       --------------------------------------------------------------- */
+    function initHero3D() {
+        const canvas = document.getElementById('hero3d-canvas');
+        const heroEl = document.querySelector('.hero-header');
+        if (!canvas || !heroEl || typeof THREE === 'undefined' || prefersReducedMotion) return;
+
+        let width = heroEl.clientWidth, height = heroEl.clientHeight;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(width, height);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+        camera.position.set(0, 0.4, 9);
+
+        // Warm lighting rig
+        const ambient = new THREE.AmbientLight(0xffdecb, 0.65);
+        scene.add(ambient);
+        const warmLight = new THREE.PointLight(0xffb27a, 1.6, 30);
+        warmLight.position.set(-3, 3, 4);
+        scene.add(warmLight);
+        const coolFill = new THREE.PointLight(0xffe9d6, 0.5, 30);
+        coolFill.position.set(4, -2, 3);
+        scene.add(coolFill);
+
+        // Soft round glow texture used for dust / petal sprites
+        function makeGlowTexture(hex) {
+            const c = document.createElement('canvas');
+            c.width = c.height = 64;
+            const ctx = c.getContext('2d');
+            const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            g.addColorStop(0, hex + 'ff');
+            g.addColorStop(0.4, hex + 'aa');
+            g.addColorStop(1, hex + '00');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(c);
+        }
+        const goldGlow = makeGlowTexture('#e3a880');
+        const oliveGlow = makeGlowTexture('#a9b98a');
+
+        // --- Procedural terracotta floral arch: a torus "arch" frame
+        //     dressed with small flower/leaf clusters around it.
+        const archGroup = new THREE.Group();
+        const archGeo = new THREE.TorusGeometry(3.4, 0.09, 12, 60, Math.PI);
+        const archMat = new THREE.MeshStandardMaterial({ color: 0x8f4526, roughness: 0.55, metalness: 0.15 });
+        const arch = new THREE.Mesh(archGeo, archMat);
+        arch.rotation.z = Math.PI;
+        arch.position.y = -1.6;
+        archGroup.add(arch);
+
+        // Flower clusters (small spheres) + leaves (flattened spheres) along the arch
+        const flowerColors = [0xc1633d, 0xe3a880, 0xecd3bd, 0x6f7d55];
+        for (let i = 0; i <= 22; i++) {
+            const t = i / 22;
+            const ang = Math.PI * (1 - t);
+            const r = 3.4 + (Math.random() - 0.5) * 0.5;
+            const x = Math.cos(ang) * r;
+            const y = Math.sin(ang) * r - 1.6;
+            if (Math.random() > 0.45) {
+                const fGeo = new THREE.SphereGeometry(0.13 + Math.random() * 0.09, 8, 8);
+                const fMat = new THREE.MeshStandardMaterial({
+                    color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                    roughness: 0.6
+                });
+                const flower = new THREE.Mesh(fGeo, fMat);
+                flower.position.set(x + (Math.random() - 0.5) * 0.3, y + (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.4);
+                archGroup.add(flower);
+            }
+            if (Math.random() > 0.55) {
+                const lGeo = new THREE.SphereGeometry(0.16, 6, 6);
+                lGeo.scale(1, 0.35, 0.6);
+                const lMat = new THREE.MeshStandardMaterial({ color: 0x6f7d55, roughness: 0.7 });
+                const leaf = new THREE.Mesh(lGeo, lMat);
+                leaf.position.set(x + (Math.random() - 0.5) * 0.4, y + (Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.4);
+                leaf.rotation.z = Math.random() * Math.PI;
+                archGroup.add(leaf);
+            }
+        }
+        archGroup.position.set(0, 1.1, -1.5);
+        archGroup.scale.setScalar(isSmallScreen ? 0.72 : 0.92);
+        scene.add(archGroup);
+
+        // --- Animated wedding rings: two interlocking tori with a soft metal material
+        const ringGroup = new THREE.Group();
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xe3c199, metalness: 0.85, roughness: 0.25 });
+        const ringGeo = new THREE.TorusGeometry(0.55, 0.07, 24, 64);
+        const ringA = new THREE.Mesh(ringGeo, ringMat);
+        const ringB = new THREE.Mesh(ringGeo, ringMat);
+        ringA.position.set(-0.32, 0, 0);
+        ringB.position.set(0.32, 0, 0);
+        ringA.rotation.y = 0.3;
+        ringB.rotation.y = -0.3;
+        ringGroup.add(ringA, ringB);
+        ringGroup.position.set(0, -1.55, 2.2);
+        ringGroup.scale.setScalar(isSmallScreen ? 0.8 : 1);
+        scene.add(ringGroup);
+
+        // --- Golden dust particles
+        const dustCount = isSmallScreen ? 45 : 90;
+        const dustGeo = new THREE.BufferGeometry();
+        const dustPos = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+            dustPos[i * 3] = (Math.random() - 0.5) * 12;
+            dustPos[i * 3 + 1] = (Math.random() - 0.5) * 8;
+            dustPos[i * 3 + 2] = (Math.random() - 0.5) * 8;
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMat = new THREE.PointsMaterial({
+            size: 0.16, map: goldGlow, transparent: true, opacity: 0.85,
+            depthWrite: false, blending: THREE.AdditiveBlending
+        });
+        const dust = new THREE.Points(dustGeo, dustMat);
+        scene.add(dust);
+
+        canvas.classList.add('ready');
+
+        let frame = 0;
+        function animate() {
+            frame += 1;
+            requestAnimationFrame(animate);
+            archGroup.rotation.y = Math.sin(frame * 0.002) * 0.12;
+            ringGroup.rotation.y += 0.006;
+            ringGroup.position.y = -1.55 + Math.sin(frame * 0.02) * 0.08;
+            const positions = dust.geometry.attributes.position.array;
+            for (let i = 0; i < dustCount; i++) {
+                positions[i * 3 + 1] += 0.004;
+                if (positions[i * 3 + 1] > 4) positions[i * 3 + 1] = -4;
+            }
+            dust.geometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', function () {
+            width = heroEl.clientWidth;
+            height = heroEl.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Expose so the day/night toggle can retint the warm light
+        window.__heroWarmLight = warmLight;
+    }
+
+    /* ---------------------------------------------------------------
+       2) GLOBAL AMBIENT LAYER — floating dried petals, leaves and
+          gently flapping butterflies, drawn on a lightweight 2D canvas
+          so it stays smooth on every device.
+       --------------------------------------------------------------- */
+    function initAmbientFX() {
+        const canvas = document.getElementById('ambient-fx-canvas');
+        if (!canvas || prefersReducedMotion) return;
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const petalColors = ['#c1633d', '#e3a880', '#ecd3bd'];
+        const leafColor = '#6f7d55';
+
+        function makeParticle(kind) {
+            return {
+                kind,
+                x: Math.random() * w,
+                y: -20 - Math.random() * h,
+                size: kind === 'butterfly' ? 10 + Math.random() * 6 : 6 + Math.random() * 6,
+                speedY: kind === 'butterfly' ? 0.6 + Math.random() * 0.4 : 0.4 + Math.random() * 0.6,
+                driftAmp: 20 + Math.random() * 30,
+                driftSpeed: 0.4 + Math.random() * 0.6,
+                phase: Math.random() * Math.PI * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.02,
+                color: kind === 'leaf' ? leafColor : petalColors[Math.floor(Math.random() * petalColors.length)],
+                flap: 0
+            };
+        }
+
+        const petalCount = isSmallScreen ? 10 : 20;
+        const leafCount = isSmallScreen ? 5 : 10;
+        const butterflyCount = isSmallScreen ? 2 : 5;
+        const particles = [];
+        for (let i = 0; i < petalCount; i++) particles.push(makeParticle('petal'));
+        for (let i = 0; i < leafCount; i++) particles.push(makeParticle('leaf'));
+        for (let i = 0; i < butterflyCount; i++) particles.push(makeParticle('butterfly'));
+        particles.forEach(p => { p.y = Math.random() * h; });
+
+        function drawPetal(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.85;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        function drawLeaf(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.size * 0.5, p.size, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        function drawButterfly(p) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(Math.sin(p.phase) * 0.15);
+            const flap = Math.sin(p.flap) * 0.9;
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.9;
+            ctx.save();
+            ctx.scale(flap, 1);
+            ctx.beginPath();
+            ctx.ellipse(-p.size * 0.5, 0, p.size * 0.6, p.size * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            ctx.save();
+            ctx.scale(-flap, 1);
+            ctx.beginPath();
+            ctx.ellipse(-p.size * 0.5, 0, p.size * 0.6, p.size * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            ctx.fillStyle = '#4c5639';
+            ctx.fillRect(-1, -p.size * 0.4, 2, p.size * 0.8);
+            ctx.restore();
+        }
+
+        let running = true;
+        document.addEventListener('visibilitychange', function () { running = !document.hidden; });
+
+        function loop() {
+            requestAnimationFrame(loop);
+            if (!running) return;
+            ctx.clearRect(0, 0, w, h);
+            particles.forEach(p => {
+                p.phase += p.driftSpeed * 0.02;
+                p.flap += 0.15;
+                p.rotation += p.rotSpeed;
+                p.x += Math.sin(p.phase) * (p.driftAmp * 0.01);
+                p.y += p.speedY;
+                if (p.y > h + 20) {
+                    p.y = -20;
+                    p.x = Math.random() * w;
+                }
+                if (p.kind === 'petal') drawPetal(p);
+                else if (p.kind === 'leaf') drawLeaf(p);
+                else drawButterfly(p);
+            });
+        }
+        loop();
+    }
+
+    /* ---------------------------------------------------------------
+       3) ORGANIC SCROLL REVEAL for love story / events / gallery / RSVP
+       --------------------------------------------------------------- */
+    function initReveal() {
+        const items = document.querySelectorAll('.reveal-fx');
+        if (!items.length) return;
+        if (!('IntersectionObserver' in window)) {
+            items.forEach(el => el.classList.add('in-view'));
+            return;
+        }
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+        items.forEach(el => obs.observe(el));
+
+        // Subtle organic parallax on scroll for the hero ornament, if GSAP+ScrollTrigger loaded
+        if (window.gsap && window.ScrollTrigger && !prefersReducedMotion) {
+            gsap.registerPlugin(ScrollTrigger);
+            const ornament = document.querySelector('.hero-ornament-top');
+            if (ornament) {
+                gsap.to(ornament, {
+                    y: 80,
+                    ease: 'none',
+                    scrollTrigger: { trigger: '.hero-header', start: 'top top', end: 'bottom top', scrub: true }
+                });
+            }
+        }
+    }
+
+    /* ---------------------------------------------------------------
+       4) DAY / NIGHT AMBIENT TOGGLE
+       --------------------------------------------------------------- */
+    function initDayNight() {
+        const btn = document.getElementById('daynight-toggle');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            const night = document.body.classList.toggle('night-mode');
+            btn.innerHTML = night ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+            if (window.__heroWarmLight) {
+                window.__heroWarmLight.intensity = night ? 0.9 : 1.6;
+                window.__heroWarmLight.color.set(night ? 0x8a6a52 : 0xffb27a);
+            }
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       5) OPTIONAL BACKGROUND MUSIC TOGGLE
+       --------------------------------------------------------------- */
+    function initMusic() {
+        const btn = document.getElementById('music-toggle');
+        const audio = document.getElementById('bg-music');
+        if (!btn || !audio) return;
+        btn.addEventListener('click', function () {
+            if (audio.paused) {
+                audio.volume = 0.5;
+                audio.play().catch(() => {});
+                btn.classList.add('playing');
+                btn.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                audio.pause();
+                btn.classList.remove('playing');
+                btn.innerHTML = '<i class="fas fa-music"></i>';
+            }
+        });
+    }
+
+    /* ---------------------------------------------------------------
+       6) RSVP CELEBRATION — confetti + petal burst after submission
+       --------------------------------------------------------------- */
+    function celebrate() {
+        const canvas = document.getElementById('celebration-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.classList.add('active');
+
+        const colors = ['#c1633d', '#e3a880', '#ecd3bd', '#6f7d55', '#f4ece0'];
+        const pieces = [];
+        const count = isSmallScreen ? 60 : 110;
+        for (let i = 0; i < count; i++) {
+            pieces.push({
+                x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+                y: canvas.height * 0.35 + (Math.random() - 0.5) * 60,
+                vx: (Math.random() - 0.5) * 9,
+                vy: -6 - Math.random() * 6,
+                size: 5 + Math.random() * 6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.3,
+                shape: Math.random() > 0.5 ? 'petal' : 'square'
+            });
+        }
+        let t = 0;
+        const gravity = 0.22;
+        function frame() {
+            t += 1;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let alive = false;
+            pieces.forEach(p => {
+                p.vy += gravity;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.rotation += p.rotSpeed;
+                if (p.y < canvas.height + 40) alive = true;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, 1 - t / 220);
+                if (p.shape === 'petal') {
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                }
+                ctx.restore();
+            });
+            if (alive && t < 260) {
+                requestAnimationFrame(frame);
+            } else {
+                canvas.classList.remove('active');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        frame();
+    }
+
+    // Init everything
+    initHero3D();
+    initAmbientFX();
+    initReveal();
+    initDayNight();
+    initMusic();
+
+    <?php if ($rsvp_success): ?>
+    setTimeout(celebrate, 300);
+    <?php endif; ?>
+});
 </script>
 </body>
 </html>
