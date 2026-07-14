@@ -255,6 +255,31 @@ require '../layouts/header.php';
     .empty-state { text-align: center; padding: 60px 20px; color: #9ea3b0; }
     .empty-state i { font-size: 2.5rem; margin-bottom: 16px; opacity: 0.3; }
     .empty-state p { font-size: 0.9rem; }
+
+    /* ============ Mobile Guest Cards (screenshot style) ============ */
+    .guest-cards-mobile { display: none; padding: 14px; }
+    .guest-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+    .guest-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .guest-card-name { font-weight: 700; font-size: 1rem; color: #1a1a2e; }
+    .icon-btn-del-top { background: none; border: none; color: #dc2626; font-size: 0.9rem; padding: 4px; flex-shrink: 0; }
+    .guest-card-phone { font-family: monospace; font-size: 0.85rem; color: #6b7280; margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+    .guest-card-phone i { color: #9ea3b0; font-size: 0.78rem; }
+    .guest-card-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .guest-card-badges .badge-pending-rsvp { text-transform: uppercase; }
+    .guest-card-delivery-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .mini-status { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #9ea3b0; }
+    .guest-card-meta { font-size: 0.78rem; color: #6b7280; margin-top: 8px; }
+    .guest-card-meta strong { color: #1a1a2e; }
+    .guest-card-actions { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .btn-wa-send-full { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #25d366, #1eb658); color: #fff !important; border-radius: 12px; padding: 12px 14px; font-weight: 700; font-size: 0.85rem; text-decoration: none; }
+    .btn-wa-send-full.disabled { background: #f1f5f9; color: #d1d5db !important; pointer-events: none; }
+    .icon-btn-mobile { flex-shrink: 0; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid #e8ecf0; background: #fff; color: #4a5568; text-decoration: none; cursor: pointer; }
+    .icon-btn-mobile.icon-btn-del { color: #dc2626; }
+
+    @media (max-width: 768px) {
+        .guest-table-scroll { display: none; }
+        .guest-cards-mobile { display: block; }
+    }
 </style>
 
 <?php if ($msg) echo $msg; ?>
@@ -356,7 +381,7 @@ require '../layouts/header.php';
 
         <div class="guest-table-wrap">
             <?php if (count($guestsList) > 0): ?>
-            <div style="overflow-x:auto;">
+            <div style="overflow-x:auto;" class="guest-table-scroll">
                 <table class="guest-table" id="guest-table">
                     <thead>
                         <tr>
@@ -472,6 +497,119 @@ require '../layouts/header.php';
                     </tbody>
                 </table>
             </div>
+
+            <!-- ============ Mobile Guest Cards (screenshot style) ============ -->
+            <div class="guest-cards-mobile">
+                <?php foreach ($guestsList as $g):
+                    $guest_wa_intl = to_whatsapp_intl($g['whatsapp_number']);
+                    $cat = $g['category'];
+                    $catClass = strtolower($cat);
+                    $side = $g['side'];
+                    $sideClass = strtolower(str_replace("'s", '', $side)) . '-side';
+                    $seats_count = intval($g['seats_reserved'] ?? 1);
+                ?>
+                <div class="guest-card"
+                     data-id="<?php echo $g['id']; ?>"
+                     data-name="<?php echo strtolower(htmlspecialchars($g['name'])); ?>"
+                     data-cat="<?php echo htmlspecialchars($g['category']); ?>"
+                     data-rsvp="<?php echo htmlspecialchars($g['rsvp_status']); ?>"
+                     data-seats="<?php echo $seats_count; ?>">
+
+                    <div class="guest-card-top">
+                        <div class="guest-card-name">
+                            <?php echo htmlspecialchars($g['name']); ?>
+                            <?php if (!empty($g['guest_note'])): ?>
+                                <div class="guest-note-box">
+                                    <i class="fas fa-comment-dots" style="color:#c9a96e;"></i>
+                                    <strong>Note:</strong> "<?php echo htmlspecialchars($g['guest_note']); ?>"
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <a href="guests.php?delete=<?php echo $g['id']; ?>"
+                           class="icon-btn-del-top"
+                           onclick="return confirm('Remove <?php echo addslashes($g['name']); ?> from the guest list?');">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </div>
+
+                    <div class="guest-card-phone">
+                        <i class="fas fa-phone-alt"></i> <?php echo htmlspecialchars($g['whatsapp_number']); ?>
+                    </div>
+
+                    <div class="guest-card-badges">
+                        <?php
+                        if ($g['rsvp_status'] == 'accepted')
+                            echo "<span class='badge badge-attending'><i class='fas fa-check'></i> Attending</span>";
+                        elseif ($g['rsvp_status'] == 'rejected')
+                            echo "<span class='badge badge-declined'><i class='fas fa-times'></i> Declined</span>";
+                        else
+                            echo "<span class='badge badge-pending-rsvp'>Pending</span>";
+                        ?>
+                        <span class="guest-card-delivery-status">
+                            <?php if ($g['is_opened']): ?>
+                                <span class="mini-status"><i class="fas fa-check-double" style="color:#16a34a;"></i> Opened</span>
+                            <?php elseif ($g['is_sent']): ?>
+                                <span class="mini-status"><i class="fas fa-paper-plane" style="color:#0284c7;"></i> Sent</span>
+                            <?php else: ?>
+                                <span class="mini-status"><i class="far fa-circle"></i> Not sent</span>
+                                <span class="mini-status"><i class="fas fa-eye-slash"></i> Not opened</span>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+
+                    <div class="guest-card-meta">
+                        To You: <strong><?php echo $seats_count; ?> head<?php echo $seats_count > 1 ? 's' : ''; ?></strong>
+                        &nbsp;·&nbsp; <?php echo htmlspecialchars($cat); ?>
+                        &nbsp;·&nbsp; <?php echo htmlspecialchars($side); ?>
+                    </div>
+
+                    <div class="guest-card-actions">
+                        <?php if (!empty($guest_wa_intl) && !empty($invite_url_for_header)): ?>
+                            <a href="#"
+                               class="btn-wa-send btn-wa-send-full"
+                               data-id="<?php echo $g['id']; ?>"
+                               data-phone="<?php echo $guest_wa_intl; ?>"
+                               data-token="<?php echo htmlspecialchars($g['invite_token']); ?>"
+                               data-guest-name="<?php echo htmlspecialchars($g['name']); ?>">
+                                <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                            </a>
+                        <?php else: ?>
+                            <span class="btn-wa-send btn-wa-send-full disabled">
+                                <i class="fab fa-whatsapp"></i> No valid number
+                            </span>
+                        <?php endif; ?>
+
+                        <button type="button"
+                                class="icon-btn-mobile icon-btn-note"
+                                title="Guest note"
+                                data-note="<?php echo htmlspecialchars($g['guest_note'] ?? ''); ?>">
+                            <i class="far fa-comment"></i>
+                        </button>
+
+                        <?php
+                            $card_personal_link = '';
+                            if (!empty($invite_url_for_header)) {
+                                $sep = strpos($invite_url_for_header, '?') !== false ? '&' : '?';
+                                $card_personal_link = $invite_url_for_header . $sep . 't=' . urlencode($g['invite_token']);
+                            }
+                        ?>
+                        <button type="button"
+                                class="icon-btn-mobile icon-btn-copy"
+                                title="Copy invitation link"
+                                data-link="<?php echo htmlspecialchars($card_personal_link); ?>">
+                            <i class="far fa-copy"></i>
+                        </button>
+
+                        <a href="guests.php?delete=<?php echo $g['id']; ?>"
+                           class="icon-btn-mobile icon-btn-del"
+                           onclick="return confirm('Remove <?php echo addslashes($g['name']); ?> from the guest list?');">
+                            <i class="fas fa-trash-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
             <?php else: ?>
             <div class="empty-state">
                 <div><i class="fas fa-users"></i></div>
@@ -488,23 +626,37 @@ function filterGuests() {
     const cat    = document.getElementById('filter-cat').value;
     const rsvp   = document.getElementById('filter-rsvp').value;
     const rows   = document.querySelectorAll('#guest-table tbody tr');
+    const cards  = document.querySelectorAll('.guest-cards-mobile .guest-card');
     let visibleSeats  = 0;
+    let countedIds    = new Set();
 
-    rows.forEach(row => {
-        const name    = row.dataset.name || '';
-        const rowCat  = row.dataset.cat  || '';
-        const rowRsvp = row.dataset.rsvp || '';
-        const rowSeats = parseInt(row.dataset.seats) || 1;
+    function matches(el) {
+        const name    = el.dataset.name || '';
+        const elCat   = el.dataset.cat  || '';
+        const elRsvp  = el.dataset.rsvp || '';
 
         const matchSearch = name.includes(search);
-        const matchCat    = !cat  || rowCat  === cat;
-        const matchRsvp   = !rsvp || rowRsvp === rsvp;
+        const matchCat    = !cat  || elCat  === cat;
+        const matchRsvp   = !rsvp || elRsvp === rsvp;
 
-        const show = matchSearch && matchCat && matchRsvp;
+        return matchSearch && matchCat && matchRsvp;
+    }
+
+    rows.forEach(row => {
+        const show = matches(row);
         row.style.display = show ? '' : 'none';
-        
-        if (show) {
-            visibleSeats += rowSeats;
+        if (show && !countedIds.has(row.dataset.id)) {
+            visibleSeats += parseInt(row.dataset.seats) || 1;
+            countedIds.add(row.dataset.id);
+        }
+    });
+
+    cards.forEach(card => {
+        const show = matches(card);
+        card.style.display = show ? '' : 'none';
+        if (show && !countedIds.has(card.dataset.id)) {
+            visibleSeats += parseInt(card.dataset.seats) || 1;
+            countedIds.add(card.dataset.id);
         }
     });
 
@@ -543,10 +695,20 @@ document.querySelectorAll('.btn-wa-send').forEach(btn => {
         // 1. AJAX එකෙන් පසුබිමෙන් (Background) සර්වර් එකට යවා "Sent" ලෙස DB එකේ සටහන් කිරීම
         fetch(`guests.php?action=mark_sent&id=${guestId}`);
 
-        // 2. සජීවීව (Instantly) Table Row එකේ පෙනුම "Sent" ලෙස වෙනස් කිරීම (Wow factor!)
-        const statusCell = this.closest('tr').querySelector('.opened-status-cell');
-        if (statusCell && !statusCell.querySelector('.badge-opened')) {
-            statusCell.innerHTML = `<span class="badge badge-sent"><i class="fas fa-paper-plane"></i> Sent</span><br><small style="color:#9ea3b0; font-size:0.7rem; margin-top:3px; display:block;">Just now</small>`;
+        // 2. සජීවීව (Instantly) Table Row / Mobile Card එකේ පෙනුම "Sent" ලෙස වෙනස් කිරීම (Wow factor!)
+        const row = this.closest('tr');
+        if (row) {
+            const statusCell = row.querySelector('.opened-status-cell');
+            if (statusCell && !statusCell.querySelector('.badge-opened')) {
+                statusCell.innerHTML = `<span class="badge badge-sent"><i class="fas fa-paper-plane"></i> Sent</span><br><small style="color:#9ea3b0; font-size:0.7rem; margin-top:3px; display:block;">Just now</small>`;
+            }
+        }
+        const card = this.closest('.guest-card');
+        if (card) {
+            const deliveryStatus = card.querySelector('.guest-card-delivery-status');
+            if (deliveryStatus && !deliveryStatus.querySelector('.fa-check-double')) {
+                deliveryStatus.innerHTML = `<span class="mini-status"><i class="fas fa-paper-plane" style="color:#0284c7;"></i> Sent</span>`;
+            }
         }
         
         let waUrl = "";
@@ -641,11 +803,76 @@ function fetchGuestsLiveStatus() {
 
                 // Keep the RSVP filter dropdown accurate against live data
                 row.dataset.rsvp = g.rsvp_status;
+
+                // 💡 Same live sync for the mobile card view
+                const card = document.querySelector(`.guest-card[data-id="${g.id}"]`);
+                if (card) {
+                    const cardName = card.querySelector('.guest-card-name');
+                    if (cardName) {
+                        let cellHtml = escapeHtml(g.name);
+                        if (g.guest_note && g.guest_note.trim() !== '') {
+                            cellHtml += `
+                                <div class="guest-note-box">
+                                    <i class="fas fa-comment-dots" style="color: #c9a96e;"></i>
+                                    <strong>Note:</strong> "${escapeHtml(g.guest_note)}"
+                                </div>
+                            `;
+                        }
+                        cardName.innerHTML = cellHtml;
+                    }
+
+                    const noteBtn = card.querySelector('.icon-btn-note');
+                    if (noteBtn) noteBtn.setAttribute('data-note', g.guest_note || '');
+
+                    let deliveryHtml = '';
+                    if (g.is_opened == 1) {
+                        deliveryHtml = `<span class="mini-status"><i class="fas fa-check-double" style="color:#16a34a;"></i> Opened</span>`;
+                    } else if (g.is_sent == 1) {
+                        deliveryHtml = `<span class="mini-status"><i class="fas fa-paper-plane" style="color:#0284c7;"></i> Sent</span>`;
+                    } else {
+                        deliveryHtml = `<span class="mini-status"><i class="far fa-circle"></i> Not sent</span><span class="mini-status"><i class="fas fa-eye-slash"></i> Not opened</span>`;
+                    }
+                    const deliveryStatus = card.querySelector('.guest-card-delivery-status');
+                    if (deliveryStatus) deliveryStatus.innerHTML = deliveryHtml;
+
+                    let rsvpBadgeHtml = renderRsvpStatusCell(g.rsvp_status);
+                    const badgesWrap = card.querySelector('.guest-card-badges');
+                    if (badgesWrap) {
+                        // Keep the delivery-status span, only swap the RSVP badge before it
+                        const keepDelivery = badgesWrap.querySelector('.guest-card-delivery-status');
+                        badgesWrap.innerHTML = rsvpBadgeHtml + (keepDelivery ? keepDelivery.outerHTML : '');
+                        const newDeliverySpan = badgesWrap.querySelector('.guest-card-delivery-status');
+                        if (newDeliverySpan) newDeliverySpan.innerHTML = deliveryHtml;
+                    }
+
+                    card.dataset.rsvp = g.rsvp_status;
+                }
             });
         })
         .catch(err => console.error('Error syncing guest live status:', err));
 }
 setInterval(fetchGuestsLiveStatus, 5000);
+
+// Mobile card action buttons: copy invite link / view note
+document.querySelectorAll('.icon-btn-copy').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const link = this.getAttribute('data-link');
+        if (!link) { alert('No invitation link available for this guest.'); return; }
+        navigator.clipboard.writeText(link).then(() => {
+            const icon = this.querySelector('i');
+            icon.classList.remove('fa-copy');
+            icon.classList.add('fa-check');
+            setTimeout(() => { icon.classList.remove('fa-check'); icon.classList.add('fa-copy'); }, 1200);
+        }).catch(() => alert('Could not copy the link automatically. Link: ' + link));
+    });
+});
+
+document.querySelectorAll('.icon-btn-note').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const note = this.getAttribute('data-note');
+        alert(note && note.trim() !== '' ? note : 'No note from this guest yet.');
+    });
+});
 </script>
 
 <?php require '../layouts/footer.php'; ?>
