@@ -81,7 +81,8 @@ invite/
 ├── terms.php                 # Terms & Conditions
 ├── invite.php                # Virtual envelope unseal & core invitation logic
 ├── view_invitation.php       # Dynamic invitation viewer and RSVP processor
-└── calendar.php              # ICS Calendar file generator
+├── calendar.php              # ICS Calendar file generator
+└── .env                      # Environment variables
 ```
 
 ---
