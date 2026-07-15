@@ -3,42 +3,68 @@ require '../config/config.php';
 $msg = "";
 $step = 1;
 
+$RECAPTCHA_SITE_KEY   = $_ENV['RECAPTCHA_SITE_KEY'];
+$RECAPTCHA_SECRET_KEY = $_ENV['RECAPTCHA_SECRET_KEY'];
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $bride  = trim($_POST['bride_name']);
-    $groom  = trim($_POST['groom_name']);
-    $date   = $_POST['wedding_date'];
-    $venue  = trim($_POST['venue']);
-    $email  = trim($_POST['email']);
-    $pass   = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    
+    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+    $recaptcha_data = [
+        'secret' => $RECAPTCHA_SECRET_KEY,
+        'response' => $recaptcha_response,
+        'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+    $options = [
+        'http' => [
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($recaptcha_data)
+        ]
+    ];
+    $context  = stream_context_create($options);
+    $verify = file_get_contents($recaptcha_url, false, $context);
+    $captcha_success = json_decode($verify);
 
-    try {
-        $pdo->beginTransaction();
+    if (!$captcha_success->success) {
+        $msg = "Please complete the reCAPTCHA correctly.";
+    } else {
+        $bride  = trim($_POST['bride_name']);
+        $groom  = trim($_POST['groom_name']);
+        $date   = $_POST['wedding_date'];
+        $venue  = trim($_POST['venue']);
+        $email  = trim($_POST['email']);
+        $pass   = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-        $sql1 = "INSERT INTO users (name, email, password, status) VALUES (?, ?, ?, 'pending')";
-        $stmt1 = $pdo->prepare($sql1);
-        $stmt1->execute([$bride . " & " . $groom, $email, $pass]);
-        $user_id = $pdo->lastInsertId();
+        try {
+            $pdo->beginTransaction();
 
-        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $bride . '-' . $groom));
-        $slug = trim($slug, '-');
-        
-        // Ensure uniqueness
-        $check = $pdo->prepare("SELECT COUNT(*) FROM weddings WHERE slug = ?");
-        $check->execute([$slug]);
-        if ($check->fetchColumn() > 0) {
-            $slug .= '-' . rand(100, 999);
+            $sql1 = "INSERT INTO users (name, email, password, status) VALUES (?, ?, ?, 'pending')";
+            $stmt1 = $pdo->prepare($sql1);
+            $stmt1->execute([$bride . " & " . $groom, $email, $pass]);
+            $user_id = $pdo->lastInsertId();
+
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $bride . '-' . $groom));
+            $slug = trim($slug, '-');
+            
+            // Ensure uniqueness
+            $check = $pdo->prepare("SELECT COUNT(*) FROM weddings WHERE slug = ?");
+            $check->execute([$slug]);
+            if ($check->fetchColumn() > 0) {
+                $slug .= '-' . rand(100, 999);
+            }
+
+            $sql2 = "INSERT INTO weddings (user_id, bride_name, groom_name, wedding_date, slug, venue) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt2 = $pdo->prepare($sql2);
+            $stmt2->execute([$user_id, $bride, $groom, $date, $slug, $venue]);
+
+            $pdo->commit();
+            header("Location: login.php?registered=success");
+            exit();
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $msg = "Registration failed. " . ($e->getCode() == 23000 ? "Email already registered." : $e->getMessage());
         }
-
-        $sql2 = "INSERT INTO weddings (user_id, bride_name, groom_name, wedding_date, slug, venue) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt2 = $pdo->prepare($sql2);
-        $stmt2->execute([$user_id, $bride, $groom, $date, $slug, $venue]);
-
-        $pdo->commit();
-        header("Location: login.php?registered=success");
-        exit();
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $msg = "Registration failed. " . ($e->getCode() == 23000 ? "Email already registered." : $e->getMessage());
     }
 }
 ?>
@@ -52,6 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -401,6 +428,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
                 </div>
 
+                <div class="form-group" style="margin-top: 10px; display: flex; justify-content: center;">
+                    <div class="g-recaptcha" data-sitekey="<?php echo htmlspecialchars($RECAPTCHA_SITE_KEY); ?>" data-theme="dark"></div>
+                </div>
+
                 <div class="btn-row">
                     <button type="button" class="btn-prev" onclick="goStep(2)">
                         <i class="fas fa-arrow-left"></i> Back
@@ -462,9 +493,18 @@ function goStep(n) {
 document.getElementById('reg-form').addEventListener('submit', function(e) {
     const pw  = document.getElementById('password').value;
     const cpw = document.getElementById('confirm_password').value;
+    const recaptcha = document.querySelector('.g-recaptcha-response').value;
+    
     if (pw !== cpw) {
         e.preventDefault();
         alert('Passwords do not match!');
+        return;
+    }
+    
+    if (!recaptcha) {
+        e.preventDefault();
+        alert('Please confirm you are not a robot.');
+        return;
     }
 });
 

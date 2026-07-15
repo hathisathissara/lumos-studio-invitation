@@ -122,3 +122,10 @@ CREATE TABLE IF NOT EXISTS guest_gallery (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (wedding_id) REFERENCES weddings(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id INT AUTO_INCREMENT PRIMARY KEY, 
+  ip_address VARCHAR(45) NOT NULL, 
+  email VARCHAR(255) NOT NULL, 
+  attempt_time DATETIME NOT NULL
+);

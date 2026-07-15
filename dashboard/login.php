@@ -1,6 +1,12 @@
 <?php
 session_start();
 require '../config/config.php';
+
+// --- reCAPTCHA Settings ---
+// ඔයාගේ Google reCAPTCHA (v2 Checkbox) Site Key එක සහ Secret Key එක මෙතනට දාන්න.
+$RECAPTCHA_SITE_KEY   = $_ENV['RECAPTCHA_SITE_KEY']; 
+$RECAPTCHA_SECRET_KEY = $_ENV['RECAPTCHA_SECRET_KEY'];
+
 if (isset($_SESSION['user_id'])) {
     if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin') {
         header("Location: admin/index.php");
@@ -11,30 +17,81 @@ if (isset($_SESSION['user_id'])) {
 }
 $error = "";
 
+// --- Rate Limiting Settings ---
+$MAX_ATTEMPTS = 5; // උපරිම වැරදි අවස්ථා ගණන
+$LOCKOUT_TIME = 15; // විනාඩි 15ක් block වෙනවා
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $email    = $_POST['email'];
-    $password = $_POST['password'];
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $ip_address = $_SERVER['REMOTE_ADDR'];
 
-    $stmt = $pdo->prepare("SELECT users.*, weddings.id as wedding_id FROM users 
-                           LEFT JOIN weddings ON users.id = weddings.user_id 
-                           WHERE users.email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+    // 1. Check Rate Limit
+    $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM login_attempts WHERE ip_address = ? AND attempt_time > (NOW() - INTERVAL ? MINUTE)");
+    $stmtCheck->execute([$ip_address, $LOCKOUT_TIME]);
+    $attempts = $stmtCheck->fetchColumn();
 
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id']    = $user['id'];
-        $_SESSION['user_name']  = $user['name'];
-        $_SESSION['wedding_id'] = $user['wedding_id'];
-        $_SESSION['status']     = $user['status'];
-        $_SESSION['role']       = $user['role'];
-        if ($user['role'] === 'admin') {
-            header("Location: admin/index.php");
-        } else {
-            header("Location: user/index.php");
-        }
-        exit();
+    if ($attempts >= $MAX_ATTEMPTS) {
+        $error = "Too many failed attempts. Please try again after {$LOCKOUT_TIME} minutes.";
     } else {
-        $error = "Incorrect email or password. Please try again.";
+        // 2. Verify reCAPTCHA (පහල keys මාරු කරාට පස්සේ මේක වැඩ කරාවි)
+        $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+        $recaptcha_valid = true;
+
+        if ($RECAPTCHA_SITE_KEY !== 'YOUR_SITE_KEY_HERE') {
+            $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+            $recaptcha_data = [
+                'secret' => $RECAPTCHA_SECRET_KEY,
+                'response' => $recaptcha_response,
+                'remoteip' => $ip_address
+            ];
+            
+            $options = [
+                'http' => [
+                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                    'method'  => 'POST',
+                    'content' => http_build_query($recaptcha_data)
+                ]
+            ];
+            $context  = stream_context_create($options);
+            $verify = file_get_contents($recaptcha_url, false, $context);
+            $captcha_success = json_decode($verify);
+            if (!$captcha_success->success) {
+                $recaptcha_valid = false;
+                $error = "Please complete the reCAPTCHA correctly.";
+            }
+        }
+
+        if ($recaptcha_valid) {
+            // 3. Process Login
+            $stmt = $pdo->prepare("SELECT users.*, weddings.id as wedding_id FROM users 
+                                   LEFT JOIN weddings ON users.id = weddings.user_id 
+                                   WHERE users.email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
+
+            if ($user && password_verify($password, $user['password'])) {
+                // Login Success! Clear previous failed attempts
+                $pdo->prepare("DELETE FROM login_attempts WHERE ip_address = ?")->execute([$ip_address]);
+
+                $_SESSION['user_id']    = $user['id'];
+                $_SESSION['user_name']  = $user['name'];
+                $_SESSION['wedding_id'] = $user['wedding_id'];
+                $_SESSION['status']     = $user['status'];
+                $_SESSION['role']       = $user['role'];
+                
+                if ($user['role'] === 'admin') {
+                    header("Location: admin/index.php");
+                } else {
+                    header("Location: user/index.php");
+                }
+                exit();
+            } else {
+                // Record Failed Attempt
+                $pdo->prepare("INSERT INTO login_attempts (ip_address, email, attempt_time) VALUES (?, ?, NOW())")->execute([$ip_address, $email]);
+                $error = "Incorrect email or password. Please try again.";
+            }
+        }
     }
 }
 ?>
@@ -48,6 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -279,6 +337,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
                 </div>
             </div>
+
+            <?php if ($RECAPTCHA_SITE_KEY !== 'YOUR_SITE_KEY_HERE'): ?>
+            <div class="form-group" style="margin-top: 20px; display: flex; justify-content: center;">
+                <div class="g-recaptcha" data-sitekey="<?php echo htmlspecialchars($RECAPTCHA_SITE_KEY); ?>" data-theme="dark"></div>
+            </div>
+            <?php endif; ?>
+
             <button type="submit" class="btn-login">Sign In to Dashboard</button>
         </form>
 

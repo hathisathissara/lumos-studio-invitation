@@ -2,16 +2,28 @@
 // Force UTF-8 end-to-end: the HTTP response header, PHP's internal string
 // handling, and the DB connection must all agree — otherwise WAMP's PHP
 // (which often defaults to ISO-8859-1) can send the wrong charset header,
-// the browser misreads the emoji bytes, and they turn into "�".
+// the browser misreads the emoji bytes, and they turn into "".
 if (!headers_sent()) {
     header('Content-Type: text/html; charset=UTF-8');
 }
 mb_internal_encoding('UTF-8');
 
-$host = 'localhost';
-$dbname = 'invite';
-$username = 'root';
-$password = ''; // wamp server එකේ සාමාන්‍යයෙන් password එකක් නෑ, ඒ නිසා මේක හිස්ව තියන්න.
+// Load .env variables
+$envPath = __DIR__ . '../.env';
+if (file_exists($envPath)) {
+    $envVars = parse_ini_file($envPath);
+    if ($envVars) {
+        foreach ($envVars as $key => $value) {
+            $_ENV[$key] = $value;
+            putenv("$key=$value");
+        }
+    }
+}
+
+$host = $_ENV['DB_HOST'];
+$dbname = $_ENV['DB_NAME'];
+$username = $_ENV['DB_USER'];
+$password = $_ENV['DB_PASS'];
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);

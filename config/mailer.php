@@ -3,23 +3,19 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    // Composer install
-    require_once __DIR__ . '/../vendor/autoload.php';
-} else {
-    // Manual install fallback
-    require_once __DIR__ . '/PHPMailer/Exception.php';
-    require_once __DIR__ . '/PHPMailer/PHPMailer.php';
-    require_once __DIR__ . '/PHPMailer/SMTP.php';
-}
+
+require_once __DIR__ . '/PHPMailer/Exception.php';
+require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/SMTP.php';
+
 
 // ---------------- Fill these in ----------------
-define('MAIL_SMTP_HOST', 'smtp.gmail.com');
-define('MAIL_SMTP_PORT', 587);
-define('MAIL_SMTP_USERNAME', 'noreply.sysmail.lk@gmail.com');   // Your Gmail address
-define('MAIL_SMTP_PASSWORD', 'loce vyvk dyea kxlm');    // 16-char Gmail App Password
-define('MAIL_FROM_EMAIL', 'noreply.sysmail.lk@gmail.com');
-define('MAIL_FROM_NAME', 'Lumos Invitation Studio');
+define('MAIL_SMTP_HOST', $_ENV['MAIL_SMTP_HOST']);
+define('MAIL_SMTP_PORT', $_ENV['MAIL_SMTP_PORT']);
+define('MAIL_SMTP_USERNAME', $_ENV['MAIL_SMTP_USERNAME']);
+define('MAIL_SMTP_PASSWORD', $_ENV['MAIL_SMTP_PASSWORD']);
+define('MAIL_FROM_EMAIL', $_ENV['MAIL_FROM_EMAIL']);
+define('MAIL_FROM_NAME', $_ENV['MAIL_FROM_NAME']);
 // -------------------------------------------------
 
 /**

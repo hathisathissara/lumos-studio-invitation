@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require '../../config/config.php';
 
@@ -110,9 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_account'])) {
     if ($user_data && password_verify($del_pw, $user_data['password'])) {
         // Delete related data manually to ensure complete wipe if ON DELETE CASCADE is not set
         $pdo->prepare("DELETE FROM guest_gallery WHERE wedding_id = ?")->execute([$wedding_id]);
-        $pdo->prepare("DELETE FROM wedding_gallery WHERE wedding_id = ?")->execute([$wedding_id]);
+        $pdo->prepare("DELETE FROM gallery WHERE wedding_id = ?")->execute([$wedding_id]);
         $pdo->prepare("DELETE FROM events WHERE wedding_id = ?")->execute([$wedding_id]);
         $pdo->prepare("DELETE FROM guests WHERE wedding_id = ?")->execute([$wedding_id]);
+        $pdo->prepare("DELETE FROM tasks WHERE wedding_id = ?")->execute([$wedding_id]);
         $pdo->prepare("DELETE FROM weddings WHERE id = ?")->execute([$wedding_id]);
         $pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$user_id]);
 

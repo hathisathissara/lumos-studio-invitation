@@ -1,0 +1,12 @@
+# Environment Variables
+.env
+
+# Composer dependencies (if any in the future)
+vendor/
+
+# Node modules (if any in the future)
+node_modules/
+
+# OS generated files
+.DS_Store
+Thumbs.db
