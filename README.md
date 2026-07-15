@@ -45,7 +45,8 @@ invite/
 ├── config/
 │   ├── config.php            # Database connections and configuration
 │   ├── mailer.php            # SMTP email configuration
-│   └── PHPMailer/            # PHPMailer library files
+│   ├── PHPMailer/            # PHPMailer library files
+│   └── installer.php         # Auto-setup script
 ├── dashboard/
 │   ├── admin/                # Super Admin Panel
 │   │   ├── index.php         # Billing & Verification Dashboard

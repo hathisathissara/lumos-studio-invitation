@@ -19,7 +19,7 @@ if (file_exists($envPath)) {
         }
     }
 }
-
+require_once __DIR__ . '/installer.php';
 $host = $_ENV['DB_HOST'];
 $dbname = $_ENV['DB_NAME'];
 $username = $_ENV['DB_USER'];
