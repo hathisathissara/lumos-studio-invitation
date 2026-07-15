@@ -15,7 +15,7 @@ if (isset($_GET['deleted'])) {
 }
 
 // Check CSRF for state-changing actions
-if (isset($_GET['action']) && in_array($_GET['action'], ['activate', 'deactivate', 'approve_upgrade', 'reject_upgrade', 'notify_delete'])) {
+if (isset($_GET['action']) && in_array($_GET['action'], ['activate', 'deactivate', 'notify_delete'])) {
     if (!isset($_GET['csrf_token']) || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
         die("CSRF token validation failed.");
     }
@@ -51,58 +51,6 @@ if (isset($_GET['action']) && isset($_GET['uid']) && in_array($_GET['action'], [
     }
 }
 
-// 2. Approve Package Upgrade Request (Upgrade අනුමත කිරීම)
-if (isset($_GET['action']) && $_GET['action'] === 'approve_upgrade' && isset($_GET['uid'])) {
-    $u_id = intval($_GET['uid']);
-    
-    $stmtGetUpgrade = $pdo->prepare("SELECT name, email, pending_upgrade_plan, upgrade_slip FROM users WHERE id = ?");
-    $stmtGetUpgrade->execute([$u_id]);
-    $upgradeData = $stmtGetUpgrade->fetch();
-
-    if ($upgradeData && !empty($upgradeData['pending_upgrade_plan'])) {
-        // 'standard|1' හෝ 'premium|1' වැනි string එක package සහ gallery ලෙස වෙන්කර ගැනීම
-        $parts = explode('|', $upgradeData['pending_upgrade_plan']);
-        $target_package = $parts[0] ?? 'standard';
-        $target_gallery = intval($parts[1] ?? 0);
-        
-        // පැරණි slip එක delete කර අලුත් එක save කිරීම
-        $stmtOldSlip = $pdo->prepare("SELECT payment_slip FROM users WHERE id = ?");
-        $stmtOldSlip->execute([$u_id]);
-        $oldSlipFile = $stmtOldSlip->fetchColumn();
-        if (!empty($oldSlipFile) && file_exists('../../' . $oldSlipFile)) {
-            unlink('../../' . $oldSlipFile);
-        }
-
-        $stmtUpdatePkg = $pdo->prepare("UPDATE users SET package = ?, has_guest_gallery = ?, payment_slip = upgrade_slip, upgrade_slip = NULL, pending_upgrade_plan = NULL WHERE id = ?");
-        if ($stmtUpdatePkg->execute([$target_package, $target_gallery, $u_id])) {
-            
-            if (function_exists('send_upgrade_success_mail')) {
-                $new_plan_readable = ucfirst($target_package) . ($target_gallery ? " + Guest Gallery" : "");
-                send_upgrade_success_mail($upgradeData['email'], $upgradeData['name'], $new_plan_readable);
-            }
-            $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Upgrade approved! Couple successfully promoted to <strong>" . ucfirst($target_package) . " Plan</strong> and notified via email.</div>";
-        }
-    }
-}
-
-// 3. Reject Package Upgrade Request (Upgrade ප්‍රතික්ෂේප කිරීම)
-if (isset($_GET['action']) && $_GET['action'] === 'reject_upgrade' && isset($_GET['uid'])) {
-    $u_id = intval($_GET['uid']);
-    
-    $stmtGetUpgrade = $pdo->prepare("SELECT upgrade_slip FROM users WHERE id = ?");
-    $stmtGetUpgrade->execute([$u_id]);
-    $upgradeSlipFile = $stmtGetUpgrade->fetchColumn();
-
-    if (!empty($upgradeSlipFile) && file_exists('../../' . $upgradeSlipFile)) {
-        unlink('../../' . $upgradeSlipFile);
-    }
-
-    $stmtReject = $pdo->prepare("UPDATE users SET upgrade_slip = NULL, pending_upgrade_plan = NULL WHERE id = ?");
-    if ($stmtReject->execute([$u_id])) {
-        $msg = "<div class='flash flash-success'><i class='fas fa-check-circle'></i> Upgrade request rejected and slip file deleted. Account remains on previous active plan.</div>";
-    }
-}
-
 // 4. Send the 7-day deletion notice
 if (isset($_GET['action']) && $_GET['action'] === 'notify_delete' && isset($_GET['uid'])) {
     $notify_uid = intval($_GET['uid']);
@@ -123,7 +71,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'notify_delete' && isset($_GET
     }
 }
 
-// 5. AJAX: සජීවීව (Live) Admin Stat Cards + Registered Couples Table Update කිරීම
+// 5. AJAX: Live Admin Stat Cards + Registered Couples Table Update
 if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
     header('Content-Type: application/json');
 
@@ -145,6 +93,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
     $liveActive  = count(array_filter($liveUsersList, fn($u) => $u['status'] === 'active'));
     $livePending = $liveTotal - $liveActive;
     $liveRefunds = count(array_filter($liveUsersList, fn($u) => !empty($u['refund_requested_at'])));
+    $liveUpgrades = count(array_filter($liveUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip'])));
 
     $liveRowsFormatted = [];
     foreach ($liveUsersList as $user) {
@@ -190,38 +139,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'live_stats') {
         ];
     }
 
-    $liveUpgradeRequests = array_filter($liveUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip']));
-    $liveUpgradeFormatted = [];
-    foreach ($liveUpgradeRequests as $upg) {
-        $parts = explode('|', $upg['pending_upgrade_plan']);
-        $req_pkg = $parts[0] ?? 'standard';
-        $req_gal = intval($parts[1] ?? 0);
-        $req_text = ucfirst($req_pkg) . ($req_gal ? " + Guest Gallery" : "");
-
-        $liveUpgradeFormatted[] = [
-            'id' => (int) $upg['id'],
-            'name' => htmlspecialchars($upg['name']),
-            'email' => htmlspecialchars($upg['email']),
-            'package' => ucfirst($upg['package'] ?? 'Basic'),
-            'has_guest_gallery' => !empty($upg['has_guest_gallery']),
-            'req_text' => htmlspecialchars($req_text),
-            'upgrade_slip' => !empty($upg['upgrade_slip']) ? htmlspecialchars('../../' . $upg['upgrade_slip']) : null,
-            'upgrade_slip_is_pdf' => !empty($upg['upgrade_slip']) && strtolower(pathinfo($upg['upgrade_slip'], PATHINFO_EXTENSION)) === 'pdf',
-        ];
-    }
-
     echo json_encode([
         'total' => $liveTotal,
         'active' => $liveActive,
         'pending' => $livePending,
         'refund_requests_count' => $liveRefunds,
+        'upgrade_requests_count' => $liveUpgrades,
         'users' => $liveRowsFormatted,
-        'upgrade_requests' => $liveUpgradeFormatted,
     ]);
     exit();
 }
 
-// Main Users List Retrieval (සියලුම upgrade properties නිවැරදිව ලබාගෙන ඇත)
+// Main Users List Retrieval
 $stmtUsers = $pdo->prepare("
     SELECT users.id, users.name, users.email, users.status, users.payment_slip, users.upgrade_slip, users.pending_upgrade_plan, users.created_at, users.deletion_notice_sent_at, users.refund_requested_at, users.package, users.has_guest_gallery,
            weddings.wedding_date, weddings.bride_name, weddings.groom_name, weddings.id as wedding_id,
@@ -236,229 +165,239 @@ $allUsersList = $stmtUsers->fetchAll();
 
 $domain = rtrim('http://' . $_SERVER['HTTP_HOST'] . dirname(dirname(dirname($_SERVER['PHP_SELF']))), '/');
 
-// Stats (100% ක්ම නිවැරදි $allUsersList යොදා ඇත)
 $total   = count($allUsersList);
 $active  = count(array_filter($allUsersList, fn($u) => $u['status'] === 'active'));
 $pending = $total - $active;
 $refund_requests_count = count(array_filter($allUsersList, fn($u) => !empty($u['refund_requested_at'])));
+$upgrade_requests_count = count(array_filter($allUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip'])));
 
 require '../layouts/header.php';
 ?>
 
 <style>
-    :root {
-        --primary: #1a1a2e;
-        --border-color: #e8ecf0;
-        --gold: #c9a96e;
-        --success: #10b981;
-        --danger: #ef4444;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-        --text-dark: #1e293b;
-        --text-muted: #64748b;
-    }
+/* ============================================================
+   ADMIN PANEL — PREMIUM REDESIGN
+   ============================================================ */
 
-    .flash { padding: 14px 20px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 24px; display:flex; align-items:center; gap:10px; font-family: 'Inter', sans-serif; font-weight: 500; }
-    .flash-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: var(--success); }
-    .flash-error   { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: var(--danger); }
+:root {
+    --ap-gold:        #c9a96e;
+    --ap-gold-light:  rgba(201,169,110,0.12);
+    --ap-gold-glow:   rgba(201,169,110,0.25);
+    --ap-emerald:     #10b981;
+    --ap-emerald-bg:  rgba(16,185,129,0.10);
+    --ap-amber:       #f59e0b;
+    --ap-amber-bg:    rgba(245,158,11,0.10);
+    --ap-red:         #ef4444;
+    --ap-red-bg:      rgba(239,68,68,0.10);
+    --ap-blue:        #6366f1;
+    --ap-blue-bg:     rgba(99,102,241,0.10);
+    --ap-border-soft: #e8ecf0;
+    --ap-surface:     #ffffff;
+    --ap-text:        #1e293b;
+    --ap-muted:       #64748b;
+    --ap-faint:       #94a3b8;
+    --ap-radius:      16px;
+    --ap-radius-sm:   10px;
+    --ap-shadow:      0 4px 24px rgba(15,15,26,0.06);
+    --ap-shadow-lg:   0 12px 40px rgba(15,15,26,0.10);
+}
 
-    .admin-stat { background: white; border: 1px solid #e8ecf0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
-    .admin-stat:hover { transform: translateY(-3px); box-shadow: 0 12px 20px -3px rgba(0,0,0,0.06); }
-    .admin-stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-    .icon-gold  { background: rgba(201,169,110,0.12); color: #c9a96e; }
-    .icon-green { background: rgba(34,197,94,0.12);  color: #22c55e; }
-    .icon-amber { background: rgba(245,158,11,0.12); color: #d97706; }
-    .icon-red   { background: rgba(239,68,68,0.12); color: #dc2626; }
-    .admin-stat-num { font-size: 1.8rem; font-weight: 800; color: #1a1a2e; line-height: 1; }
-    .admin-stat-label { font-size: 0.75rem; color: #9ea3b0; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.flash { display:flex; align-items:center; gap:12px; padding:14px 20px; border-radius:var(--ap-radius-sm); font-size:.875rem; font-weight:500; margin-bottom:28px; animation:slideDown .4s ease; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+.flash i { font-size:1rem; flex-shrink:0; }
+.flash-success { background:var(--ap-emerald-bg); border:1px solid rgba(16,185,129,.25); color:#059669; }
+.flash-error   { background:var(--ap-red-bg);     border:1px solid rgba(239,68,68,.25);  color:#dc2626; }
 
-    .table-card { background: white; border: 1px solid #e8ecf0; border-radius: 16px; overflow: hidden; margin-bottom:28px; }
-    .table-card-header { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .table-card-header h5 { font-size: 1.05rem; font-weight: 700; color: #1a1a2e; margin: 0; }
-    .search-wrap { position: relative; }
-    .search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ea3b0; font-size: 0.8rem; }
-    .search-input { border: 1px solid #e8ecf0; border-radius: 10px; padding: 8px 12px 8px 34px; font-family: 'Inter', sans-serif; font-size: 0.82rem; outline: none; width: 220px; }
-    .search-input:focus { border-color: #c9a96e; }
+.admin-page-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:28px; }
+.admin-page-header-left h1 { font-size:1.5rem; font-weight:800; color:var(--ap-text); margin:0; letter-spacing:-.3px; }
+.admin-page-header-left p  { font-size:.82rem; color:var(--ap-muted); margin:4px 0 0; }
+.live-dot { display:inline-flex; align-items:center; gap:7px; background:var(--ap-emerald-bg); border:1px solid rgba(16,185,129,.2); border-radius:20px; padding:6px 14px; font-size:.75rem; font-weight:600; color:var(--ap-emerald); }
+.live-dot::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--ap-emerald); animation:pulse-dot 1.6s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.3)} }
 
-    .admin-table { width: 100%; border-collapse: collapse; }
-    .admin-table th { padding: 12px 16px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #9ea3b0; background: #f8fafc; border-bottom: 1px solid #e8ecf0; text-align: left; white-space: nowrap; }
-    .admin-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.86rem; color: #4a5568; vertical-align: middle; }
-    .admin-table tr:hover td { background: #fafbfc; }
+.stat-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:18px; margin-bottom:28px; }
+@media(max-width:1200px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:991px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stat-grid{grid-template-columns:1fr;gap:12px}}
 
-    .couple-name { font-weight: 700; color: #1a1a2e; }
-    .couple-email { font-size: 0.78rem; color: #9ea3b0; margin-top: 2px; }
+.stat-card { background:var(--ap-surface); border:1px solid var(--ap-border-soft); border-radius:var(--ap-radius); padding:22px 20px; display:flex; align-items:center; gap:16px; box-shadow:var(--ap-shadow); transition:transform .22s ease,box-shadow .22s ease; position:relative; overflow:hidden; text-decoration:none; cursor:default; }
+a.stat-card { cursor:pointer; }
+.stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:var(--ap-radius) var(--ap-radius) 0 0; opacity:0; transition:opacity .22s; }
+.stat-card:hover { transform:translateY(-4px); box-shadow:var(--ap-shadow-lg); }
+.stat-card:hover::after { opacity:1; }
+.stat-card--gold::after  { background:linear-gradient(90deg,#c9a96e,#e2c28a); }
+.stat-card--green::after { background:linear-gradient(90deg,#10b981,#34d399); }
+.stat-card--amber::after { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+.stat-card--red::after   { background:linear-gradient(90deg,#ef4444,#f87171); }
+.stat-card--blue::after  { background:linear-gradient(90deg,#6366f1,#818cf8); }
 
-    .badge-active  { display:inline-flex; align-items:center; gap:4px; background:rgba(34,197,94,0.1); color:#16a34a; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; }
-    .badge-pending { display:inline-flex; align-items:center; gap:4px; background:rgba(245,158,11,0.1); color:#d97706; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; }
-    .badge-refund-req { display:inline-flex; align-items:center; gap:4px; background:rgba(239,68,68,0.1); color:#dc2626; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; margin-top:4px; }
-    .badge-upgrade-req { display:inline-flex; align-items:center; gap:4px; background:rgba(59,130,246,0.1); color:#2563eb; border-radius:20px; padding:4px 10px; font-size:0.72rem; font-weight:700; margin-top:4px; }
+.stat-icon { width:48px; height:48px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; transition:transform .2s; }
+.stat-card:hover .stat-icon { transform:scale(1.08) rotate(-5deg); }
+.stat-icon--gold  { background:var(--ap-gold-light);  color:var(--ap-gold); }
+.stat-icon--green { background:var(--ap-emerald-bg);  color:var(--ap-emerald); }
+.stat-icon--amber { background:var(--ap-amber-bg);    color:var(--ap-amber); }
+.stat-icon--red   { background:var(--ap-red-bg);      color:var(--ap-red); }
+.stat-icon--blue  { background:var(--ap-blue-bg);     color:var(--ap-blue); }
 
-    .slip-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid #e8ecf0; cursor: pointer; transition: transform 0.2s; }
-    .slip-thumb:hover { transform: scale(1.08); }
+.stat-body { flex:1; min-width:0; }
+.stat-num   { font-size:2rem; font-weight:900; color:var(--ap-text); line-height:1; letter-spacing:-1px; font-variant-numeric:tabular-nums; transition:color .2s; }
+.stat-label { font-size:.72rem; font-weight:600; color:var(--ap-faint); text-transform:uppercase; letter-spacing:.7px; margin-top:4px; }
 
-    .btn-action { display: inline-flex; align-items: center; gap: 6px; border-radius: 10px; padding: 8px 14px; font-size: 0.76rem; font-weight: 700; text-decoration: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 1px solid transparent; }
-    .btn-activate { background: rgba(16,185,129,0.08); color: var(--success); border-color: rgba(16,185,129,0.12); }
-    .btn-activate:hover { background: var(--success); color: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.25); }
-    .btn-deactivate { background: rgba(245,158,11,0.08); color: var(--warning); border-color: rgba(245,158,11,0.12); }
-    .btn-deactivate:hover { background: var(--warning); color: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
-    .btn-preview { background: #fafbfc; color: var(--text-muted); border-color: var(--border-color); }
-    .btn-preview:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
-    .btn-delete-account { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: rgba(239,68,68,0.06); color: var(--danger); border: 1px solid rgba(239,68,68,0.15); border-radius: 10px; font-size: 0.8rem; text-decoration: none; transition: all 0.2s; margin-left: 4px; }
-    .btn-delete-account:hover { background: var(--danger); color: white; box-shadow: 0 4px 10px rgba(239,68,68,0.2); }
-    .btn-notify-delete { background: rgba(245,158,11,0.08); color: var(--warning); border-color: rgba(245,158,11,0.15); }
-    .btn-notify-delete:hover { background: var(--warning); color: white; box-shadow: 0 4px 12px rgba(245,158,11,0.2); }
-    .badge-countdown { display: inline-flex; align-items: center; gap: 6px; background: rgba(100,116,139,0.06); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 14px; font-size: 0.74rem; font-weight: 700; margin-left: 4px; white-space: nowrap; }
+.panel-card { background:var(--ap-surface); border:1px solid var(--ap-border-soft); border-radius:var(--ap-radius); box-shadow:var(--ap-shadow); margin-bottom:24px; overflow:hidden; }
+.panel-card-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:18px 24px; border-bottom:1px solid #f1f5f9; background:#fafbfc; }
+.panel-card-title { display:flex; align-items:center; gap:10px; font-size:.95rem; font-weight:700; color:var(--ap-text); margin:0; }
+.title-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:.85rem; }
+.title-icon--gold { background:var(--ap-gold-light); color:var(--ap-gold); }
 
-    .lightbox { display: none; position: fixed; inset: 0; background: rgba(15,15,26,0.92); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; }
-    .lightbox.open { display: flex; }
-    .lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 16px; object-fit: contain; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.05); }
-    .lightbox-close { position: absolute; top: 24px; right: 28px; color: white; font-size: 2.2rem; cursor: pointer; transition: transform 0.2s; }
-    .lightbox-close:hover { transform: scale(1.1) rotate(90deg); }
+.search-wrap { position:relative; }
+.search-wrap .search-ico { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--ap-faint); font-size:.78rem; pointer-events:none; }
+.search-input { border:1px solid var(--ap-border-soft); border-radius:var(--ap-radius-sm); padding:9px 12px 9px 34px; font-family:'Inter',sans-serif; font-size:.82rem; outline:none; width:230px; background:var(--ap-surface); color:var(--ap-text); transition:border-color .2s,box-shadow .2s; }
+.search-input:focus { border-color:var(--ap-gold); box-shadow:0 0 0 3px var(--ap-gold-light); }
+.search-input::placeholder { color:var(--ap-faint); }
 
-    .empty-table { text-align: center; padding: 50px; color: #9ea3b0; }
-    
-    @media (max-width: 767.98px) {
-        .table-card-header { flex-direction: column; align-items: flex-start; }
-        .admin-table, .admin-table thead, .admin-table tbody, .admin-table th, .admin-table td, .admin-table tr { display: block; }
-        .admin-table thead tr { position: absolute; top: -9999px; left: -9999px; }
-        .admin-table tr { border: 1px solid var(--border-color); border-radius: 12px; margin: 14px; padding: 6px 0; box-shadow: 0 1px 2px rgba(16,24,40,0.04); }
-        .admin-table td { border-bottom: 1px dashed #f1f5f9; padding: 10px 16px; display: flex; align-items: flex-start; gap: 10px; }
-        .admin-table td:last-child { border-bottom: none; }
-        .admin-table td::before { content: attr(data-label); font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); flex: 0 0 100px; padding-top: 2px; }
-    }
+.ap-table-wrap { overflow-x:auto; }
+.ap-table { width:100%; border-collapse:collapse; min-width:700px; }
+.ap-table thead tr { background:#f8fafc; }
+.ap-table th { padding:11px 18px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.9px; color:var(--ap-faint); border-bottom:1px solid #e8ecf0; text-align:left; white-space:nowrap; }
+.ap-table td { padding:14px 18px; border-bottom:1px solid #f1f5f9; font-size:.855rem; color:var(--ap-muted); vertical-align:middle; }
+.ap-table tbody tr { transition:background .15s; }
+.ap-table tbody tr:hover td { background:#f8fafb; }
+.ap-table tbody tr:last-child td { border-bottom:none; }
+
+.couple-name   { font-weight:700; color:var(--ap-text); font-size:.88rem; }
+.couple-email  { font-size:.76rem; color:var(--ap-faint); margin-top:2px; }
+.couple-badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+
+.badge-pill    { display:inline-flex; align-items:center; gap:4px; border-radius:20px; padding:3px 9px; font-size:.68rem; font-weight:700; letter-spacing:.2px; }
+.badge-active  { background:rgba(16,185,129,.10); color:#059669; border:1px solid rgba(16,185,129,.2); }
+.badge-pending { background:rgba(245,158,11,.10); color:#b45309; border:1px solid rgba(245,158,11,.2); }
+.badge-refund  { background:rgba(239,68,68,.10);  color:#dc2626; border:1px solid rgba(239,68,68,.2); }
+.badge-upgrade { background:rgba(99,102,241,.10); color:#4f46e5; border:1px solid rgba(99,102,241,.2); }
+.badge-pkg     { background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
+.badge-gallery { background:rgba(16,185,129,.08); color:#059669; border:1px solid rgba(16,185,129,.15); font-size:.65rem; }
+.badge-passed  { display:inline-flex; align-items:center; gap:3px; background:rgba(239,68,68,.08); color:#dc2626; border-radius:6px; padding:2px 7px; font-size:.67rem; font-weight:700; margin-left:6px; }
+
+.status-dot    { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px; }
+.dot-active    { background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.2); }
+.dot-pending   { background:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.2); }
+
+.slip-thumb    { width:42px; height:42px; border-radius:9px; object-fit:cover; border:2px solid #e8ecf0; cursor:pointer; transition:transform .2s,border-color .2s,box-shadow .2s; }
+.slip-thumb:hover { transform:scale(1.1); border-color:var(--ap-gold); box-shadow:0 4px 12px rgba(201,169,110,.3); }
+.slip-pdf-link { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:var(--ap-gold); text-decoration:none; font-weight:600; padding:5px 10px; background:var(--ap-gold-light); border-radius:8px; border:1px solid var(--ap-gold-glow); transition:background .2s; }
+.slip-pdf-link:hover { background:rgba(201,169,110,.2); color:var(--ap-gold); }
+.slip-none { color:#d1d5db; font-size:.78rem; font-style:italic; }
+
+.invite-link-cell { display:flex; align-items:center; gap:7px; }
+.invite-link-text { font-size:.76rem; color:var(--ap-muted); max-width:155px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.btn-copy { background:none; border:1px solid #e2e8f0; border-radius:7px; padding:4px 9px; cursor:pointer; font-size:.72rem; color:var(--ap-faint); flex-shrink:0; transition:all .18s; line-height:1; }
+.btn-copy:hover { border-color:var(--ap-gold); color:var(--ap-gold); }
+
+.actions-cell { display:flex; align-items:center; gap:6px; flex-wrap:nowrap; }
+.btn-ap { display:inline-flex; align-items:center; gap:5px; border-radius:var(--ap-radius-sm); padding:7px 13px; font-size:.74rem; font-weight:700; text-decoration:none; transition:all .2s cubic-bezier(.4,0,.2,1); cursor:pointer; border:1px solid transparent; white-space:nowrap; letter-spacing:.1px; }
+.btn-ap:hover { transform:translateY(-1px); }
+.btn-preview    { background:#f8fafc; color:var(--ap-muted); border-color:#e2e8f0; }
+.btn-preview:hover { border-color:var(--ap-gold); color:var(--ap-gold); background:var(--ap-gold-light); box-shadow:0 3px 10px var(--ap-gold-glow); }
+.btn-activate   { background:var(--ap-emerald-bg); color:#059669; border-color:rgba(16,185,129,.2); }
+.btn-activate:hover { background:var(--ap-emerald); color:#fff; box-shadow:0 4px 14px rgba(16,185,129,.3); }
+.btn-deactivate { background:var(--ap-amber-bg); color:#b45309; border-color:rgba(245,158,11,.2); }
+.btn-deactivate:hover { background:var(--ap-amber); color:#fff; box-shadow:0 4px 14px rgba(245,158,11,.3); }
+.btn-notify     { background:rgba(245,158,11,.08); color:#b45309; border-color:rgba(245,158,11,.2); }
+.btn-notify:hover { background:var(--ap-amber); color:#fff; box-shadow:0 4px 14px rgba(245,158,11,.3); }
+.btn-delete-icon { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:9px; background:var(--ap-red-bg); color:var(--ap-red); border:1px solid rgba(239,68,68,.2); text-decoration:none; font-size:.78rem; transition:all .2s; flex-shrink:0; }
+.btn-delete-icon:hover { background:var(--ap-red); color:#fff; box-shadow:0 4px 12px rgba(239,68,68,.3); transform:translateY(-1px); }
+
+.badge-countdown { display:inline-flex; align-items:center; gap:5px; background:#f1f5f9; color:var(--ap-muted); border:1px solid #e2e8f0; border-radius:9px; padding:7px 12px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+
+.empty-state { text-align:center; padding:52px 24px; color:var(--ap-faint); }
+.empty-state i { font-size:2.5rem; margin-bottom:12px; display:block; opacity:.35; }
+.empty-state p { font-size:.88rem; margin:0; }
+
+.lightbox { display:none; position:fixed; inset:0; background:rgba(10,10,20,.94); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); z-index:9999; align-items:center; justify-content:center; animation:lbFadeIn .2s ease; }
+@keyframes lbFadeIn { from{opacity:0} to{opacity:1} }
+.lightbox.open { display:flex; }
+.lightbox-inner { position:relative; max-width:90vw; max-height:88vh; animation:lbScaleIn .25s cubic-bezier(.34,1.56,.64,1); }
+@keyframes lbScaleIn { from{opacity:0;transform:scale(.85)} to{opacity:1;transform:scale(1)} }
+.lightbox-inner img { max-width:90vw; max-height:85vh; border-radius:18px; object-fit:contain; box-shadow:0 30px 80px rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.06); display:block; }
+.lightbox-close { position:absolute; top:-14px; right:-14px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.15); color:#fff; font-size:1rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .2s,transform .2s; }
+.lightbox-close:hover { background:rgba(239,68,68,.7); transform:rotate(90deg); }
+
+@media(max-width:767px){
+    .ap-table,
+    .ap-table thead,.ap-table tbody,.ap-table th,.ap-table td,.ap-table tr{display:block}
+    .ap-table thead tr{position:absolute;top:-9999px;left:-9999px}
+    .ap-table tbody tr{border:1px solid var(--ap-border-soft);border-radius:12px;margin:12px;padding:4px 0;box-shadow:0 2px 8px rgba(15,24,40,.04)}
+    .ap-table td{border-bottom:1px dashed #f1f5f9;padding:10px 14px;display:flex;align-items:flex-start;gap:10px}
+    .ap-table td:last-child{border-bottom:none}
+    .ap-table td::before{content:attr(data-label);font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ap-faint);flex:0 0 90px;padding-top:2px}
+    .actions-cell{flex-wrap:wrap}
+    .panel-card-header{flex-direction:column;align-items:flex-start}
+    .search-input{width:100%}
+}
 </style>
+
+<div class="admin-page-header">
+    <div class="admin-page-header-left">
+        <h1><i class="fas fa-shield-halved" style="color:var(--ap-gold);margin-right:10px;font-size:1.3rem;"></i>Admin Control Panel</h1>
+        <p>Manage registered couples, packages & account lifecycle</p>
+    </div>
+    <div class="live-dot">Live Sync Active</div>
+</div>
 
 <?php if ($msg) echo $msg; ?>
 
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
-            <div class="admin-stat-icon icon-gold flex-shrink-0"><i class="fas fa-users"></i></div>
-            <div>
-                <div class="admin-stat-num" id="live-admin-total"><?php echo $total; ?></div>
-                <div class="admin-stat-label">Total Couples</div>
-            </div>
+<div class="stat-grid">
+    <div class="stat-card stat-card--gold">
+        <div class="stat-icon stat-icon--gold"><i class="fas fa-users"></i></div>
+        <div class="stat-body">
+            <div class="stat-num" id="live-admin-total"><?php echo $total; ?></div>
+            <div class="stat-label">Total Couples</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
-            <div class="admin-stat-icon icon-green flex-shrink-0"><i class="fas fa-check-circle"></i></div>
-            <div>
-                <div class="admin-stat-num" id="live-admin-active"><?php echo $active; ?></div>
-                <div class="admin-stat-label">Active</div>
-            </div>
+    <div class="stat-card stat-card--green">
+        <div class="stat-icon stat-icon--green"><i class="fas fa-circle-check"></i></div>
+        <div class="stat-body">
+            <div class="stat-num" id="live-admin-active"><?php echo $active; ?></div>
+            <div class="stat-label">Active</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100">
-            <div class="admin-stat-icon icon-amber flex-shrink-0"><i class="fas fa-clock"></i></div>
-            <div>
-                <div class="admin-stat-num" id="live-admin-pending"><?php echo $pending; ?></div>
-                <div class="admin-stat-label">Pending Review</div>
-            </div>
+    <div class="stat-card stat-card--amber">
+        <div class="stat-icon stat-icon--amber"><i class="fas fa-hourglass-half"></i></div>
+        <div class="stat-body">
+            <div class="stat-num" id="live-admin-pending"><?php echo $pending; ?></div>
+            <div class="stat-label">Pending Review</div>
         </div>
     </div>
-    <!-- Refund Requests Stat Card -->
-    <div class="col-6 col-md-3">
-        <a href="admin_refunds.php" class="admin-stat p-4 rounded-4 d-flex align-items-center gap-3 h-100 text-decoration-none">
-            <div class="admin-stat-icon icon-red flex-shrink-0"><i class="fas fa-undo-alt"></i></div>
-            <div>
-                <div class="admin-stat-num text-danger" id="live-admin-refunds"><?php echo $refund_requests_count; ?></div>
-                <div class="admin-stat-label">Refund Requests</div>
-            </div>
-        </a>
-    </div>
+    <a href="admin_refunds.php" class="stat-card stat-card--red" style="cursor:pointer;">
+        <div class="stat-icon stat-icon--red"><i class="fas fa-rotate-left"></i></div>
+        <div class="stat-body">
+            <div class="stat-num" id="live-admin-refunds" style="color:var(--ap-red);"><?php echo $refund_requests_count; ?></div>
+            <div class="stat-label">Refund Requests</div>
+        </div>
+    </a>
+    <a href="admin_upgrades.php" class="stat-card stat-card--blue" style="cursor:pointer;">
+        <div class="stat-icon stat-icon--blue"><i class="fas fa-arrow-up-right-dots"></i></div>
+        <div class="stat-body">
+            <div class="stat-num" id="live-admin-upgrades" style="color:var(--ap-blue);"><?php echo $upgrade_requests_count; ?></div>
+            <div class="stat-label">Upgrade Requests</div>
+        </div>
+    </a>
 </div>
 
-<!-- =====================================================================
-     💡 UPGRADE REQUESTS SECTION
-     ===================================================================== -->
-<?php
-$upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgrade_plan']) && !empty($u['upgrade_slip']));
-?>
-<?php $hasUpgradeRequests = count($upgradeRequests) > 0; ?>
-<div class="table-card border border-primary" id="upgrade-requests-card" style="<?php echo $hasUpgradeRequests ? '' : 'display:none;'; ?>">
-    <div class="table-card-header bg-light text-primary" style="background: rgba(59,130,246,0.03) !important;">
-        <h5 class="fw-bold" style="color: var(--info);"><i class="fas fa-arrow-circle-up me-1"></i> Pending Package Upgrade Reviews (පැකේජ් උසස් කිරීම්)</h5>
-    </div>
-    <div style="overflow-x:auto;">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Couple Info</th>
-                    <th>Current Plan</th>
-                    <th>Requested Upgrade Plan</th>
-                    <th>Upgrade Receipt</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="upgrade-requests-tbody">
-                <?php foreach ($upgradeRequests as $upg): 
-                    $parts = explode('|', $upg['pending_upgrade_plan']);
-                    $req_pkg = $parts[0] ?? 'standard';
-                    $req_gal = intval($parts[1] ?? 0);
-                    $req_text = ucfirst($req_pkg) . ($req_gal ? " + Guest Gallery" : "");
-                ?>
-                <tr>
-                    <td data-label="Couple Info">
-                        <div class="fw-bold text-dark"><?php echo htmlspecialchars($upg['name']); ?></div>
-                        <div class="text-muted small"><?php echo htmlspecialchars($upg['email']); ?></div>
-                    </td>
-                    <td data-label="Current Plan">
-                        <span class="badge bg-secondary"><?php echo ucfirst($upg['package'] ?? 'Basic'); ?></span>
-                        <?php echo !empty($upg['has_guest_gallery']) ? '<br><small class="text-success fw-bold">With Gallery</small>' : ''; ?>
-                    </td>
-                    <td data-label="Requested Plan">
-                        <strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> <?php echo $req_text; ?></strong>
-                    </td>
-                    <td data-label="Receipt">
-                        <?php if (!empty($upg['upgrade_slip'])): ?>
-                            <?php $ext_upg_slip = strtolower(pathinfo($upg['upgrade_slip'], PATHINFO_EXTENSION)); ?>
-                            <?php if ($ext_upg_slip === 'pdf'): ?>
-                                <a href="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" target="_blank"
-                                   style="font-size:0.78rem; color:#c9a96e; text-decoration:none;">
-                                    <i class="fas fa-file-pdf"></i> View PDF
-                                </a>
-                            <?php else: ?>
-                                <img src="../../<?php echo htmlspecialchars($upg['upgrade_slip']); ?>" 
-                                     class="slip-thumb border border-primary" 
-                                     onclick="openLightbox(this.src)" 
-                                     alt="Upgrade Receipt">
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </td>
-                    <td data-label="Actions" style="white-space:nowrap;">
-                        <a href="index.php?action=approve_upgrade&uid=<?php echo $upg['id']; ?>&csrf_token=<?php echo $csrf_token; ?>" 
-                           class="btn-action btn-activate"
-                           onclick="return confirm('Approve package upgrade to <?php echo $req_text; ?> for <?php echo addslashes($upg['name']); ?>?');">
-                            <i class="fas fa-check"></i> Approve Upgrade
-                        </a>
-                        <a href="index.php?action=reject_upgrade&uid=<?php echo $upg['id']; ?>&csrf_token=<?php echo $csrf_token; ?>" 
-                           class="btn-action btn-deactivate"
-                           style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);"
-                           onclick="return confirm('Reject upgrade request for <?php echo addslashes($upg['name']); ?>? This will delete the slip receipt.');">
-                            <i class="fas fa-times"></i> Reject
-                        </a>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Table: Registered Couples -->
-<div class="table-card">
-    <div class="table-card-header">
-        <h5>Registered Couples</h5>
+<div class="panel-card">
+    <div class="panel-card-header">
+        <h5 class="panel-card-title">
+            <span class="title-icon title-icon--gold"><i class="fas fa-heart"></i></span>
+            Registered Couples
+            <span class="badge-pill badge-pkg" style="font-size:0.7rem;margin-left:6px;" id="couples-count-badge"><?php echo $total; ?></span>
+        </h5>
         <div class="search-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" class="search-input" id="admin-search" placeholder="Search couples...">
+            <i class="fas fa-search search-ico"></i>
+            <input type="text" class="search-input" id="admin-search" placeholder="Search by name or email…" autocomplete="off">
         </div>
     </div>
 
-    <div style="overflow-x:auto;">
-        <table class="admin-table" id="admin-table">
+    <div class="ap-table-wrap">
+        <table class="ap-table" id="admin-table">
             <thead>
                 <tr>
                     <th>Couple</th>
@@ -477,8 +416,8 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                         $invite_slug  = !empty($user['slug']) ? $user['slug'] : ('invite.php?w_id=' . $user['wedding_id']);
                         $invite_url   = $domain . '/' . $invite_slug;
 
-                        $notice_sent = !empty($user['deletion_notice_sent_at']);
-                        $days_left = 0;
+                        $notice_sent    = !empty($user['deletion_notice_sent_at']);
+                        $days_left      = 0;
                         $can_delete_now = false;
                         if ($notice_sent) {
                             $delete_eligible_at = strtotime($user['deletion_notice_sent_at'] . ' +7 days');
@@ -489,35 +428,28 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                     ?>
                     <tr data-search="<?php echo strtolower($user['name'] . ' ' . $user['email']); ?>">
                         <td data-label="Couple">
-                            <div class="couple-name">
-                                <?php echo htmlspecialchars($user['name']); ?>
-                            </div>
+                            <div class="couple-name"><?php echo htmlspecialchars($user['name']); ?></div>
                             <div class="couple-email"><?php echo htmlspecialchars($user['email']); ?></div>
-                            
-                            <!-- Badges -->
-                            <?php if (!empty($user['refund_requested_at'])): ?>
-                                <span class="badge-refund-req">
-                                    <i class="fas fa-exclamation-triangle"></i> Refund Requested
-                                </span>
-                            <?php endif; ?>
-                            <?php if (!empty($user['pending_upgrade_plan'])): ?>
-                                <span class="badge-upgrade-req">
-                                    <i class="fas fa-arrow-circle-up"></i> Upgrade Pending
-                                </span>
-                            <?php endif; ?>
+                            <div class="couple-badges">
+                                <?php if (!empty($user['refund_requested_at'])): ?>
+                                    <span class="badge-pill badge-refund"><i class="fas fa-triangle-exclamation"></i> Refund Req.</span>
+                                <?php endif; ?>
+                                <?php if (!empty($user['pending_upgrade_plan'])): ?>
+                                    <span class="badge-pill badge-upgrade"><i class="fas fa-arrow-up"></i> Upgrade Pending</span>
+                                <?php endif; ?>
+                            </div>
                         </td>
-                        <!-- Plan/Package Display -->
-                        <td data-label="Plan / Add-on">
-                            <span class="badge bg-secondary"><?php echo ucfirst($user['package'] ?? 'Basic'); ?></span>
+                        <td data-label="Plan">
+                            <span class="badge-pill badge-pkg"><?php echo ucfirst($user['package'] ?? 'Basic'); ?></span>
                             <?php if ($user['has_guest_gallery'] == 1): ?>
-                                <br><small class="text-success fw-bold"><i class="fas fa-images"></i> Guest Gallery</small>
+                                <br><span class="badge-pill badge-gallery" style="margin-top:4px;"><i class="fas fa-images"></i> +Gallery</span>
                             <?php endif; ?>
                         </td>
                         <td data-label="Wedding Date">
                             <?php if ($user['wedding_date']): ?>
                                 <?php echo date("d M Y", strtotime($user['wedding_date'])); ?>
                                 <?php if ($wedding_past): ?>
-                                    <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.08);color:#dc2626;border-radius:6px;padding:2px 7px;font-size:0.68rem;font-weight:700;margin-left:4px;"><i class="fas fa-clock" style="font-size:0.6rem;"></i> Passed</span>
+                                    <span class="badge-passed"><i class="fas fa-clock" style="font-size:0.6rem;"></i> Passed</span>
                                 <?php endif; ?>
                             <?php else: ?>
                                 <span style="color:#d1d5db;">—</span>
@@ -525,37 +457,37 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                         </td>
                         <td data-label="Bank Slip">
                             <?php if (!empty($user['payment_slip'])): ?>
-                                <?php
-                                $slip_path = $user['payment_slip'];
-                                $ext_slip = strtolower(pathinfo($user['payment_slip'], PATHINFO_EXTENSION));
-                                ?>
+                                <?php $ext_slip = strtolower(pathinfo($user['payment_slip'], PATHINFO_EXTENSION)); ?>
                                 <?php if ($ext_slip === 'pdf'): ?>
-                                    <a href="../../<?php echo htmlspecialchars($slip_path); ?>" target="_blank"
-                                       style="font-size:0.78rem; color:#c9a96e; text-decoration:none;">
+                                    <a href="../../<?php echo htmlspecialchars($user['payment_slip']); ?>" target="_blank" class="slip-pdf-link">
                                         <i class="fas fa-file-pdf"></i> View PDF
                                     </a>
                                 <?php else: ?>
-                                    <img src="../../<?php echo htmlspecialchars($slip_path); ?>"
+                                    <img src="../../<?php echo htmlspecialchars($user['payment_slip']); ?>"
                                          class="slip-thumb"
                                          onclick="openLightbox(this.src)"
                                          alt="Payment slip">
                                 <?php endif; ?>
                             <?php else: ?>
-                                <span style="color:#d1d5db; font-size:0.78rem; font-style:italic;">No slip yet</span>
+                                <span class="slip-none">No slip yet</span>
                             <?php endif; ?>
                         </td>
                         <td data-label="Status">
                             <?php if ($user['status'] === 'active'): ?>
-                                <span class="badge-active"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Active</span>
+                                <span class="badge-pill badge-active">
+                                    <span class="status-dot dot-active"></span> Active
+                                </span>
                             <?php else: ?>
-                                <span class="badge-pending"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pending</span>
+                                <span class="badge-pill badge-pending">
+                                    <span class="status-dot dot-pending"></span> Pending
+                                </span>
                             <?php endif; ?>
                         </td>
                         <td data-label="Invite Link">
                             <?php if ($user['wedding_id'] && !empty($user['slug'])): ?>
-                                <div style="display:flex;align-items:center;gap:6px;">
-                                    <span style="font-size:0.78rem;color:#4a5568;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?php echo htmlspecialchars($invite_url); ?>"><?php echo htmlspecialchars($invite_url); ?></span>
-                                    <button onclick="adminCopyLink('<?php echo addslashes($invite_url); ?>', this)" style="background:none;border:1px solid #e8ecf0;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:0.72rem;color:#9ea3b0;flex-shrink:0;" title="Copy link"><i class="fas fa-copy"></i></button>
+                                <div class="invite-link-cell">
+                                    <span class="invite-link-text" title="<?php echo htmlspecialchars($invite_url); ?>"><?php echo htmlspecialchars($invite_url); ?></span>
+                                    <button class="btn-copy" onclick="adminCopyLink('<?php echo addslashes($invite_url); ?>', this)" title="Copy link"><i class="fas fa-copy"></i></button>
                                 </div>
                             <?php elseif ($user['wedding_id']): ?>
                                 <span style="font-size:0.75rem;color:#d1d5db;">No slug yet</span>
@@ -563,141 +495,151 @@ $upgradeRequests = array_filter($allUsersList, fn($u) => !empty($u['pending_upgr
                                 <span style="color:#d1d5db;">—</span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Actions" style="white-space:nowrap;">
-                            <?php if ($user['wedding_id']): ?>
-                            <a href="../../view_invitation.php?w_id=<?php echo $user['wedding_id']; ?>&preview=1"
-                               target="_blank" class="btn-preview">
-                                <i class="fas fa-eye"></i> Preview
-                            </a>
-                            <?php endif; ?>
-
-                            <?php if ($user['status'] === 'pending'): ?>
-                            <a href="index.php?action=activate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
-                               class="btn-action btn-activate"
-                               onclick="return confirm('Activate account for <?php echo addslashes($user['name']); ?>?');">
-                                <i class="fas fa-check"></i> Activate
-                            </a>
-                            <?php else: ?>
-                            <a href="index.php?action=deactivate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
-                               class="btn-action btn-deactivate"
-                               onclick="return confirm('Deactivate account for <?php echo addslashes($user['name']); ?>?');">
-                                <i class="fas fa-times"></i> Deactivate
-                            </a>
-                            <?php endif; ?>
-
-                            <?php if ($wedding_past): ?>
-                                <?php if (!$notice_sent): ?>
-                                <a href="index.php?action=notify_delete&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
-                                   class="btn-action btn-notify-delete"
-                                   onclick="return confirm('Email <?php echo addslashes($user['name']); ?> that their invitation will be deleted in 7 days?');"
-                                   title="Send 7-day deletion notice">
-                                    <i class="fas fa-bell"></i> Notify
-                                </a>
-                                <?php elseif (!$can_delete_now): ?>
-                                <span class="badge-countdown" title="Notice sent on <?php echo date('d M Y', strtotime($user['deletion_notice_sent_at'])); ?>">
-                                    <i class="fas fa-hourglass-half"></i> <?php echo $days_left; ?>d left
-                                </span>
-                                <?php else: ?>
-                                <a href="admin_delete_account.php?uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
-                                   class="btn-delete-account"
-                                   onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');"
-                                   title="Notice period ended — delete this account">
-                                    <i class="fas fa-trash-alt"></i>
+                        <td data-label="Actions">
+                            <div class="actions-cell">
+                                <?php if ($user['wedding_id']): ?>
+                                <a href="../../view_invitation.php?w_id=<?php echo $user['wedding_id']; ?>&preview=1"
+                                   target="_blank" class="btn-ap btn-preview">
+                                    <i class="fas fa-eye"></i> Preview
                                 </a>
                                 <?php endif; ?>
-                            <?php endif; ?>
+
+                                <?php if ($user['status'] === 'pending'): ?>
+                                <a href="index.php?action=activate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
+                                   class="btn-ap btn-activate"
+                                   onclick="return confirm('Activate account for <?php echo addslashes($user['name']); ?>?');">
+                                    <i class="fas fa-check"></i> Activate
+                                </a>
+                                <?php else: ?>
+                                <a href="index.php?action=deactivate&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
+                                   class="btn-ap btn-deactivate"
+                                   onclick="return confirm('Deactivate account for <?php echo addslashes($user['name']); ?>?');">
+                                    <i class="fas fa-xmark"></i> Deactivate
+                                </a>
+                                <?php endif; ?>
+
+                                <?php if ($wedding_past): ?>
+                                    <?php if (!$notice_sent): ?>
+                                    <a href="index.php?action=notify_delete&uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
+                                       class="btn-ap btn-notify"
+                                       onclick="return confirm('Email <?php echo addslashes($user['name']); ?> that their invitation will be deleted in 7 days?')"
+                                       title="Send 7-day deletion notice">
+                                        <i class="fas fa-bell"></i> Notify
+                                    </a>
+                                    <?php elseif (!$can_delete_now): ?>
+                                    <span class="badge-countdown" title="Notice sent on <?php echo date('d M Y', strtotime($user['deletion_notice_sent_at'])); ?>">
+                                        <i class="fas fa-hourglass-half"></i> <?php echo $days_left; ?>d left
+                                    </span>
+                                    <?php else: ?>
+                                    <a href="admin_delete_account.php?uid=<?php echo $user['id']; ?>&csrf_token=<?php echo $csrf_token; ?>"
+                                       class="btn-delete-icon"
+                                       onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.')"
+                                       title="Notice period ended — delete this account">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="8" class="empty-table">No couples registered yet.</td></tr>
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-heart-crack"></i>
+                                <p>No couples registered yet.</p>
+                            </div>
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Lightbox for slip images with Backdrop blur -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-    <span class="lightbox-close"><i class="fas fa-times"></i></span>
-    <img src="" id="lightbox-img" alt="Payment slip">
+    <div class="lightbox-inner" onclick="event.stopPropagation()">
+        <div class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-xmark"></i></div>
+        <img src="" id="lightbox-img" alt="Payment slip">
+    </div>
 </div>
 
 <script>
-// Search
-document.getElementById('admin-search').addEventListener('input', function() {
-    const q = this.value.toLowerCase();
+document.getElementById('admin-search').addEventListener('input', function () {
+    const q = this.value.toLowerCase().trim();
     document.querySelectorAll('#admin-table tbody tr').forEach(row => {
         row.style.display = (row.dataset.search || '').includes(q) ? '' : 'none';
     });
 });
 
-// Lightbox
 function openLightbox(src) {
     document.getElementById('lightbox-img').src = src;
     document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
 }
 function closeLightbox() {
     document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => { document.getElementById('lightbox-img').src = ''; }, 300);
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-// =====================================================================
-// 🔥 සජීවීව Admin Stat Cards Update කිරීම
-// =====================================================================
 function updateLiveText(id, newValue) {
     const el = document.getElementById(id);
     if (el && el.textContent != newValue) {
-        el.style.transition = 'opacity 0.2s';
-        el.style.opacity = '0.2';
+        el.style.transition = 'opacity 0.18s, transform 0.18s';
+        el.style.opacity    = '0';
+        el.style.transform  = 'translateY(-6px)';
         setTimeout(() => {
-            el.textContent = newValue;
-            el.style.opacity = '1';
-        }, 200);
+            el.textContent  = newValue;
+            el.style.opacity   = '1';
+            el.style.transform = 'translateY(0)';
+        }, 180);
     }
 }
 
 function esc(str) {
-    // Basic JS-side escape as a safety net (server already sends pre-escaped strings)
     return String(str).replace(/'/g, "\\'");
 }
 
 function buildCoupleRow(user) {
     let badges = '';
     if (user.refund_requested) {
-        badges += `<span class="badge-refund-req"><i class="fas fa-exclamation-triangle"></i> Refund Requested</span>`;
+        badges += `<span class="badge-pill badge-refund"><i class="fas fa-triangle-exclamation"></i> Refund Req.</span>`;
     }
     if (user.upgrade_pending) {
-        badges += `<span class="badge-upgrade-req"><i class="fas fa-arrow-circle-up"></i> Upgrade Pending</span>`;
+        badges += `<span class="badge-pill badge-upgrade"><i class="fas fa-arrow-up"></i> Upgrade Pending</span>`;
     }
+    const badgesHtml = badges ? `<div class="couple-badges">${badges}</div>` : '';
 
-    const packageHtml = `<span class="badge bg-secondary">${user.package}</span>` +
-        (user.has_guest_gallery ? `<br><small class="text-success fw-bold"><i class="fas fa-images"></i> Guest Gallery</small>` : '');
+    const pkgHtml = `<span class="badge-pill badge-pkg">${user.package}</span>` +
+        (user.has_guest_gallery ? `<br><span class="badge-pill badge-gallery" style="margin-top:4px;"><i class="fas fa-images"></i> +Gallery</span>` : '');
 
     let dateHtml = `<span style="color:#d1d5db;">—</span>`;
     if (user.wedding_date) {
         dateHtml = user.wedding_date;
         if (user.wedding_past) {
-            dateHtml += `<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.08);color:#dc2626;border-radius:6px;padding:2px 7px;font-size:0.68rem;font-weight:700;margin-left:4px;"><i class="fas fa-clock" style="font-size:0.6rem;"></i> Passed</span>`;
+            dateHtml += `<span class="badge-passed"><i class="fas fa-clock" style="font-size:0.6rem;"></i> Passed</span>`;
         }
     }
 
-    let slipHtml = `<span style="color:#d1d5db; font-size:0.78rem; font-style:italic;">No slip yet</span>`;
+    let slipHtml = `<span class="slip-none">No slip yet</span>`;
     if (user.payment_slip) {
         slipHtml = user.slip_is_pdf
-            ? `<a href="${user.payment_slip}" target="_blank" style="font-size:0.78rem; color:#c9a96e; text-decoration:none;"><i class="fas fa-file-pdf"></i> View PDF</a>`
+            ? `<a href="${user.payment_slip}" target="_blank" class="slip-pdf-link"><i class="fas fa-file-pdf"></i> View PDF</a>`
             : `<img src="${user.payment_slip}" class="slip-thumb" onclick="openLightbox(this.src)" alt="Payment slip">`;
     }
 
     const statusHtml = user.status === 'active'
-        ? `<span class="badge-active"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Active</span>`
-        : `<span class="badge-pending"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pending</span>`;
+        ? `<span class="badge-pill badge-active"><span class="status-dot dot-active"></span> Active</span>`
+        : `<span class="badge-pill badge-pending"><span class="status-dot dot-pending"></span> Pending</span>`;
 
     let linkHtml = `<span style="color:#d1d5db;">—</span>`;
     if (user.wedding_id && user.has_slug) {
-        linkHtml = `<div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:0.78rem;color:#4a5568;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${user.invite_url}">${user.invite_url}</span>
-            <button onclick="adminCopyLink('${user.invite_url}', this)" style="background:none;border:1px solid #e8ecf0;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:0.72rem;color:#9ea3b0;flex-shrink:0;" title="Copy link"><i class="fas fa-copy"></i></button>
+        linkHtml = `<div class="invite-link-cell">
+            <span class="invite-link-text" title="${user.invite_url}">${user.invite_url}</span>
+            <button class="btn-copy" onclick="adminCopyLink('${user.invite_url}', this)" title="Copy link"><i class="fas fa-copy"></i></button>
         </div>`;
     } else if (user.wedding_id) {
         linkHtml = `<span style="font-size:0.75rem;color:#d1d5db;">No slug yet</span>`;
@@ -705,20 +647,20 @@ function buildCoupleRow(user) {
 
     let actionsHtml = '';
     if (user.wedding_id) {
-        actionsHtml += `<a href="../../view_invitation.php?w_id=${user.wedding_id}&preview=1" target="_blank" class="btn-preview"><i class="fas fa-eye"></i> Preview</a>`;
+        actionsHtml += `<a href="../../view_invitation.php?w_id=${user.wedding_id}&preview=1" target="_blank" class="btn-ap btn-preview"><i class="fas fa-eye"></i> Preview</a>`;
     }
     if (user.status === 'pending') {
-        actionsHtml += `<a href="index.php?action=activate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-activate" onclick="return confirm('Activate account for ${esc(user.name)}?');"><i class="fas fa-check"></i> Activate</a>`;
+        actionsHtml += `<a href="index.php?action=activate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-ap btn-activate" onclick="return confirm('Activate account for ${esc(user.name)}?');"><i class="fas fa-check"></i> Activate</a>`;
     } else {
-        actionsHtml += `<a href="index.php?action=deactivate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-deactivate" onclick="return confirm('Deactivate account for ${esc(user.name)}?');"><i class="fas fa-times"></i> Deactivate</a>`;
+        actionsHtml += `<a href="index.php?action=deactivate&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-ap btn-deactivate" onclick="return confirm('Deactivate account for ${esc(user.name)}?');"><i class="fas fa-xmark"></i> Deactivate</a>`;
     }
     if (user.wedding_past) {
         if (!user.notice_sent) {
-            actionsHtml += `<a href="index.php?action=notify_delete&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-notify-delete" onclick="return confirm('Email ${esc(user.name)} that their invitation will be deleted in 7 days?');" title="Send 7-day deletion notice"><i class="fas fa-bell"></i> Notify</a>`;
+            actionsHtml += `<a href="index.php?action=notify_delete&uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-ap btn-notify" onclick="return confirm('Email ${esc(user.name)} that their invitation will be deleted in 7 days?');" title="Send 7-day deletion notice"><i class="fas fa-bell"></i> Notify</a>`;
         } else if (!user.can_delete_now) {
             actionsHtml += `<span class="badge-countdown" title="Notice sent on ${user.notice_sent_at}"><i class="fas fa-hourglass-half"></i> ${user.days_left}d left</span>`;
         } else {
-            actionsHtml += `<a href="admin_delete_account.php?uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-delete-account" onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');" title="Notice period ended — delete this account"><i class="fas fa-trash-alt"></i></a>`;
+            actionsHtml += `<a href="admin_delete_account.php?uid=${user.id}&csrf_token=${csrfTokenJS}" class="btn-delete-icon" onclick="return confirm('Permanently delete this account? The 7-day notice period has ended.');" title="Notice period ended — delete this account"><i class="fas fa-trash-alt"></i></a>`;
         }
     }
 
@@ -726,53 +668,26 @@ function buildCoupleRow(user) {
         <td data-label="Couple">
             <div class="couple-name">${user.name}</div>
             <div class="couple-email">${user.email}</div>
-            ${badges}
+            ${badgesHtml}
         </td>
-        <td data-label="Plan / Add-on">${packageHtml}</td>
+        <td data-label="Plan">${pkgHtml}</td>
         <td data-label="Wedding Date">${dateHtml}</td>
         <td data-label="Bank Slip">${slipHtml}</td>
         <td data-label="Status">${statusHtml}</td>
         <td data-label="Invite Link">${linkHtml}</td>
-        <td data-label="Actions" style="white-space:nowrap;">${actionsHtml}</td>
+        <td data-label="Actions"><div class="actions-cell">${actionsHtml}</div></td>
     </tr>`;
 }
 
-function buildUpgradeRow(upg) {
-    const galleryNote = upg.has_guest_gallery ? `<br><small class="text-success fw-bold">With Gallery</small>` : '';
-    let slipHtml = '';
-    if (upg.upgrade_slip) {
-        slipHtml = upg.upgrade_slip_is_pdf
-            ? `<a href="${upg.upgrade_slip}" target="_blank" style="font-size:0.78rem; color:#c9a96e; text-decoration:none;"><i class="fas fa-file-pdf"></i> View PDF</a>`
-            : `<img src="${upg.upgrade_slip}" class="slip-thumb border border-primary" onclick="openLightbox(this.src)" alt="Upgrade Receipt">`;
-    }
-
-    return `<tr>
-        <td data-label="Couple Info">
-            <div class="fw-bold text-dark">${upg.name}</div>
-            <div class="text-muted small">${upg.email}</div>
-        </td>
-        <td data-label="Current Plan"><span class="badge bg-secondary">${upg.package}</span>${galleryNote}</td>
-        <td data-label="Requested Plan"><strong class="text-primary"><i class="fas fa-chevron-circle-right text-primary me-1"></i> ${upg.req_text}</strong></td>
-        <td data-label="Receipt">${slipHtml}</td>
-        <td data-label="Actions" style="white-space:nowrap;">
-            <a href="index.php?action=approve_upgrade&uid=${upg.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-activate" onclick="return confirm('Approve package upgrade to ${esc(upg.req_text)} for ${esc(upg.name)}?');"><i class="fas fa-check"></i> Approve Upgrade</a>
-            <a href="index.php?action=reject_upgrade&uid=${upg.id}&csrf_token=${csrfTokenJS}" class="btn-action btn-deactivate" style="margin-left:4px; color: var(--danger); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.12);" onclick="return confirm('Reject upgrade request for ${esc(upg.name)}? This will delete the slip receipt.');"><i class="fas fa-times"></i> Reject</a>
-        </td>
-    </tr>`;
-}
-
-let csrfTokenJS = "<?php echo $csrf_token; ?>";
+let csrfTokenJS       = "<?php echo $csrf_token; ?>";
 let lastUsersSnapshot = null;
-let lastUpgradeSnapshot = null;
-let adminPollPaused = false;
-let pollingInterval = 5000;
+let adminPollPaused   = false;
+let pollingInterval   = 5000;
 let consecutiveErrors = 0;
-let adminStatsTimer = null;
+let adminStatsTimer   = null;
 
-// Pause live refresh briefly whenever an action link/button inside the tables is pressed,
-// so an in-flight 5s poll can never replace the row out from under a click mid-navigation.
-document.addEventListener('mousedown', function(e) {
-    if (e.target.closest('#admin-table-tbody') || e.target.closest('#upgrade-requests-tbody')) {
+document.addEventListener('mousedown', function (e) {
+    if (e.target.closest('#admin-table-tbody')) {
         adminPollPaused = true;
         setTimeout(() => { adminPollPaused = false; }, 3000);
     }
@@ -786,25 +701,24 @@ function fetchAdminLiveStats() {
         .then(data => {
             consecutiveErrors = 0;
             if (data.error) return;
-            updateLiveText('live-admin-total', data.total);
-            updateLiveText('live-admin-active', data.active);
+
+            updateLiveText('live-admin-total',   data.total);
+            updateLiveText('live-admin-active',  data.active);
             updateLiveText('live-admin-pending', data.pending);
             updateLiveText('live-admin-refunds', data.refund_requests_count);
+            updateLiveText('live-admin-upgrades', data.upgrade_requests_count);
+            updateLiveText('couples-count-badge', data.total);
 
-            // Only touch the DOM if the underlying data actually changed —
-            // avoids wiping out rows mid-click and avoids needless flicker.
             const usersSnapshot = JSON.stringify(data.users);
             if (usersSnapshot !== lastUsersSnapshot) {
                 lastUsersSnapshot = usersSnapshot;
-
                 const tbody = document.getElementById('admin-table-tbody');
                 if (tbody && data.users) {
                     if (data.users.length > 0) {
                         tbody.innerHTML = data.users.map(buildCoupleRow).join('');
                     } else {
-                        tbody.innerHTML = `<tr><td colspan="8" class="empty-table">No couples registered yet.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="fas fa-heart-crack"></i><p>No couples registered yet.</p></div></td></tr>`;
                     }
-                    // Re-apply the active search filter to the freshly rebuilt rows
                     const searchBox = document.getElementById('admin-search');
                     if (searchBox && searchBox.value) {
                         const q = searchBox.value.toLowerCase();
@@ -815,31 +729,13 @@ function fetchAdminLiveStats() {
                 }
             }
 
-            // Upgrade Requests card — show/hide as a whole, and rebuild rows only if changed
-            const upgradeSnapshot = JSON.stringify(data.upgrade_requests);
-            if (upgradeSnapshot !== lastUpgradeSnapshot) {
-                lastUpgradeSnapshot = upgradeSnapshot;
-
-                const upgradeCard = document.getElementById('upgrade-requests-card');
-                const upgradeTbody = document.getElementById('upgrade-requests-tbody');
-                if (upgradeCard && upgradeTbody && data.upgrade_requests) {
-                    if (data.upgrade_requests.length > 0) {
-                        upgradeTbody.innerHTML = data.upgrade_requests.map(buildUpgradeRow).join('');
-                        upgradeCard.style.display = '';
-                    } else {
-                        upgradeTbody.innerHTML = '';
-                        upgradeCard.style.display = 'none';
-                    }
-                }
-            }
-
             if (pollingInterval > 5000) {
                 pollingInterval = 5000;
                 resetAdminStatsTimer();
             }
         })
         .catch(err => {
-            console.error('Error syncing admin live stats:', err);
+            console.error('Admin live stats error:', err);
             consecutiveErrors++;
             if (consecutiveErrors > 2) {
                 pollingInterval = Math.min(60000, pollingInterval * 2);
@@ -853,20 +749,25 @@ function resetAdminStatsTimer() {
     adminStatsTimer = setInterval(fetchAdminLiveStats, pollingInterval);
 }
 
-document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-        fetchAdminLiveStats();
-    }
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) fetchAdminLiveStats();
 });
 resetAdminStatsTimer();
 
-// Admin copy invite link
 function adminCopyLink(url, btn) {
     navigator.clipboard.writeText(url).then(() => {
         const orig = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check" style="color:#22c55e;"></i>';
-        setTimeout(() => { btn.innerHTML = orig; }, 2000);
-        showToast('\u2713 Invite link copied!');
+        btn.innerHTML = '<i class="fas fa-check" style="color:#10b981;"></i>';
+        btn.style.borderColor = '#10b981';
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.style.borderColor = '';
+        }, 2000);
+        
+        // Show existing header toast if function exists
+        if(typeof showToast === 'function') {
+            showToast('✓ Invite link copied!');
+        }
     }).catch(() => {
         prompt('Copy this invite link:', url);
     });

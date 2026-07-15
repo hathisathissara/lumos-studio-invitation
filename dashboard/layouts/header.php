@@ -449,9 +449,11 @@ $current = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-shield-alt"></i> Admin Panel
             </a>
             <a href="admin_refunds.php" class="nav-item <?php echo $current === 'admin_refunds.php' ? 'active' : ''; ?>">
-                <i class="fas fa-shield-alt"></i> Refund Requests
+                <i class="fas fa-rotate-left"></i> Refund Requests
             </a>
-            
+            <a href="admin_upgrades.php" class="nav-item <?php echo $current === 'admin_upgrades.php' ? 'active' : ''; ?>">
+                <i class="fas fa-arrow-up-right-dots"></i> Upgrade Requests
+            </a>
         <?php else: ?>
             <div class="nav-section-label">Overview</div>
             <a href="index.php" class="nav-item <?php echo $current === 'index.php' ? 'active' : ''; ?>">
