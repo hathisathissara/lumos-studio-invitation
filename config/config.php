@@ -9,7 +9,7 @@ if (!headers_sent()) {
 mb_internal_encoding('UTF-8');
 
 // Load .env variables
-$envPath = __DIR__ . '../.env';
+$envPath = __DIR__ . '/../.env';
 if (file_exists($envPath)) {
     $envVars = parse_ini_file($envPath);
     if ($envVars) {
