@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS `weddings` (
   `love_story` text  DEFAULT NULL,
   `hero_image` varchar(255)   DEFAULT NULL,
   `template_name` varchar(100)   DEFAULT 'default',
+  `invite_language` VARCHAR(5) NOT NULL DEFAULT 'en' COMMENT 'en, si, ta',
+  `music_track` VARCHAR(50) DEFAULT NULL COMMENT 'preset key from music_library.php, NULL = off',
   `slug` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
