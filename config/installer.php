@@ -16,7 +16,7 @@
 // =================================================================
 // SCHEMA_VERSION eka - alut migration ekak danakota meka 1kin wadi karanna
 // =================================================================
-define('SCHEMA_VERSION', 1);
+define('SCHEMA_VERSION', 3);
 
 // =================================================================
 // Fast path: version eka already up-to-date nam, DB ekata query
@@ -128,6 +128,8 @@ try {
             `love_story` text DEFAULT NULL,
             `hero_image` varchar(255) DEFAULT NULL,
             `template_name` varchar(100) DEFAULT 'default',
+            `invite_language` VARCHAR(5) NOT NULL DEFAULT 'en' COMMENT 'en, si, ta',
+            `music_track` VARCHAR(50) DEFAULT NULL COMMENT 'preset key from music_library.php, NULL = off',
             `slug` varchar(255) DEFAULT NULL,
             PRIMARY KEY (`id`),
             KEY `user_id` (`user_id`)
@@ -221,12 +223,12 @@ try {
     $migrations = [
         // Udaharanayak witharai — anaganna one nam methana comment
         // eka ain karala, values danna:
-        //
+
         // [
-        //     'version' => 2,
-        //     'table'   => 'guests',
-        //     'column'  => 'meal_preference',
-        //     'sql'     => "ALTER TABLE `guests` ADD COLUMN `meal_preference` VARCHAR(50) DEFAULT NULL",
+        //     'version' => 3,
+        //     'table'   => 'weddings',
+        //     'column'  => 'music_track',
+        //     'sql'     => "ALTER TABLE `weddings` ADD COLUMN `music_track` VARCHAR(50) DEFAULT NULL COMMENT 'preset key from music_library.php, NULL = off' AFTER `invite_language`",
         // ],
     ];
 
