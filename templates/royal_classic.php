@@ -1,10 +1,18 @@
 <?php
+require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/music_library.php';
+set_invite_lang($wedding['invite_language'] ?? 'en');
+
 $hero_style = "";
 if (!empty($wedding['hero_image'])) {
     $img_path = htmlspecialchars($wedding['hero_image']);
     $hero_style = "style=\"background: url('{$img_path}') center/cover no-repeat;\"";
 }
 $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(substr($wedding['groom_name'] ?? '', 0, 1));
+
+// Background music (off unless the couple picked a preset in customize.php)
+$music_key = $wedding['music_track'] ?? null;
+$music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY[$music_key]['file'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -390,11 +398,59 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 <canvas id="page-canvas"></canvas>
 <div id="dove-layer"></div>
 
+<?php if ($music_file): ?>
+<audio id="bg-music" src="<?php echo htmlspecialchars($music_file); ?>" loop preload="none"></audio>
+<button type="button" id="music-toggle" aria-label="Toggle background music"
+    style="position:fixed; bottom:22px; right:22px; z-index:1000; width:48px; height:48px; border-radius:50%;
+    background:var(--plum-dark); color:var(--parchment); border:none; box-shadow:0 8px 20px rgba(161,88,115,0.35);
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer;">
+    <i class="fas fa-music"></i>
+</button>
+<script>
+(function () {
+    const audio = document.getElementById('bg-music');
+    const btn = document.getElementById('music-toggle');
+    let playing = false;
+
+    function setPlayingUI(isPlaying) {
+        playing = isPlaying;
+        btn.innerHTML = isPlaying ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-music"></i>';
+    }
+
+    function startPlayback() {
+        if (playing) return;
+        audio.play().then(() => setPlayingUI(true)).catch(() => {});
+    }
+
+    // 1) Try to autoplay as soon as the page loads.
+    startPlayback();
+
+    // 2) If the browser blocked it, start on the very first user interaction anywhere on the page.
+    ['click', 'touchstart', 'scroll', 'keydown'].forEach(evt => {
+        document.addEventListener(evt, function onceHandler() {
+            if (!playing) startPlayback();
+        }, { once: true, passive: true });
+    });
+
+    // 3) The button still works as a manual toggle.
+    btn.addEventListener('click', function () {
+        if (playing) {
+            audio.pause();
+            setPlayingUI(false);
+        } else {
+            audio.play().catch(() => {});
+            setPlayingUI(true);
+        }
+    });
+})();
+</script>
+<?php endif; ?>
+
 <?php if ($guest_id == 0): ?>
 <div class="preview-bar">
     <i class="fas fa-eye"></i>
-    <strong>PREVIEW MODE</strong> — This is how your guests will see the invitation.
-    <a href="dashboard/index.php">← Back to Dashboard</a>
+    <strong><?php echo t('preview_mode_label'); ?></strong> — <?php echo t('preview_mode_note'); ?>
+    <a href="dashboard/index.php"><?php echo t('back_to_dashboard'); ?></a>
 </div>
 <?php endif; ?>
 
@@ -412,8 +468,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     </div>
     <div class="hero-panel gold-frame" id="hero-panel">
         <span class="gf-tr"></span><span class="gf-bl"></span>
-        <span class="eyebrow">You're Warmly Invited</span>
-        <p class="guest-line">Dear <?php echo htmlspecialchars($guest_name); ?>,</p>
+        <span class="eyebrow"><?php echo t('hero_eyebrow'); ?></span>
+        <p class="guest-line"><?php echo t('hero_dear'); ?> <?php echo htmlspecialchars($guest_name); ?>,</p>
 
         <div class="light-rays-wrap">
             <h1 class="couple-title">
@@ -424,8 +480,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         </div>
 
         <div class="date-chip">
-            <span class="lbl">We're getting married</span>
-            <span class="val"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></span>
+            <span class="lbl"><?php echo t('hero_getting_married'); ?></span>
+            <span class="val"><?php echo t_date($wedding['wedding_date']); ?></span>
         </div>
 
         <?php if (!empty($wedding['venue'])): ?>
@@ -436,14 +492,14 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
 <!-- COUNTDOWN -->
 <div class="countdown-section">
-    <p class="countdown-label">Counting down to the big day</p>
+    <p class="countdown-label"><?php echo t('countdown_label'); ?></p>
     <div class="countdown" id="countdown">
         <div class="time-unit">
             <div class="flip-card" id="fc-days"><div class="flip-card-inner">
                 <div class="flip-face front" id="cd-days">00</div>
                 <div class="flip-face back" id="cd-days-back">00</div>
             </div></div>
-            <span class="time-label">Days</span>
+            <span class="time-label"><?php echo t('cd_days'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
@@ -451,7 +507,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                 <div class="flip-face front" id="cd-hours">00</div>
                 <div class="flip-face back" id="cd-hours-back">00</div>
             </div></div>
-            <span class="time-label">Hours</span>
+            <span class="time-label"><?php echo t('cd_hours'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
@@ -459,7 +515,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                 <div class="flip-face front" id="cd-mins">00</div>
                 <div class="flip-face back" id="cd-mins-back">00</div>
             </div></div>
-            <span class="time-label">Minutes</span>
+            <span class="time-label"><?php echo t('cd_mins'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
@@ -467,7 +523,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                 <div class="flip-face front" id="cd-secs">00</div>
                 <div class="flip-face back" id="cd-secs-back">00</div>
             </div></div>
-            <span class="time-label">Seconds</span>
+            <span class="time-label"><?php echo t('cd_secs'); ?></span>
         </div>
     </div>
     <svg id="countdown-cake" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -488,8 +544,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
     <!-- LOVE STORY -->
     <?php if (!empty($wedding['love_story'])): ?>
     <div class="section-head reveal">
-        <span class="tag">How It All Began</span>
-        <h2>Our <em>Love Story</em></h2>
+        <span class="tag"><?php echo t('love_story_tag'); ?></span>
+        <h2><?php echo t('love_story_title'); ?></h2>
     </div>
     <div class="letter-card reveal">
         <?php echo nl2br(htmlspecialchars($wedding['love_story'])); ?>
@@ -498,8 +554,8 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
     <!-- PROGRAMME -->
     <div class="section-head reveal">
-        <span class="tag">Join Us For These Celebrations</span>
-        <h2><em>Wedding</em> Programme</h2>
+        <span class="tag"><?php echo t('programme_tag'); ?></span>
+        <h2><?php echo t('programme_title'); ?></h2>
     </div>
 
     <?php if (count($wedding_events) > 0): ?>
@@ -516,23 +572,23 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             <div class="tl-item reveal">
                 <div class="tl-marker">
                     <span class="d"><?php echo date('d', strtotime($ev['event_date_time'])); ?></span>
-                    <span class="m"><?php echo date('M', strtotime($ev['event_date_time'])); ?></span>
+                    <span class="m"><?php echo t_month($ev['event_date_time']); ?></span>
                 </div>
                 <div class="tl-card">
                     <div class="tl-name"><?php echo htmlspecialchars($ev['event_name']); ?></div>
                     <div class="tl-meta">
-                        <div class="tl-meta-item"><i class="far fa-clock"></i><span><?php echo date("h:i A", strtotime($ev['event_date_time'])); ?></span></div>
+                        <div class="tl-meta-item"><i class="far fa-clock"></i><span><?php echo t_time($ev['event_date_time']); ?></span></div>
                         <div class="tl-meta-item"><i class="fas fa-map-marker-alt"></i><span><?php echo htmlspecialchars($ev['location_name']); ?></span></div>
                     </div>
                     <div class="tl-actions">
                         <?php if (!empty($ev['google_map_link'])): ?>
                         <a href="<?php echo htmlspecialchars($ev['google_map_link']); ?>" target="_blank" class="btn-map" rel="noopener">
-                            <i class="fas fa-directions"></i> Get Directions
+                            <i class="fas fa-directions"></i> <?php echo t('get_directions'); ?>
                         </a>
                         <?php endif; ?>
                         <div class="cal-dropdown">
                             <button class="btn-cal" onclick="toggleCal(this)">
-                                <i class="fas fa-calendar-plus"></i> Add to Calendar
+                                <i class="fas fa-calendar-plus"></i> <?php echo t('add_to_calendar'); ?>
                             </button>
                             <div class="cal-menu">
                                 <a href="<?php echo $ev_gcal; ?>" target="_blank" rel="noopener"><i class="fab fa-google" style="color:#4285f4;"></i> Google Calendar</a>
@@ -546,14 +602,14 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p style="text-align:center; color:var(--ink-light); font-style:italic; padding:30px 0;">Event details will be updated soon.</p>
+        <p style="text-align:center; color:var(--ink-light); font-style:italic; padding:30px 0;"><?php echo t('event_details_soon'); ?></p>
     <?php endif; ?>
 
     <!-- GALLERY -->
     <?php if (count($gallery_images) > 0): ?>
     <div class="section-head reveal">
-        <span class="tag">Our Engagement Memories</span>
-        <h2><em>Sweet</em> Moments</h2>
+        <span class="tag"><?php echo t('gallery_tag'); ?></span>
+        <h2><?php echo t('gallery_title'); ?></h2>
     </div>
     <div class="coverflow-wrap reveal-scale" id="gallery-grid">
         <div class="coverflow-viewport">
@@ -591,21 +647,21 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         <div class="section-divider-icon"><i class="fas fa-images"></i></div>
         <div class="section-divider-line right"></div>
     </div>
-    <h2 class="section-heading"><em>Guest</em> Shared Moments</h2>
+    <h2 class="section-heading"><?php echo t('guest_gallery_title'); ?></h2>
     <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
     <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
     <div style="max-width:720px; margin:0 auto 30px; background: rgba(241,233,216,0.7); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center;">
         <?php if ($guest_id == 0): ?>
-            <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
+            <p class="text-muted small"><i class="fas fa-lock"></i> <?php echo t('upload_disabled_preview'); ?></p>
         <?php else: ?>
             <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold-dark); margin-bottom: 12px; display: block;"></i>
-            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--navy); margin-bottom: 6px;">Share a Photo from Your Phone</h5>
-            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--navy); margin-bottom: 6px;"><?php echo t('share_photo_heading'); ?></h5>
+            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;"><?php echo t('share_photo_desc'); ?></p>
             
             <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
             <button type="button" class="btn-map" onclick="document.getElementById('guest-image-input').click()" style="border: none; cursor: pointer;">
-                <i class="fas fa-cloud-upload-alt"></i> Upload Wedding Photo
+                <i class="fas fa-cloud-upload-alt"></i> <?php echo t('upload_wedding_photo_btn'); ?>
             </button>
             
             <!-- Uploading Loader -->
@@ -717,15 +773,15 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
         <div id="rsvp-hearts-layer"></div>
         <div class="rsvp-aside">
             <span class="quote-mark">&ldquo;</span>
-            <p>Every love story is beautiful, but ours is our favorite. Come celebrate this new chapter with us.</p>
+            <p><?php echo t('rsvp_quote'); ?></p>
         </div>
         <div class="rsvp-form-side">
-            <h2 class="rsvp-title">RSVP</h2>
-            <p class="rsvp-subtitle">Will you be joining us?</p>
+            <h2 class="rsvp-title"><?php echo t('rsvp_title'); ?></h2>
+            <p class="rsvp-subtitle"><?php echo t('rsvp_subtitle'); ?></p>
             <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
     <div class="reserved-note" style="margin-bottom: 20px;">
         <i class="fas fa-chair"></i>
-        <span>We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.</span>
+        <span><?php echo t('seats_reserved'); ?>: <strong><?php echo intval($current_guest['seats_reserved']); ?></strong></span>
     </div>
 <?php endif; ?>
 
@@ -743,7 +799,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                             <?php if ($current_guest['rsvp_status'] == 'accepted') echo 'checked'; ?> required>
                         <label for="rsvp-yes">
                             <i class="fas fa-heart" style="color:#1c2340;"></i>
-                            Joyfully Accept
+                            <?php echo t('rsvp_accept'); ?>
                         </label>
                     </div>
                     <div class="rsvp-option">
@@ -751,7 +807,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                             <?php if ($current_guest['rsvp_status'] == 'rejected') echo 'checked'; ?>>
                         <label for="rsvp-no">
                             <i class="fas fa-heart-broken" style="color:#7a1f2b;"></i>
-                            Regretfully Decline
+                            <?php echo t('rsvp_decline'); ?>
                         </label>
                     </div>
                 </div>
@@ -760,10 +816,10 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
                     name="guest_note"
                     class="rsvp-note"
                     rows="3"
-                    placeholder="Any notes for the couple? (dietary needs, etc.) — optional"
+                    placeholder="<?php echo htmlspecialchars(t('rsvp_note_placeholder')); ?>"
                 ><?php echo !empty($current_guest['guest_note']) ? htmlspecialchars($current_guest['guest_note']) : ''; ?></textarea>
 
-                <button type="submit" name="submit_rsvp" class="btn-rsvp-submit">Send My RSVP</button>
+                <button type="submit" name="submit_rsvp" class="btn-rsvp-submit"><?php echo t('rsvp_submit'); ?></button>
             </form>
         </div>
     </div>
@@ -771,7 +827,7 @@ $monogram = strtoupper(substr($wedding['bride_name'] ?? '', 0, 1)) . strtoupper(
 
 <!-- FOOTER -->
 <div class="inv-footer">
-    <span class="brand">Lumus Studio</span>
+    <span class="brand">Lumos Studio</span>
     Digital Wedding Invitations · Designed by Hathisa Thissara
 </div>
 
@@ -803,7 +859,7 @@ function tick() {
     const now = Date.now();
     const dist = weddingDate - now;
     if (dist < 0) {
-        document.getElementById('countdown').innerHTML = '<p class="just-married-msg">Just Married! ❧</p>';
+        document.getElementById('countdown').innerHTML = '<p class="just-married-msg"><?php echo t('just_married'); ?></p>';
         return;
     }
     const d = Math.floor(dist / 86400000);

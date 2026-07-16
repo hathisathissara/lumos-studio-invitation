@@ -1,9 +1,17 @@
 <?php
+require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/music_library.php';
+set_invite_lang($wedding['invite_language'] ?? 'en');
+
 $hero_style = "";
 if (!empty($wedding['hero_image'])) {
     $img_path = htmlspecialchars($wedding['hero_image']);
     $hero_style = "style=\"background: linear-gradient(180deg, rgba(250,245,236,0.55) 0%, rgba(250,245,236,0.92) 55%, var(--cream) 100%), url('{$img_path}') center/cover no-repeat;\"";
 }
+// Background music (off unless the couple picked a preset in customize.php)
+$music_key = $wedding['music_track'] ?? null;
+$music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY[$music_key]['file'] : null;
+
 // Detect a successful RSVP submission so we can trigger the confetti/petal celebration.
 $rsvp_just_submitted = ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_rsvp']));
 $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') === false && stripos($msg, 'error') === false;
@@ -862,19 +870,19 @@ body.night-mode::after {
     <button type="button" class="fx-btn" id="daynight-toggle" title="Toggle day / night ambience" aria-label="Toggle day and night ambience">
         <i class="fas fa-moon"></i>
     </button>
-    <?php if (!empty($wedding['music_url'])): ?>
+    <?php if ($music_file): ?>
     <button type="button" class="fx-btn" id="music-toggle" title="Play background music" aria-label="Play background music">
         <i class="fas fa-music"></i>
     </button>
-    <audio id="bg-music" loop preload="none" src="<?php echo htmlspecialchars($wedding['music_url']); ?>"></audio>
+    <audio id="bg-music" loop preload="none" src="<?php echo htmlspecialchars($music_file); ?>"></audio>
     <?php endif; ?>
 </div>
 
 <?php if ($guest_id == 0): ?>
 <div class="preview-bar">
     <i class="fas fa-eye"></i>
-    <strong>PREVIEW MODE</strong> — This is how your guests will see the invitation.
-    <a href="dashboard/index.php">← Back to Dashboard</a>
+    <strong><?php echo t('preview_mode_label'); ?></strong> — <?php echo t('preview_mode_note'); ?>
+    <a href="dashboard/index.php"><?php echo t('back_to_dashboard'); ?></a>
 </div>
 <?php endif; ?>
 
@@ -896,9 +904,9 @@ if (!empty($wedding['hero_image'])) {
     <canvas id="hero3d-canvas" aria-hidden="true"></canvas>
     <div class="hero-ornament-top">❧</div>
     <div class="hero-content">
-        <span class="guest-greeting-tag">You're Warmly Invited</span>
+        <span class="guest-greeting-tag"><?php echo t('hero_eyebrow'); ?></span>
         <div class="guest-name-display">
-            Dear <?php echo htmlspecialchars($guest_name); ?>,
+            <?php echo t('hero_dear'); ?> <?php echo htmlspecialchars($guest_name); ?>,
         </div>
 
         <div class="couple-names-hero">
@@ -917,8 +925,8 @@ if (!empty($wedding['hero_image'])) {
         </div>
 
         <div class="hero-date-area">
-            <p class="hero-getting-married">We are getting married on</p>
-            <p class="hero-date"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></p>
+            <p class="hero-getting-married"><?php echo t('hero_getting_married'); ?></p>
+            <p class="hero-date"><?php echo t_date($wedding['wedding_date']); ?></p>
             <?php if(!empty($wedding['venue'])): ?>
             <p class="hero-venue mt-3" style="font-family:'Inter',sans-serif; font-size:1.1rem; color:var(--gold);"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($wedding['venue']); ?></p>
             <?php endif; ?>
@@ -928,26 +936,26 @@ if (!empty($wedding['hero_image'])) {
 
 <!-- COUNTDOWN TIMER -->
 <div class="countdown-section">
-    <p class="countdown-label">Counting down to the big day</p>
+    <p class="countdown-label"><?php echo t('countdown_label'); ?></p>
     <div class="countdown" id="countdown">
         <div class="time-unit">
             <span class="time-value" id="cd-days">00</span>
-            <span class="time-label">Days</span>
+            <span class="time-label"><?php echo t('cd_days'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
             <span class="time-value" id="cd-hours">00</span>
-            <span class="time-label">Hours</span>
+            <span class="time-label"><?php echo t('cd_hours'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
             <span class="time-value" id="cd-mins">00</span>
-            <span class="time-label">Minutes</span>
+            <span class="time-label"><?php echo t('cd_mins'); ?></span>
         </div>
         <span class="time-sep">:</span>
         <div class="time-unit">
             <span class="time-value" id="cd-secs">00</span>
-            <span class="time-label">Seconds</span>
+            <span class="time-label"><?php echo t('cd_secs'); ?></span>
         </div>
     </div>
 </div>
@@ -961,8 +969,8 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-icon"><i class="fas fa-heart"></i></div>
         <div class="section-divider-line right"></div>
     </div>
-    <h2 class="section-heading">Our <em>Love Story</em></h2>
-    <p class="section-sub">How it all began</p>
+    <h2 class="section-heading"><?php echo t('love_story_title'); ?></h2>
+    <p class="section-sub"><?php echo t('love_story_tag'); ?></p>
     <div class="love-story-text reveal-fx">
         <?php echo nl2br(htmlspecialchars($wedding['love_story'])); ?>
     </div>
@@ -974,8 +982,8 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-icon"><i class="fas fa-calendar-alt"></i></div>
         <div class="section-divider-line right"></div>
     </div>
-    <h2 class="section-heading"><em>Wedding</em> Programme</h2>
-    <p class="section-sub">Join us for these celebrations</p>
+    <h2 class="section-heading"><?php echo t('programme_title'); ?></h2>
+    <p class="section-sub"><?php echo t('programme_tag'); ?></p>
 
     <?php if (count($wedding_events) > 0): ?>
         <div class="event-timeline row row-cols-1 row-cols-md-2 g-5 align-items-center">
@@ -993,11 +1001,11 @@ if (!empty($wedding['hero_image'])) {
                 <div class="event-meta">
                     <div class="event-meta-item">
                         <i class="far fa-calendar"></i>
-                        <span><?php echo date("l, d F Y", strtotime($ev['event_date_time'])); ?></span>
+                        <span><?php echo t_date($ev['event_date_time']); ?></span>
                     </div>
                     <div class="event-meta-item">
                         <i class="far fa-clock"></i>
-                        <span><?php echo date("h:i A", strtotime($ev['event_date_time'])); ?></span>
+                        <span><?php echo t_time($ev['event_date_time']); ?></span>
                     </div>
                     <div class="event-meta-item">
                         <i class="fas fa-map-marker-alt"></i>
@@ -1007,13 +1015,13 @@ if (!empty($wedding['hero_image'])) {
                 <div class="event-actions">
                     <?php if (!empty($ev['google_map_link'])): ?>
                     <a href="<?php echo htmlspecialchars($ev['google_map_link']); ?>" target="_blank" class="btn-map" rel="noopener">
-                        <i class="fas fa-directions"></i> Get Directions
+                        <i class="fas fa-directions"></i> <?php echo t('get_directions'); ?>
                     </a>
                     <?php endif; ?>
 
                     <div class="cal-dropdown">
                         <button class="btn-cal" onclick="toggleCal(this)">
-                            <i class="fas fa-calendar-plus"></i> Add to Calendar
+                            <i class="fas fa-calendar-plus"></i> <?php echo t('add_to_calendar'); ?>
                         </button>
                         <div class="cal-menu">
                             <a href="<?php echo $ev_gcal; ?>" target="_blank" rel="noopener">
@@ -1032,7 +1040,7 @@ if (!empty($wedding['hero_image'])) {
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p style="text-align:center; color:var(--text-light); font-style:italic; padding:30px 0;">Event details will be updated soon.</p>
+        <p style="text-align:center; color:var(--text-light); font-style:italic; padding:30px 0;"><?php echo t('event_details_soon'); ?></p>
     <?php endif; ?>
 
     <!-- GALLERY -->
@@ -1042,8 +1050,8 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-icon"><i class="fas fa-camera"></i></div>
         <div class="section-divider-line right"></div>
     </div>
-    <h2 class="section-heading"><em>Sweet</em> Moments</h2>
-    <p class="section-sub">Our engagement memories</p>
+    <h2 class="section-heading"><?php echo t('gallery_title'); ?></h2>
+    <p class="section-sub"><?php echo t('gallery_tag'); ?></p>
 
     <div class="sweet-slideshow reveal-fx" id="sweet-slideshow">
         <div class="sweet-slideshow-track" id="sweet-slideshow-track">
@@ -1077,21 +1085,21 @@ if (!empty($wedding['hero_image'])) {
         <div class="section-divider-icon"><i class="fas fa-images"></i></div>
         <div class="section-divider-line right"></div>
     </div>
-    <h2 class="section-heading"><em>Guest</em> Shared Moments</h2>
+    <h2 class="section-heading"><?php echo t('guest_gallery_title'); ?></h2>
     <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
     <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
     <div style="background: var(--cream-2); border: 2px dashed var(--gold); border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
         <?php if ($guest_id == 0): ?>
-            <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
+            <p class="text-muted small"><i class="fas fa-lock"></i> <?php echo t('upload_disabled_preview'); ?></p>
         <?php else: ?>
             <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold); margin-bottom: 12px; display: block;"></i>
-            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: #1a1a2e; margin-bottom: 6px;">Share a Photo from Your Phone</h5>
-            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: #1a1a2e; margin-bottom: 6px;"><?php echo t('share_photo_heading'); ?></h5>
+            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;"><?php echo t('share_photo_desc'); ?></p>
             
             <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
             <button type="button" class="btn-map" onclick="document.getElementById('guest-image-input').click()" style="border: none; cursor: pointer;">
-                <i class="fas fa-cloud-upload-alt"></i> Upload Wedding Photo
+                <i class="fas fa-cloud-upload-alt"></i> <?php echo t('upload_wedding_photo_btn'); ?>
             </button>
             
             <!-- Uploading Loader -->
@@ -1181,14 +1189,12 @@ if (!empty($wedding['hero_image'])) {
     </div>
 
     <div class="rsvp-card text-center shadow rounded-5 p-4 reveal-fx">
-        <h2 class="rsvp-title">RSVP</h2>
-        <p class="rsvp-subtitle">Will you be joining us?</p>
+        <h2 class="rsvp-title"><?php echo t('rsvp_title'); ?></h2>
+        <p class="rsvp-subtitle"><?php echo t('rsvp_subtitle'); ?></p>
             <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
     <div class="reserved-note" style="margin-bottom: 20px;">
         <i class="fas fa-chair"></i>
-        <span>
-            We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.
-        </span>
+        <span><?php echo t('seats_reserved'); ?>: <strong><?php echo intval($current_guest['seats_reserved']); ?></strong></span>
     </div>
 <?php endif; ?>
 
@@ -1203,7 +1209,7 @@ if (!empty($wedding['hero_image'])) {
                         <?php if ($current_guest['rsvp_status'] == 'accepted') echo 'checked'; ?> required>
                     <label for="rsvp-yes">
                         <i class="fas fa-heart" style="color:#6f7d55;"></i>
-                        Joyfully Accept
+                        <?php echo t('rsvp_accept'); ?>
                     </label>
                 </div>
                 <div class="rsvp-option">
@@ -1211,7 +1217,7 @@ if (!empty($wedding['hero_image'])) {
                         <?php if ($current_guest['rsvp_status'] == 'rejected') echo 'checked'; ?>>
                     <label for="rsvp-no">
                         <i class="fas fa-heart-broken" style="color:#b5473a;"></i>
-                        Regretfully Decline
+                        <?php echo t('rsvp_decline'); ?>
                     </label>
                 </div>
             </div>
@@ -1220,19 +1226,17 @@ if (!empty($wedding['hero_image'])) {
                 name="guest_note"
                 class="rsvp-note"
                 rows="3"
-                placeholder="Any notes for the couple? (dietary needs, etc.) — optional"
+                placeholder="<?php echo htmlspecialchars(t('rsvp_note_placeholder')); ?>"
             ><?php echo !empty($current_guest['guest_note']) ? htmlspecialchars($current_guest['guest_note']) : ''; ?></textarea>
 
-            <button type="submit" name="submit_rsvp" class="btn-rsvp-submit">
-                Send My RSVP
-            </button>
+            <button type="submit" name="submit_rsvp" class="btn-rsvp-submit"><?php echo t('rsvp_submit'); ?></button>
         </form>
     </div>
 </div>
 
 <!-- FOOTER -->
 <div class="inv-footer">
-    <span class="brand">Lumus Studio</span><br>
+    <span class="brand">Lumos Studio</span><br>
     Digital Wedding Invitations · Designed by Hathisa Thissara
 </div>
 
@@ -1243,7 +1247,7 @@ function tick() {
     const now = Date.now();
     const dist = weddingDate - now;
     if (dist < 0) {
-        document.getElementById('countdown').innerHTML = '<p class="just-married-msg">Just Married! ❧</p>';
+        document.getElementById('countdown').innerHTML = '<p class="just-married-msg"><?php echo t('just_married'); ?></p>';
         return;
     }
     const d = Math.floor(dist / 86400000);
@@ -1671,23 +1675,42 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ---------------------------------------------------------------
        5) OPTIONAL BACKGROUND MUSIC TOGGLE
        --------------------------------------------------------------- */
-    function initMusic() {
-        const btn = document.getElementById('music-toggle');
-        const audio = document.getElementById('bg-music');
-        if (!btn || !audio) return;
-        btn.addEventListener('click', function () {
-            if (audio.paused) {
-                audio.volume = 0.5;
-                audio.play().catch(() => {});
-                btn.classList.add('playing');
-                btn.innerHTML = '<i class="fas fa-pause"></i>';
-            } else {
-                audio.pause();
-                btn.classList.remove('playing');
-                btn.innerHTML = '<i class="fas fa-music"></i>';
-            }
-        });
+    (function () {
+    const audio = document.getElementById('bg-music');
+    const btn = document.getElementById('music-toggle');
+    let playing = false;
+
+    function setPlayingUI(isPlaying) {
+        playing = isPlaying;
+        btn.innerHTML = isPlaying ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-music"></i>';
     }
+
+    function startPlayback() {
+        if (playing) return;
+        audio.play().then(() => setPlayingUI(true)).catch(() => {});
+    }
+
+    // 1) Try to autoplay as soon as the page loads.
+    startPlayback();
+
+    // 2) If the browser blocked it, start on the very first user interaction anywhere on the page.
+    ['click', 'touchstart', 'scroll', 'keydown'].forEach(evt => {
+        document.addEventListener(evt, function onceHandler() {
+            if (!playing) startPlayback();
+        }, { once: true, passive: true });
+    });
+
+    // 3) The button still works as a manual toggle.
+    btn.addEventListener('click', function () {
+        if (playing) {
+            audio.pause();
+            setPlayingUI(false);
+        } else {
+            audio.play().catch(() => {});
+            setPlayingUI(true);
+        }
+    });
+})();
 
     /* ---------------------------------------------------------------
        6) RSVP CELEBRATION — confetti + petal burst after submission

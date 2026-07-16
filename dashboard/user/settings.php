@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_wedding'])) {
     $groom = trim($_POST['groom_name']);
     $date  = $_POST['wedding_date'];
     $venue = trim($_POST['venue']);
-    $template = isset($_POST['template_name']) ? $_POST['template_name'] : 'premium_gold';
+    // Design template is now managed on customize.php — not touched here.
 
     if (!empty($bride) && !empty($groom) && !empty($date) && !empty($venue)) {
 
@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_wedding'])) {
             $link_changed = true;
         }
 
-        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, venue = ?, template_name = ?, slug = ? WHERE id = ? AND user_id = ?")
-            ->execute([$bride, $groom, $date, $venue, $template, $slug_to_use, $wedding_id, $user_id]);
+        $pdo->prepare("UPDATE weddings SET bride_name = ?, groom_name = ?, wedding_date = ?, venue = ?, slug = ? WHERE id = ? AND user_id = ?")
+            ->execute([$bride, $groom, $date, $venue, $slug_to_use, $wedding_id, $user_id]);
 
         $new_name = $bride . " & " . $groom;
         $pdo->prepare("UPDATE users SET name = ? WHERE id = ?")
@@ -299,7 +299,7 @@ if (!empty($msg_delete)) $open_section = 'danger';
                 <div class="acc-icon"><i class="fas fa-heart"></i></div>
                 <div>
                     <div class="acc-title">Wedding Details</div>
-                    <div class="acc-sub">Update couple names, date, venue & invitation template</div>
+                    <div class="acc-sub">Update couple names, date & venue</div>
                 </div>
             </div>
             <div class="acc-chevron"><i class="fas fa-chevron-down"></i></div>
@@ -346,23 +346,10 @@ if (!empty($msg_delete)) $open_section = 'danger';
                         </div>
                     </div>
                 </div>
-                <div class="form-field">
-                    <label>Design Template</label>
-                    <div class="input-wrap">
-                        <i class="fas fa-paint-brush"></i>
-                        <select name="template_name" required>
-                            <option value="premium_gold" <?php echo ($wedding_data['template_name'] == 'premium_gold' || empty($wedding_data['template_name'])) ? 'selected' : ''; ?>>Premium Gold (Dark Theme)</option>
-                            <option value="minimal_light" <?php echo ($wedding_data['template_name'] == 'minimal_light') ? 'selected' : ''; ?>>Minimal Light (Clean Theme)</option>
-                            <option value="terracotta_bloom" <?php echo ($wedding_data['template_name'] == 'terracotta_bloom') ? 'selected' : ''; ?>>Terracotta Bloom (Warm Theme)</option>
-                            <option value="plum_parchment" <?php echo ($wedding_data['template_name'] == 'plum_parchment') ? 'selected' : ''; ?>>Plum Parchment (Elegant Theme)</option>
-                            <option value="floral_garden" <?php echo ($wedding_data['template_name'] == 'floral_garden') ? 'selected' : ''; ?>>Floral Garden (Floral Theme)</option>
-                            <option value="beach_tropical" <?php echo ($wedding_data['template_name'] == 'beach_tropical') ? 'selected' : ''; ?>>Beach Tropical (Tropical Theme)</option>
-                            <option value="rustic_boho" <?php echo ($wedding_data['template_name'] == 'rustic_boho') ? 'selected' : ''; ?>>Rustic Boho (Boho Theme)</option>
-                            <option value="royal_classic" <?php echo ($wedding_data['template_name'] == 'royal_classic') ? 'selected' : ''; ?>>Royal Classic (Royal Theme)</option>
-                            <option value="indian_royal" <?php echo ($wedding_data['template_name'] == 'indian_royal') ? 'selected' : ''; ?>>Indian Royal (Indian Theme)</option>
-                        </select>
-                    </div>
-                </div>
+                <p style="font-size:0.82rem; color:#94a3b8; margin:-4px 0 18px;">
+                    <i class="fas fa-paint-brush"></i> Design template, language & music are now managed on the
+                    <a href="customize.php" style="color:#c9a96e; font-weight:600;">Customize Invitation</a> page.
+                </p>
                 <button type="submit" name="update_wedding" class="btn-save">
                     <i class="fas fa-save"></i> Save Changes
                 </button>

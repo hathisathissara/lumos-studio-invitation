@@ -1,9 +1,17 @@
 <?php
+require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/music_library.php';
+set_invite_lang($wedding['invite_language'] ?? 'en');
+
 $hero_style = "";
 if (!empty($wedding['hero_image'])) {
     $img_path = htmlspecialchars($wedding['hero_image']);
     $hero_style = "style=\"background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.9) 60%, transparent 100%), url('{$img_path}') center/cover no-repeat;\"";
 }
+// Background music (off unless the couple picked a preset in customize.php)
+$music_key = $wedding['music_track'] ?? null;
+$music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY[$music_key]['file'] : null;
+
 // Detect a successful RSVP submission so we can trigger the celebration animation.
 $rsvp_just_submitted = ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_rsvp']));
 $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') === false && stripos($msg, 'error') === false;
@@ -475,34 +483,60 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>
 
 <div class="fx-controls">
-    <?php if (!empty($wedding['music_url'])): ?>
-    <button type="button" class="fx-btn" id="music-toggle" title="Play background music" aria-label="Play background music">
-        <i class="fas fa-music"></i>
-    </button>
-    <audio id="bg-music" loop preload="none" src="<?php echo htmlspecialchars($wedding['music_url']); ?>"></audio>
-    <?php endif; ?>
-</div>
+<?php if ($music_file): ?>
+<audio id="bg-music" src="<?php echo htmlspecialchars($music_file); ?>" loop preload="none"></audio>
+<button type="button" id="music-toggle" aria-label="Toggle background music"
+    style="position:fixed; bottom:22px; right:22px; z-index:1000; width:48px; height:48px; border-radius:50%;
+    background:var(--plum-dark); color:var(--parchment); border:none; box-shadow:0 8px 20px rgba(161,88,115,0.35);
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem; cursor:pointer;">
+    <i class="fas fa-music"></i>
+</button>
+<script>
+(function () {
+    const audio = document.getElementById('bg-music');
+    const btn = document.getElementById('music-toggle');
+    let playing = false;
 
-<?php if ($guest_id == 0): ?>
-<div class="preview-bar">
-    <i class="fas fa-eye"></i>
-    <strong>PREVIEW MODE</strong> — This is how your guests will see the invitation.
-    <a href="dashboard/index.php">← Back to Dashboard</a>
-</div>
-<?php endif; ?>
+    function setPlayingUI(isPlaying) {
+        playing = isPlaying;
+        btn.innerHTML = isPlaying ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-music"></i>';
+    }
 
-<?php if ($msg): ?>
-<div style="max-width:700px; margin:20px auto; padding:0 20px;">
-    <?php echo $msg; ?>
-</div>
+    function startPlayback() {
+        if (playing) return;
+        audio.play().then(() => setPlayingUI(true)).catch(() => {});
+    }
+
+    // 1) Try to autoplay as soon as the page loads.
+    startPlayback();
+
+    // 2) If the browser blocked it, start on the very first user interaction anywhere on the page.
+    ['click', 'touchstart', 'scroll', 'keydown'].forEach(evt => {
+        document.addEventListener(evt, function onceHandler() {
+            if (!playing) startPlayback();
+        }, { once: true, passive: true });
+    });
+
+    // 3) The button still works as a manual toggle.
+    btn.addEventListener('click', function () {
+        if (playing) {
+            audio.pause();
+            setPlayingUI(false);
+        } else {
+            audio.play().catch(() => {});
+            setPlayingUI(true);
+        }
+    });
+})();
+</script>
 <?php endif; ?>
 
 <!-- HERO HEADER -->
 <div class="hero-header" <?php echo $hero_style; ?>>
     <canvas id="hero3d-canvas" aria-hidden="true"></canvas>
     <div class="hero-content reveal" id="invitation-main">
-        <span class="guest-greeting-tag">You're Warmly Invited</span>
-        <div class="guest-name-display">Dear <?php echo htmlspecialchars($guest_name); ?>,</div>
+        <span class="guest-greeting-tag"><?php echo t('hero_eyebrow'); ?></span>
+        <div class="guest-name-display"><?php echo t('hero_dear'); ?> <?php echo htmlspecialchars($guest_name); ?>,</div>
 
         <div class="couple-names-hero">
             <?php echo htmlspecialchars($wedding['bride_name']); ?>
@@ -511,8 +545,8 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
         </div>
 
         <div class="hero-date-area">
-            <p class="hero-getting-married">We are getting married on</p>
-            <p class="hero-date"><?php echo date("l, d F Y", strtotime($wedding['wedding_date'])); ?></p>
+            <p class="hero-getting-married"><?php echo t('hero_getting_married'); ?></p>
+            <p class="hero-date"><?php echo t_date($wedding['wedding_date']); ?></p>
             <?php if (!empty($wedding['venue'])): ?>
             <p class="hero-venue"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($wedding['venue']); ?></p>
             <?php endif; ?>
@@ -522,12 +556,12 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
 
 <!-- COUNTDOWN TIMER -->
 <div class="countdown-section">
-    <p class="countdown-label">Counting down to the big day</p>
+    <p class="countdown-label"><?php echo t('countdown_label'); ?></p>
     <div class="countdown" id="countdown">
-        <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label">Days</span></div>
-        <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label">Hours</span></div>
-        <div class="time-unit"><span class="time-value" id="cd-mins">00</span><span class="time-label">Minutes</span></div>
-        <div class="time-unit"><span class="time-value" id="cd-secs">00</span><span class="time-label">Seconds</span></div>
+        <div class="time-unit"><span class="time-value" id="cd-days">00</span><span class="time-label"><?php echo t('cd_days'); ?></span></div>
+        <div class="time-unit"><span class="time-value" id="cd-hours">00</span><span class="time-label"><?php echo t('cd_hours'); ?></span></div>
+        <div class="time-unit"><span class="time-value" id="cd-mins">00</span><span class="time-label"><?php echo t('cd_mins'); ?></span></div>
+        <div class="time-unit"><span class="time-value" id="cd-secs">00</span><span class="time-label"><?php echo t('cd_secs'); ?></span></div>
     </div>
 </div>
 
@@ -545,8 +579,8 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
         $story_icons  = ['fa-heart', 'fa-seedling', 'fa-ring', 'fa-champagne-glasses', 'fa-dove', 'fa-gem'];
         $story_labels = ['How It Began', 'A Growing Bond', 'A Promise Made', 'Building a Life Together', 'Forever Begins', 'Our Story Continues'];
     ?>
-    <h2 class="section-heading reveal">Our <em>Love Story</em></h2>
-    <p class="section-sub">How it all began</p>
+    <h2 class="section-heading reveal"><?php echo t('love_story_title'); ?></h2>
+    <p class="section-sub"><?php echo t('love_story_tag'); ?></p>
     <div class="story-timeline" id="story-timeline">
         <div class="story-timeline-line"><div class="story-timeline-fill" id="story-timeline-fill"></div></div>
         <?php foreach ($story_chapters as $i => $chapter):
@@ -566,8 +600,8 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
     <?php endif; ?>
 
     <!-- EVENTS / PROGRAMME -->
-    <h2 class="section-heading reveal"><em>Wedding</em> Programme</h2>
-    <p class="section-sub">Join us for these celebrations</p>
+    <h2 class="section-heading reveal"><?php echo t('programme_title'); ?></h2>
+    <p class="section-sub"><?php echo t('programme_tag'); ?></p>
 
     <?php if (count($wedding_events) > 0): ?>
         <div class="event-timeline row row-cols-1 g-0 justify-content-start">
@@ -583,19 +617,19 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
             <div class="event-card col reveal">
                 <div class="event-name"><?php echo htmlspecialchars($ev['event_name']); ?></div>
                 <div class="event-meta">
-                    <div class="event-meta-item"><i class="far fa-calendar"></i><span><?php echo date("l, d F Y", strtotime($ev['event_date_time'])); ?></span></div>
-                    <div class="event-meta-item"><i class="far fa-clock"></i><span><?php echo date("h:i A", strtotime($ev['event_date_time'])); ?></span></div>
+                    <div class="event-meta-item"><i class="far fa-calendar"></i><span><?php echo t_date($ev['event_date_time']); ?></span></div>
+                    <div class="event-meta-item"><i class="far fa-clock"></i><span><?php echo t_time($ev['event_date_time']); ?></span></div>
                     <div class="event-meta-item"><i class="fas fa-map-marker-alt"></i><span><?php echo htmlspecialchars($ev['location_name']); ?></span></div>
                 </div>
                 <div class="event-actions">
                     <?php if (!empty($ev['google_map_link'])): ?>
                     <a href="<?php echo htmlspecialchars($ev['google_map_link']); ?>" target="_blank" class="btn-map" rel="noopener">
-                        <i class="fas fa-directions"></i> Get Directions
+                        <i class="fas fa-directions"></i> <?php echo t('get_directions'); ?>
                     </a>
                     <?php endif; ?>
                     <div class="cal-dropdown">
                         <button class="btn-cal" onclick="toggleCal(this)">
-                            <i class="fas fa-calendar-plus"></i> Add to Calendar
+                            <i class="fas fa-calendar-plus"></i> <?php echo t('add_to_calendar'); ?>
                         </button>
                         <div class="cal-menu">
                             <a href="<?php echo $ev_gcal; ?>" target="_blank" rel="noopener"><i class="fab fa-google" style="color:#4285f4;"></i> Google Calendar</a>
@@ -619,13 +653,13 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p style="text-align:center; color:var(--ink-light); font-style:italic; padding:30px 0;">Event details will be updated soon.</p>
+        <p style="text-align:center; color:var(--ink-light); font-style:italic; padding:30px 0;"><?php echo t('event_details_soon'); ?></p>
     <?php endif; ?>
 
     <!-- GALLERY -->
     <?php if (count($gallery_images) > 0): ?>
-    <h2 class="section-heading reveal"><em>Sweet</em> Moments</h2>
-    <p class="section-sub">Our engagement memories</p>
+    <h2 class="section-heading reveal"><?php echo t('gallery_title'); ?></h2>
+    <p class="section-sub"><?php echo t('gallery_tag'); ?></p>
 
     <div class="sweet-slideshow reveal" id="sweet-slideshow">
         <div class="sweet-slideshow-track" id="sweet-slideshow-track">
@@ -657,21 +691,21 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
          ===================================================================== -->
     <?php if (isset($has_guest_gallery) && $has_guest_gallery): ?>
     <div class="invitation-body" style="padding-top:20px;">
-    <h2 class="section-heading reveal"><em>Guest</em> Shared Moments</h2>
+    <h2 class="section-heading reveal"><?php echo t('guest_gallery_title'); ?></h2>
     <p class="section-sub">Capture and share your beautiful memories with us!</p>
 
     <!-- Upload Box (Preview mode එකේදී අක්‍රීය වේ) -->
     <div style="background: rgba(255,255,255,0.6); border: 2px dashed var(--gold); padding: 30px 20px; text-align: center; margin-bottom: 30px;">
         <?php if ($guest_id == 0): ?>
-            <p class="text-muted small"><i class="fas fa-lock"></i> Photo upload is disabled in Preview Mode.</p>
+            <p class="text-muted small"><i class="fas fa-lock"></i> <?php echo t('upload_disabled_preview'); ?></p>
         <?php else: ?>
             <i class="fas fa-camera-retro" style="font-size: 2.2rem; color: var(--gold-dark); margin-bottom: 12px; display: block;"></i>
-            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 6px;">Share a Photo from Your Phone</h5>
-            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;">Did you take some candid photos of the couple? Upload them here to share with everyone!</p>
+            <h5 class="fw-bold" style="font-family:'Inter', sans-serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 6px;"><?php echo t('share_photo_heading'); ?></h5>
+            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 15px;"><?php echo t('share_photo_desc'); ?></p>
             
             <input type="file" id="guest-image-input" accept="image/*" style="display: none;">
             <button type="button" class="btn-map" onclick="document.getElementById('guest-image-input').click()" style="border: none; cursor: pointer;">
-                <i class="fas fa-cloud-upload-alt"></i> Upload Wedding Photo
+                <i class="fas fa-cloud-upload-alt"></i> <?php echo t('upload_wedding_photo_btn'); ?>
             </button>
             
             <!-- Uploading Loader -->
@@ -874,12 +908,12 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
 <!-- RSVP -->
 <div class="rsvp-section">
     <div class="rsvp-card reveal">
-        <h2 class="rsvp-title">RSVP</h2>
-        <p class="rsvp-subtitle">Will you be joining us?</p>
+        <h2 class="rsvp-title"><?php echo t('rsvp_title'); ?></h2>
+        <p class="rsvp-subtitle"><?php echo t('rsvp_subtitle'); ?></p>
         <?php if (isset($current_guest['seats_reserved']) && $current_guest['seats_reserved'] > 0): ?>
         <div class="reserved-note" style="margin-bottom: 20px;">
             <i class="fas fa-chair"></i>
-            <span>We have reserved <strong><?php echo intval($current_guest['seats_reserved']); ?></strong> seat(s) in your honor.</span>
+            <span><?php echo t('seats_reserved'); ?>: <strong><?php echo intval($current_guest['seats_reserved']); ?></strong></span>
         </div>
         <?php endif; ?>
 
@@ -894,7 +928,7 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
                         <?php if ($current_guest['rsvp_status'] == 'accepted') echo 'checked'; ?> required>
                     <label for="rsvp-yes">
                         <i class="fas fa-heart" style="color:#22c55e;"></i>
-                        Joyfully Accept
+                        <?php echo t('rsvp_accept'); ?>
                     </label>
                 </div>
                 <div class="rsvp-option">
@@ -902,7 +936,7 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
                         <?php if ($current_guest['rsvp_status'] == 'rejected') echo 'checked'; ?>>
                     <label for="rsvp-no">
                         <i class="fas fa-heart-broken" style="color:#ef4444;"></i>
-                        Regretfully Decline
+                        <?php echo t('rsvp_decline'); ?>
                     </label>
                 </div>
             </div>
@@ -911,17 +945,17 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
                 name="guest_note"
                 class="rsvp-note"
                 rows="3"
-                placeholder="Any notes for the couple? (dietary needs, etc.) — optional"
+                placeholder="<?php echo htmlspecialchars(t('rsvp_note_placeholder')); ?>"
             ><?php echo !empty($current_guest['guest_note']) ? htmlspecialchars($current_guest['guest_note']) : ''; ?></textarea>
 
-            <button type="submit" name="submit_rsvp" class="btn-rsvp-submit">Send My RSVP</button>
+            <button type="submit" name="submit_rsvp" class="btn-rsvp-submit"><?php echo t('rsvp_submit'); ?></button>
         </form>
     </div>
 </div>
 
 <!-- FOOTER -->
 <div class="inv-footer">
-    <span class="brand">Lumus Studio</span>
+    <span class="brand">Lumos Studio</span>
     Digital Wedding Invitations · Designed by Hathisa Thissara
 </div>
 
@@ -940,7 +974,7 @@ function tick() {
     const now = Date.now();
     const dist = weddingDate - now;
     if (dist < 0) {
-        document.getElementById('countdown').innerHTML = '<p class="just-married-msg">Just Married! ❧</p>';
+        document.getElementById('countdown').innerHTML = '<p class="just-married-msg"><?php echo t('just_married'); ?></p>';
         return;
     }
     const d = Math.floor(dist / 86400000);

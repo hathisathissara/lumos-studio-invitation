@@ -25,13 +25,13 @@ function normalize_whatsapp_number($value) {
 
 // 1. Wedding & user status ලබාගැනීම
 if ($wedding_id > 0) {
-    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id, w.hero_image 
+    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, w.invite_language, u.status, w.user_id, w.hero_image 
                               FROM weddings w
                               JOIN users u ON w.user_id = u.id
                               WHERE w.id = ?");
     $stmtWed->execute([$wedding_id]);
 } else if (!empty($slug)) {
-    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, u.status, w.user_id, w.hero_image 
+    $stmtWed = $pdo->prepare("SELECT w.id as wedding_id, w.bride_name, w.groom_name, w.wedding_date, w.template_name, w.invite_language, u.status, w.user_id, w.hero_image 
                               FROM weddings w
                               JOIN users u ON w.user_id = u.id
                               WHERE w.slug = ? LIMIT 1");
@@ -45,6 +45,9 @@ if ($wedding) {
 } else {
     die("Invalid Invitation Link!");
 }
+
+require_once 'templates/includes/lang.php';
+set_invite_lang($wedding['invite_language'] ?? 'en');
 
 // ---------------------------------------------------------------------
 // Theme colors
@@ -83,7 +86,24 @@ $theme_palettes = [
     'indian_royal'     => ['primary' => '#6e1626', 'accent' => '#d4af37',  'accent_light' => '#edc873', 'paper' => '#fff8ec', 'paper2' => '#fbecc9', 'ink' => '#2e0a10'],
 ];
 
+$is_owner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $wedding['user_id']);
+$is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
+
 $theme_name = !empty($wedding['template_name']) ? $wedding['template_name'] : 'premium_gold';
+
+// ---------------------------------------------------------------------
+// Design-template PREVIEW override — lets the couple "Test" a template
+// from customize.php without saving it. Only trusted for the wedding's
+// own owner (or an admin), so guests can never spoof this via the URL.
+// Nothing is written to the database here — it's a view-only override.
+// ---------------------------------------------------------------------
+$preview_template = isset($_GET['preview_template']) ? trim($_GET['preview_template']) : '';
+$is_preview = false;
+if ($preview_template !== '' && ($is_owner || $is_admin) && isset($theme_palettes[$preview_template])) {
+    $theme_name = $preview_template;
+    $is_preview = true;
+}
+
 $pal = $theme_palettes[$theme_name] ?? $theme_palettes['premium_gold'];
 
 $c_env_light = tc_lighten($pal['primary'], 0.28);
@@ -104,9 +124,6 @@ $c_paper_accent_strong = tc_darken($c_accent, 0.55);
 $c_paper_accent_mid    = tc_darken($c_accent, 0.35);
 $c_paper_accent_rgb    = tc_rgbstr(tc_darken($c_accent, 0.45));
 $c_seal_ink            = tc_darken($c_accent, 0.75);
-
-$is_owner = (isset($_SESSION['user_id']) && $_SESSION['user_id'] == $wedding['user_id']);
-$is_admin = (isset($_SESSION['role']) && $_SESSION['role'] === 'admin');
 
 if ($wedding['status'] !== 'active' && !$is_owner && !$is_admin) {
     $bride = htmlspecialchars($wedding['bride_name']);
@@ -168,7 +185,7 @@ if ($wedding['status'] !== 'active' && !$is_owner && !$is_admin) {
 <body>
 <div class="card">
     <div class="seal"><?php echo $initials; ?></div>
-    <p class="eyebrow">Save The Date</p>
+    <p class="eyebrow"><?php echo t('pending_save_the_date'); ?></p>
     <div class="couple">
         <?php echo $bride; ?>
         <span class="amp">&amp;</span>
@@ -179,13 +196,12 @@ if ($wedding['status'] !== 'active' && !$is_owner && !$is_admin) {
         <div class="divider-icon"><i class="fas fa-heart"></i></div>
         <div class="divider-line"></div>
     </div>
-    <p class="title">Their invitation is being written</p>
+    <p class="title"><?php echo t('pending_title'); ?></p>
     <p class="desc">
-        This wedding invitation is being carefully prepared.<br>
-        Please check back shortly — it will be ready soon.
+        <?php echo t('pending_desc'); ?>
     </p>
     <div class="badge">
-        <div class="pulse"></div> Being prepared
+        <div class="pulse"></div> <?php echo t('pending_badge'); ?>
     </div>
 </div>
 </body>
@@ -296,7 +312,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-$wedding_date_formatted = date("d F Y", strtotime($wedding['wedding_date']));
+$wedding_date_formatted = date("d", strtotime($wedding['wedding_date'])) . ' ' . t_month($wedding['wedding_date']) . ' ' . date("Y", strtotime($wedding['wedding_date']));
 $bride_name = htmlspecialchars($wedding['bride_name']);
 $groom_name = htmlspecialchars($wedding['groom_name']);
 $monogram = mb_strtoupper(mb_substr($wedding['bride_name'], 0, 1)) . ' · ' . mb_strtoupper(mb_substr($wedding['groom_name'], 0, 1));
@@ -658,18 +674,25 @@ if (!empty($wedding['hero_image'])) {
 </head>
 <body>
 
+<?php if ($is_preview): ?>
+<div style="position:fixed; top:0; left:0; right:0; z-index:9999; background:#1a1a2e; color:#c9a96e; text-align:center; padding:8px 14px; font-family:sans-serif; font-size:0.82rem; letter-spacing:0.5px;">
+    <i class="fas fa-eye" style="margin-right:6px;"></i>
+    Previewing "<?php echo htmlspecialchars($theme_name); ?>" template — this is a test view only, nothing is saved.
+</div>
+<?php endif; ?>
+
 <canvas id="theme3d-canvas" aria-hidden="true"></canvas>
 <div class="bg-glow glow-1"></div>
 <div class="bg-glow glow-2"></div>
 <div class="particles" id="particles"></div>
 
 <div class="stage">
-    <p class="stage-label" id="stageLabel">You Are Invited</p>
+    <p class="stage-label" id="stageLabel"><?php echo t('stage_you_are_invited'); ?></p>
 
     <div class="envelope-wrap">
         <div class="envelope" id="envelope">
 
-            <p class="envelope-face-text">Dear Guest</p>
+            <p class="envelope-face-text"><?php echo t('envelope_dear_guest'); ?></p>
 
             <div class="envelope-flap" id="envelopeFlap">
                 <svg viewBox="0 0 440 160" preserveAspectRatio="none">
@@ -691,7 +714,7 @@ if (!empty($wedding['hero_image'])) {
                 </div>
                 <?php endif; ?>
 
-                <p class="greeting">The Wedding Of</p>
+                <p class="greeting"><?php echo t('the_wedding_of'); ?></p>
 
                 <div class="couple-names">
                     <?php echo $bride_name; ?>
@@ -709,7 +732,7 @@ if (!empty($wedding['hero_image'])) {
 
                 <?php if (!$just_verified): ?>
                 <p class="instruction">
-                    Enter your WhatsApp number to open<br>your personal invitation
+                    <?php echo t('enter_whatsapp'); ?>
                 </p>
 
                 <?php if ($error): ?>
@@ -733,25 +756,25 @@ if (!empty($wedding['hero_image'])) {
                         >
                     </div>
                     <button type="submit" class="btn-open" id="openBtn">
-                        <i class="fas fa-envelope-open-text" style="margin-right:8px;"></i> Open My Invitation
+                        <i class="fas fa-envelope-open-text" style="margin-right:8px;"></i> <?php echo t('open_invitation_btn'); ?>
                     </button>
                 </form>
 
                 <p class="hint">
                     <i class="fas fa-lock" style="margin-right:4px;"></i>
-                    Your number is only used to show you your invitation. It's not shared with anyone.
+                    <?php echo t('number_privacy_hint'); ?>
                 </p>
                 <?php else: ?>
                 <!-- Guest already verified (personal link or form submit) —
                      number entry is no longer needed, so it's hidden and we
                      go straight into the seal-opening sequence below. -->
-                <p class="redirect-note"><i class="fas fa-spinner fa-spin"></i> Opening your invitation…</p>
+                <p class="redirect-note"><i class="fas fa-spinner fa-spin"></i> <?php echo t('opening_invitation'); ?></p>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <p class="tap-hint" id="tapHint">Tap the seal to open</p>
+    <p class="tap-hint" id="tapHint"><?php echo t('tap_seal_to_open'); ?></p>
 </div>
 
 <script>
@@ -785,7 +808,11 @@ function openInvitationFlow() {
     // short 3s envelope-opening animation.
     if (openBtn) openBtn.disabled = true;
     setTimeout(() => {
+        <?php if ($is_preview): ?>
+        window.location.href = 'view_invitation.php?preview_template=<?php echo urlencode($theme_name); ?>';
+        <?php else: ?>
         window.location.href = 'view_invitation.php';
+        <?php endif; ?>
     }, 3000);
     <?php else: ?>
     setTimeout(() => whatsappInput.focus(), 350);

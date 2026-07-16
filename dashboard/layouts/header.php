@@ -472,6 +472,9 @@ $current = basename($_SERVER['PHP_SELF']);
             <a href="guest_gallery.php" class="nav-item <?php echo $current === 'guest_gallery.php' ? 'active' : ''; ?>">
                 <i class="fas fa-camera-retro"></i> Guest Shared Pics
             </a>
+            <a href="customize.php" class="nav-item <?php echo $current === 'customize.php' ? 'active' : ''; ?>">
+                <i class="fas fa-magic"></i> Customize
+            </a>
             <div class="nav-section-label">Tools</div>
             <a href="checklist.php" class="nav-item <?php echo $current === 'checklist.php' ? 'active' : ''; ?>">
                 <i class="fas fa-tasks"></i> Checklist
