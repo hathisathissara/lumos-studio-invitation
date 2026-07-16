@@ -159,6 +159,42 @@ require '../layouts/header.php';
     .music-item-name { font-size:0.87rem; font-weight:600; color:#1a1a2e; flex:1; }
     .music-preview-btn { background:#eef0f5; border:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#1a1a2e; cursor:pointer; flex-shrink:0; }
     .music-preview-btn:hover { background:#c9a96e; color:#fff; }
+
+    /* ===== Mobile sticky save bar ===== */
+    .mobile-save-bar {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        background: #fff;
+        border-top: 1.5px solid #eef0f5;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -6px 24px rgba(0,0,0,0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .mobile-save-bar.active { transform: translateY(0); }
+    .msb-info { min-width: 0; }
+    .msb-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; }
+    .msb-sub { font-size: 0.94rem; font-weight: 700; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55vw; margin-top: 1px; }
+    .msb-save-btn { background: linear-gradient(135deg, #1a1a2e, #2d2d50); color: #c9a96e; border: none; border-radius: 10px; padding: 12px 22px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; transition: transform 0.15s; }
+    .msb-save-btn:active { transform: scale(0.96); }
+
+    @media (max-width: 767px) {
+        .mobile-save-bar.active { display: flex; }
+        .settings-accordion { padding-bottom: 86px; }
+        /* Compact 2-column template grid so the whole list is shorter and easier to scan */
+        .tpl-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .tpl-swatch { height: 56px; }
+        .tpl-body { padding: 10px 12px; }
+        .tpl-name { font-size: 0.8rem; }
+        .tpl-test-link { padding: 6px 12px 2px; }
+        /* Hide the in-form save buttons on mobile — the sticky bar replaces them */
+        .acc-body > form > .btn-save { display: none; }
+    }
 </style>
 
 <div class="settings-accordion">
@@ -223,7 +259,7 @@ require '../layouts/header.php';
                 This changes labels like RSVP, Countdown and Programme headings. Anything you typed yourself
                 (love story, venue, event names) stays exactly as you wrote it.
             </p>
-            <form method="POST" action="customize.php">
+            <form method="POST" action="customize.php" id="languageForm">
                 <div class="lang-grid">
                     <?php foreach ($languages as $code => $l): ?>
                     <label class="lang-card <?php echo $current_language === $code ? 'selected' : ''; ?>" onclick="selectLang(this)">
@@ -288,34 +324,112 @@ require '../layouts/header.php';
 
 </div>
 
+<!-- Mobile-only floating save bar: keeps the Save action reachable without scrolling past the template grid -->
+<div class="mobile-save-bar" id="mobileSaveBar">
+    <div class="msb-info">
+        <div class="msb-title" id="msbTitle">Design Template</div>
+        <div class="msb-sub" id="msbSub"></div>
+    </div>
+    <button type="button" class="msb-save-btn" id="msbSaveBtn" onclick="submitActiveForm()">
+        <i class="fas fa-save"></i> Save
+    </button>
+</div>
+
 <audio id="previewPlayer"></audio>
 
 <script>
+    // ===== Mobile sticky save bar =====
+    const accBarConfig = {
+        'acc-design':   { title: 'Design Template',      form: 'designForm' },
+        'acc-language': { title: 'Invitation Language',  form: 'languageForm' },
+        'acc-music':    { title: 'Background Music',     form: 'musicForm' }
+    };
+
+    function getSelectionText(accId) {
+        if (accId === 'acc-design') {
+            const sel = document.querySelector('.tpl-card.selected .tpl-name');
+            return sel ? sel.textContent.trim() : 'Choose a template';
+        }
+        if (accId === 'acc-language') {
+            const sel = document.querySelector('.lang-card.selected .lang-english');
+            return sel ? sel.textContent.trim() : 'Choose a language';
+        }
+        if (accId === 'acc-music') {
+            const enabled = document.getElementById('musicEnabledInput').checked;
+            if (!enabled) return 'Off';
+            const sel = document.querySelector('.music-item.selected .music-item-name');
+            return sel ? sel.textContent.trim() : 'Choose a track';
+        }
+        return '';
+    }
+
+    function updateMobileBar(accId) {
+        const bar = document.getElementById('mobileSaveBar');
+        const conf = accBarConfig[accId];
+        if (!conf) {
+            bar.classList.remove('active');
+            return;
+        }
+        document.getElementById('msbTitle').textContent = conf.title;
+        document.getElementById('msbSub').textContent = getSelectionText(accId);
+        bar.dataset.targetForm = conf.form;
+        bar.classList.add('active');
+    }
+
+    function refreshBarIfOpen(accId) {
+        const item = document.getElementById(accId);
+        if (item && item.classList.contains('open')) updateMobileBar(accId);
+    }
+
+    function submitActiveForm() {
+        const bar = document.getElementById('mobileSaveBar');
+        const formId = bar.dataset.targetForm;
+        if (!formId) return;
+        const form = document.getElementById(formId);
+        if (!form) return;
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+    }
+
     function toggleAcc(id) {
         const item = document.getElementById(id);
         const isOpen = item.classList.contains('open');
         document.querySelectorAll('.acc-item').forEach(el => el.classList.remove('open'));
-        if (!isOpen) item.classList.add('open');
+        if (!isOpen) {
+            item.classList.add('open');
+            updateMobileBar(id);
+        } else {
+            updateMobileBar(null);
+        }
     }
 
     function selectTpl(input) {
         document.querySelectorAll('.tpl-card').forEach(c => c.classList.remove('selected'));
         input.closest('.tpl-card').classList.add('selected');
+        refreshBarIfOpen('acc-design');
     }
 
     function selectLang(label) {
         document.querySelectorAll('.lang-card').forEach(c => c.classList.remove('selected'));
         label.classList.add('selected');
+        refreshBarIfOpen('acc-language');
     }
 
     function selectMusic(label) {
         document.querySelectorAll('.music-item').forEach(c => c.classList.remove('selected'));
         label.classList.add('selected');
+        refreshBarIfOpen('acc-music');
     }
 
     function toggleMusicList(show) {
         document.getElementById('musicList').style.display = show ? 'flex' : 'none';
+        refreshBarIfOpen('acc-music');
     }
+
+    // Design Template accordion starts open by default — show the bar right away on mobile
+    document.addEventListener('DOMContentLoaded', function () {
+        updateMobileBar('acc-design');
+    });
 
     // Simple audition player for preset tracks — one file playing at a time
     let currentPreviewBtn = null;
