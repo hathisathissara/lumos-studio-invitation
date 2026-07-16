@@ -861,7 +861,14 @@ body.night-mode::after {
 }
 </style>
 </head>
-<body>
+<body style="opacity:0; transition:opacity 0.6s ease;">
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    requestAnimationFrame(function () {
+        document.body.style.opacity = '1';
+    });
+});
+</script>
 
 <canvas id="ambient-fx-canvas" aria-hidden="true"></canvas>
 <canvas id="celebration-canvas" aria-hidden="true"></canvas>

@@ -105,7 +105,7 @@ $music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY
             width: 100%;
             text-align: center;
             padding: 54px 42px;
-            background: rgba(255,255,255,0.28);
+            background: rgba(255, 255, 255, 0.52);
             border: 1px solid rgba(196,122,148,0.35);
             border-radius: 32px;
             backdrop-filter: blur(4px);
@@ -387,7 +387,14 @@ $music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY
         .inv-footer .brand { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.35rem; color: var(--plum-dark); display: block; margin-bottom: 6px; }
     </style>
 </head>
-<body>
+<body style="opacity:0; transition:opacity 0.6s ease;">
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    requestAnimationFrame(function () {
+        document.body.style.opacity = '1';
+    });
+});
+</script>
 
 <canvas id="hero-canvas"></canvas>
 

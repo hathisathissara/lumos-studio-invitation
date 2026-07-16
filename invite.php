@@ -390,6 +390,8 @@ if (!empty($wedding['hero_image'])) {
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--emerald-900);
+            opacity: 1;
+            transition: opacity 0.6s ease;
             background-image:
                 radial-gradient(circle at 12% 15%, rgba(var(--gold-rgb),0.10), transparent 40%),
                 radial-gradient(circle at 88% 85%, rgba(var(--gold-rgb),0.08), transparent 40%),
@@ -670,6 +672,10 @@ if (!empty($wedding['hero_image'])) {
         body.opening .envelope-face-text,
         body.opening .stage-label,
         body.opening .tap-hint { opacity: 0; }
+
+        /* Fades the whole page out just before we navigate to the invitation,
+           so it's a smooth transition instead of an abrupt page jump. */
+        body.page-fade-out { opacity: 0; }
     </style>
 </head>
 <body>
@@ -805,14 +811,18 @@ function openInvitationFlow() {
     <?php if ($just_verified): ?>
     // Guest already verified (personalized link or the number form) —
     // tapping the seal now moves straight to the invitation after a
-    // short 3s envelope-opening animation.
+    // short 3s envelope-opening animation, followed by a fade-out
+    // transition so the page doesn't jump abruptly.
     if (openBtn) openBtn.disabled = true;
     setTimeout(() => {
-        <?php if ($is_preview): ?>
-        window.location.href = 'view_invitation.php?preview_template=<?php echo urlencode($theme_name); ?>';
-        <?php else: ?>
-        window.location.href = 'view_invitation.php';
-        <?php endif; ?>
+        document.body.classList.add('page-fade-out');
+        setTimeout(() => {
+            <?php if ($is_preview): ?>
+            window.location.href = 'view_invitation.php?preview_template=<?php echo urlencode($theme_name); ?>';
+            <?php else: ?>
+            window.location.href = 'view_invitation.php';
+            <?php endif; ?>
+        }, 600); // matches the 0.6s opacity transition on body
     }, 3000);
     <?php else: ?>
     setTimeout(() => whatsappInput.focus(), 350);

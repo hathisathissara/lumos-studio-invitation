@@ -393,7 +393,14 @@ $music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY
         .inv-footer .brand { font-family: 'Fraunces', serif; font-style: italic; font-size: 1.3rem; color: var(--gold); display: block; margin-bottom: 6px; }
     </style>
 </head>
-<body>
+<body style="opacity:0; transition:opacity 0.6s ease;">
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    requestAnimationFrame(function () {
+        document.body.style.opacity = '1';
+    });
+});
+</script>
 
 <canvas id="page-canvas"></canvas>
 <div id="dove-layer"></div>

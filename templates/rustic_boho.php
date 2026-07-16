@@ -474,7 +474,14 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
         .venue-map-card iframe { width: 100%; height: 100%; border: 0; display: block; }
     </style>
 </head>
-<body>
+<body style="opacity:0; transition:opacity 0.6s ease;">
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    requestAnimationFrame(function () {
+        document.body.style.opacity = '1';
+    });
+});
+</script>
 
 <a href="#invitation-main" class="skip-link">Skip to invitation content</a>
 
@@ -530,7 +537,7 @@ $rsvp_success = $rsvp_just_submitted && !empty($msg) && stripos($msg, 'danger') 
 })();
 </script>
 <?php endif; ?>
-
+</div>
 <!-- HERO HEADER -->
 <div class="hero-header" <?php echo $hero_style; ?>>
     <canvas id="hero3d-canvas" aria-hidden="true"></canvas>

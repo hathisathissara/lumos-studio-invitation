@@ -400,7 +400,14 @@ $music_file = ($music_key && isset($MUSIC_LIBRARY[$music_key])) ? $MUSIC_LIBRARY
         }
     </style>
 </head>
-<body>
+<body style="opacity:0; transition:opacity 0.6s ease;">
+<script>
+window.addEventListener('DOMContentLoaded', function () {
+    requestAnimationFrame(function () {
+        document.body.style.opacity = '1';
+    });
+});
+</script>
 
 <canvas id="page-canvas"></canvas>
 <canvas id="petal-canvas"></canvas>
