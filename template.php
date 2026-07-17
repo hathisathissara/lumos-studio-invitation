@@ -1,5 +1,5 @@
 <?php
-$page_title = "Themes — 9 Elegant Wedding Invitation Themes";
+$page_title = "Elegant Wedding Invitation Template";
 // Root layouts/header.php එක Load කිරීම
 require 'layouts/header.php'; 
 ?>

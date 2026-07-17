@@ -1,17 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://lumosinvitation.unaux.com/</loc>
+        <loc>https://invitation.iceiy.com/</loc>
         <lastmod>2026-07-06T00:00:00+00:00</lastmod>
         <priority>1.00</priority>
     </url>
     <url>
-        <loc>https://lumosinvitation.unaux.com/dashboard/login.php</loc>
+        <loc>https://invitation.iceiy.com/dashboard/login.php</loc>
         <lastmod>2026-07-06T00:00:00+00:00</lastmod>
         <priority>0.80</priority>
     </url>
     <url>
-        <loc>https://lumosinvitation.unaux.com/dashboard/register.php</loc>
+        <loc>https://invitation.iceiy.com/dashboard/register.php</loc>
+        <lastmod>2026-07-06T00:00:00+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://invitation.iceiy.com/template.php</loc>
+        <lastmod>2026-07-06T00:00:00+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://invitation.iceiy.com/features.php</loc>
+        <lastmod>2026-07-06T00:00:00+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://invitation.iceiy.com/pricing.php</loc>
         <lastmod>2026-07-06T00:00:00+00:00</lastmod>
         <priority>0.80</priority>
     </url>

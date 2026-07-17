@@ -11,42 +11,55 @@ $role = $_SESSION['role'] ?? null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($page_title) ? $page_title . ' | Lumus Studio' : 'Lumos Studio | Elegant Digital Wedding Invitations'; ?></title>
+    <title>
+        <?php echo isset($page_title) ? $page_title . ' | Lumos Studio' : 'Digital Wedding Invitations in Sri Lanka | Lumos Studio'; ?>
+    </title>
     <link rel="icon" type="image/x-icon" href="./uploads/lumos.jpg">
-    <meta name="description" content="Lumus Studio presents Lumos Wedding Invitation - create beautiful digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdown, gallery, and 9 custom themes for your special day.">
-    <meta name="keywords" content="Lumos Studio, Lumos Studio invitation, Lumos Wedding Invitation, digital wedding invitation, wedding invitation website, wedding RSVP, online wedding invitation, elegant wedding invite">
-    <link rel="canonical" href="https://lumosinvitation.unaux.com/">
+    <meta name="description" content="Create elegant digital wedding invitations in Sri Lanka with Lumos Studio. Beautiful online wedding invitation websites with RSVP, WhatsApp sharing, countdown timer, photo gallery, event schedule, Google Maps, and multilingual support.">
+    <meta name="keywords" content="Digital Wedding Invitations Sri Lanka, Wedding Invitation Sri Lanka, Online Wedding Invitation, Wedding Invitation Website, Digital Invite Sri Lanka, Wedding RSVP, WhatsApp Wedding Invitation, Sinhala Wedding Invitation, Tamil Wedding Invitation, English Wedding Invitation, Wedding Website Sri Lanka, Lumos Studio">
+    <meta name="author" content="Lumos Studio">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="language" content="English">
+    <meta name="geo.region" content="LK">
+    <meta name="geo.country" content="Sri Lanka">
+    <link rel="canonical" href="https://invitation.iceiy.com/">
     
     <!-- Open Graph Metadata -->
-    <meta property="og:title" content="Lumos Wedding Invitation | Elegant Digital Wedding Invitations">
-    <meta property="og:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://lumosinvitation.unaux.com/">
-    <meta property="og:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Lumos Wedding Invitation | Elegant Digital Wedding Invitations">
-    <meta name="twitter:description" content="Create beautiful digital wedding invitations with Lumos Wedding Invitation. Add RSVP tracking, WhatsApp delivery, live countdown, gallery, and custom themes.">
-    <meta name="twitter:image" content="https://lumosinvitation.unaux.com/lumos.jpg">
+    <meta property="og:site_name" content="Lumos Studio">
+    <meta property="og:title" content="Digital Wedding Invitations in Sri Lanka | Lumos Studio">
+    <meta property="og:description" content="Create premium digital wedding invitation websites in Sri Lanka with RSVP, WhatsApp sharing, countdown timer, gallery, Google Maps, and beautiful customizable themes.">
+    <meta property="og:url" content="https://invitation.iceiy.com/">
+    <meta property="og:image" content="https://invitation.iceiy.com/uploads/lumos.jpg">
+    <meta property="og:image:alt" content="Lumos Studio Digital Wedding Invitations">
     <meta name="google-site-verification" content="KrJVNOQBGtAEWfU1vPROURf0R31dI2ExYzITXmZN8X0" />
     
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Digital Wedding Invitations in Sri Lanka | Lumos Studio">
+    <meta name="twitter:description" content="Create elegant online wedding invitation websites with RSVP, WhatsApp sharing, countdown timer, gallery, and premium themes for weddings in Sri Lanka.">
+    <meta name="twitter:image" content="https://invitation.iceiy.com/uploads/lumos.jpg">
+    
     <!-- Google SEO Schema JSON-LD -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Lumus Studio",
-      "alternateName": "Lumos Wedding Invitation",
-      "url": "https://lumosinvitation.unaux.com/",
-      "logo": "https://lumosinvitation.unaux.com/lumos.jpg",
-      "description": "Lumos Studio creates elegant digital wedding invitations with RSVP tracking, WhatsApp delivery, live countdowns, photo galleries, and 9 custom themes."
-    }
-    </script>
-    <script type="application/ld+json">
+   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Lumos Studio - Lumos Wedding Invitation",
-      "url": "https://lumosinvitation.unaux.com/"
+      "name": "Lumos Studio",
+      "url": "https://invitation.iceiy.com/",
+      "description": "Digital Wedding Invitations in Sri Lanka with RSVP, WhatsApp sharing, countdown timer, gallery, Google Maps, and customizable themes.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://invitation.iceiy.com/?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "keywords": [
+        "Digital Wedding Invitations Sri Lanka",
+        "Wedding Invitation Website",
+        "Online Wedding Invitation",
+        "Wedding RSVP",
+        "Wedding Website Sri Lanka"
+      ]
     }
     </script>
     
@@ -329,7 +342,7 @@ $role = $_SESSION['role'] ?? null;
         <div class="collapse navbar-collapse" id="navMain">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-4 mt-3 mt-lg-0">
                 <li class="nav-item"><a class="nav-link" href="features.php">Features</a></li>
-                <li class="nav-item"><a class="nav-link" href="themes.php">Themes</a></li>
+                <li class="nav-item"><a class="nav-link" href="template.php">Template</a></li>
                 <li class="nav-item"><a class="nav-link" href="index.php#how-it-works">How It Works</a></li>
                 <li class="nav-item"><a class="nav-link" href="pricing.php">Pricing</a></li>
                 <?php if ($is_logged_in): ?>
