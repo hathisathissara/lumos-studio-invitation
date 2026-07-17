@@ -2,7 +2,7 @@
 
 A modern, highly interactive, and self-hosted digital wedding invitation and planning platform built with **Pure PHP**, **MySQL**, and **Three.js**. It features immersive 3D animated invitations, a comprehensive couple's dashboard for wedding management, real-time RSVP tracking, guest photo sharing, and a robust administrative billing workflow.
 
-🌐 **Live Platform:** [https://lumosinvitation.unaux.com/](https://lumosinvitation.unaux.com/)
+🌐 **Live Platform:** [https://invitation.iceiy.com/](https://invitation.iceiy.com/)
 
 ---
 
