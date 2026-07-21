@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
     exit();
 }
 
-// Helper: PHP upload error codes -> human readable messages
+// Helper: PHP upload error codes
 function upload_error_message($errorCode) {
     switch ($errorCode) {
         case UPLOAD_ERR_OK:
@@ -1003,7 +1003,7 @@ document.getElementById('paypal-pay-btn')?.addEventListener('click', function() 
         });
 });
 
-// Handle the return trip from PayPal (approval_url redirects back here with ?paypal_action=...&token=ORDER_ID)
+// Handle the return trip from PayPal (approval_url redirects back back here with ?paypal_action=...&token=ORDER_ID)
 (function handlePayPalReturn() {
     const params = new URLSearchParams(window.location.search);
     const ppAction = params.get('paypal_action');
